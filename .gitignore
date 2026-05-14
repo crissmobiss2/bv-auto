@@ -19,6 +19,12 @@
 
 # production
 /build
+/dist
+
+# electron build cache
+/dist/win-unpacked
+/dist/mac
+/dist/linux-unpacked
 
 # misc
 .DS_Store
@@ -39,3 +45,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+.vercel
+.env*.local

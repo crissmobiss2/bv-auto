@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#2563EB"/>
+  <circle cx="256" cy="256" r="180" fill="#1D4ED8"/>
+  <!-- Wrench -->
+  <g fill="white">
+    <path d="M340 140c-33.1 0-60 26.9-60 60 0 8.3 1.7 16.2 4.8 23.4L164 344c-7.2-3.1-15.1-4.8-23.4-4.8-33.1 0-60 26.9-60 60s26.9 60 60 60c33.1 0 60-26.9 60-60 0-8.3-1.7-16.2-4.8-23.4L316 255c7.2 3.1 15.1 4.8 23.4 4.8 33.1 0 60-26.9 60-60 0-7.7-1.5-15-4.2-21.7l-37.9 37.9-22.6-22.6 37.9-37.9c-6.7-2.7-14-4.2-21.7-4.2h-.9z"/>
+    <circle cx="140.6" cy="399.4" r="22" fill="#2563EB"/>
+  </g>
+  <!-- Car silhouette (simplified) -->
+  <rect x="160" y="240" width="192" height="48" rx="12" fill="white" opacity="0.15"/>
+  <rect x="180" y="210" width="152" height="40" rx="14" fill="white" opacity="0.12"/>
+  <circle cx="195" cy="292" r="18" fill="white" opacity="0.2"/>
+  <circle cx="317" cy="292" r="18" fill="white" opacity="0.2"/>
+</svg>

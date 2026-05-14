@@ -1,0 +1,96 @@
+workflows:
+
+  # ── iOS → App Store ──────────────────────────────────────────────────────────
+  ios-app-store:
+    name: iOS App Store Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.bvauto.app
+      vars:
+        BUNDLE_ID: com.bvauto.app
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+        APP_STORE_APPLE_ID: 0000000000   # ← replace with your App Store app ID after creating it in App Store Connect
+      node: 22.11.0
+      xcode: latest
+      cocoapods: default
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Sync Capacitor iOS
+        script: npx cap sync ios
+
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+
+      - name: Set version from package.json
+        script: |
+          VERSION=$(node -p "require('./package.json').version")
+          BUILD=$(($GOOGLE_PLAY_TRACK_BUILD_NUMBER + 1))
+          agvtool new-marketing-version $VERSION
+          agvtool new-version -all $BUILD
+        working_directory: ios/App
+
+      - name: Build iOS for App Store
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --export-options-plist /Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false   # set true when ready for full release
+
+  # ── Android → Google Play ────────────────────────────────────────────────────
+  android-play-store:
+    name: Android Play Store Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      android_signing:
+        - bvauto_keystore
+      groups:
+        - google_play
+      vars:
+        PACKAGE_NAME: com.bvauto.app
+      node: 22.11.0
+      java: 17
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Sync Capacitor Android
+        script: npx cap sync android
+
+      - name: Build Android release AAB
+        script: |
+          cd android
+          ./gradlew bundleRelease
+
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+      - android/app/build/outputs/apk/release/*.apk
+
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true

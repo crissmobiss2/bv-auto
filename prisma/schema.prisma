@@ -1,0 +1,1151 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  DISPATCHER
+  TECHNICIAN
+  PARTS_COORDINATOR
+  ACCOUNTANT
+  SERVICE_ADVISOR
+  CUSTOMER
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  BUSINESS
+}
+
+enum LeadSource {
+  WALK_IN
+  PHONE
+  WEBSITE
+  REFERRAL
+  GOOGLE
+  YELP
+  SOCIAL_MEDIA
+  OTHER
+}
+
+enum JobStatus {
+  ESTIMATE
+  PENDING_APPROVAL
+  APPROVED
+  SCHEDULED
+  IN_PROGRESS
+  PARTS_WAITING
+  COMPLETED
+  INVOICED
+  PAID
+  CANCELLED
+  WARRANTY
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  VIEWED
+  APPROVED
+  DECLINED
+  EXPIRED
+  CONVERTED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PARTIAL
+  PAID
+  OVERDUE
+  VOID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  CREDIT_CARD
+  DEBIT_CARD
+  ZELLE
+  VENMO
+  CASHAPP
+  ACH
+  OTHER
+}
+
+enum PartStatus {
+  REQUESTED
+  QUOTED
+  ORDERED
+  SHIPPED
+  PICKED_UP
+  RECEIVED
+  INSTALLED
+  RETURNED
+  CREDITED
+  CANCELLED
+}
+
+enum LineItemType {
+  LABOR
+  PART
+  FLUID
+  SUBLET
+  SHOP_SUPPLY
+  TAX
+  DISCOUNT
+  FEE
+  OTHER
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  PAYMENT
+  STATUS_CHANGE
+  EMAIL_SENT
+  SMS_SENT
+}
+
+enum CarfaxStatus {
+  PENDING
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  EXPORTED
+}
+
+// ─── USERS & AUTH ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          UserRole  @default(TECHNICIAN)
+  isActive      Boolean   @default(true)
+  phone         String?
+  signature     String?
+  shopId        String?
+  customerId    String?   // links CUSTOMER role users to their Customer record
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  jobs            Job[]            @relation("AssignedTechnician")
+  createdJobs     Job[]            @relation("CreatedByUser")
+  notes           Note[]
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+  jobPhotos       JobPhoto[]
+  createdQuotes   Quote[]
+  createdInvoices Invoice[]
+  timeLogs        TimeLog[]        @relation("TechTimeLog")
+  shop            Shop?            @relation(fields: [shopId], references: [id])
+  payrollRate     PayrollRate?
+
+  // MFA / TOTP
+  totpSecret       String?
+  totpEnabled      Boolean   @default(false)
+
+  // Password reset
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  @@index([email])
+  @@index([role])
+  @@index([resetToken])
+  @@index([shopId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── CRM / CUSTOMERS ──────────────────────────────────────────────────────────
+
+model Customer {
+  id           String       @id @default(cuid())
+  type         CustomerType @default(INDIVIDUAL)
+  firstName    String
+  lastName     String
+  company      String?
+  email        String?
+  phone        String
+  altPhone     String?
+  address      String?
+  city         String?
+  state        String?
+  zip          String?
+  leadSource   LeadSource   @default(OTHER)
+  referredBy   String?
+  taxExempt    Boolean      @default(false)
+  taxExemptId  String?
+  notes        String?
+  tags         String[]
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  portalToken    String?      @unique
+  vehicles       Vehicle[]
+  jobs           Job[]
+  quotes         Quote[]
+  invoices       Invoice[]
+  customerNotes  Note[]
+  communications Communication[]
+  followUps      FollowUp[]
+  smsMessages      SmsMessage[]
+  reviewRequests   ReviewRequest[]
+  serviceRequests  ServiceRequest[]
+  declinedServices DeclinedService[]
+  warranties       Warranty[]
+  enrollments      CommEnrollment[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([lastName])
+}
+
+// ─── VEHICLES ─────────────────────────────────────────────────────────────────
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  customerId   String
+  vin          String?
+  plate        String?
+  plateState   String?
+  year         Int
+  make         String
+  model        String
+  trim         String?
+  color        String?
+  mileage      Int?
+  engine       String?
+  transmission String?
+  driveType    String?
+  fuelType     String?
+  notes        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer             Customer              @relation(fields: [customerId], references: [id])
+  jobs                 Job[]
+  carfaxRecords        CarfaxRecord[]
+  maintenanceIntervals MaintenanceInterval[]
+  declinedServices     DeclinedService[]
+  warranties           Warranty[]
+
+  @@index([vin])
+  @@index([plate])
+  @@index([customerId])
+}
+
+// ─── CARFAX INTEGRATION ───────────────────────────────────────────────────────
+
+model CarfaxRecord {
+  id               String       @id @default(cuid())
+  vehicleId        String
+  vin              String
+  reportData       Json?
+  serviceHistoryId String?
+  status           CarfaxStatus @default(PENDING)
+  submittedAt      DateTime?
+  exportedAt       DateTime?
+  exportPayload    Json?
+  responseData     Json?
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  job     Job?    @relation(fields: [serviceHistoryId], references: [id])
+
+  @@index([vin])
+  @@index([vehicleId])
+}
+
+// ─── JOBS / REPAIR ORDERS ─────────────────────────────────────────────────────
+
+model Job {
+  id              String    @id @default(cuid())
+  jobNumber       String    @unique
+  customerId      String
+  vehicleId       String
+  technicianId    String?
+  createdById     String
+  status          JobStatus @default(ESTIMATE)
+  title           String
+  description     String?
+  serviceLocation String?
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  estimatedHours  Decimal?
+  actualHours     Decimal?
+  mileageIn       Int?
+  mileageOut      Int?
+  internalNotes   String?
+  customerNotes   String?
+  checklist       Json?
+  requiresReturn  Boolean   @default(false)
+  warrantyJobId   String?
+  fleetAccountId     String?
+  fleetPoNumber      String?
+  vehicleHealthScore Int?
+  shopId             String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  vehicle       Vehicle        @relation(fields: [vehicleId], references: [id])
+  technician    User?          @relation("AssignedTechnician", fields: [technicianId], references: [id])
+  createdBy     User           @relation("CreatedByUser", fields: [createdById], references: [id])
+  fleetAccount  FleetAccount?  @relation(fields: [fleetAccountId], references: [id])
+  shop          Shop?          @relation(fields: [shopId], references: [id])
+  quote         Quote?
+  invoice       Invoice?
+  parts         JobPart[]
+  photos        JobPhoto[]
+  jobNotes      Note[]
+  carfaxRecords CarfaxRecord[]
+  signatures    Signature[]
+  timeLogs         TimeLog[]
+  reviewRequest    ReviewRequest?
+  declinedServices DeclinedService[]
+  warranties       Warranty[]
+  insuranceClaim   InsuranceClaim?
+  sublets          Sublet[]
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([technicianId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([jobNumber])
+  @@index([fleetAccountId])
+  @@index([shopId])
+}
+
+// ─── QUOTES ───────────────────────────────────────────────────────────────────
+
+model Quote {
+  id             String      @id @default(cuid())
+  quoteNumber    String      @unique
+  jobId          String      @unique
+  customerId     String
+  createdById    String
+  status         QuoteStatus @default(DRAFT)
+  title          String?
+  notes          String?
+  internalNotes  String?
+  validUntil     DateTime?
+  sentAt         DateTime?
+  viewedAt       DateTime?
+  approvedAt     DateTime?
+  declinedAt     DateTime?
+  declineReason  String?
+  approvedBy     String?
+  approvalMethod String?
+  subtotal       Decimal     @default(0)
+  taxRate        Decimal     @default(0)
+  taxAmount      Decimal     @default(0)
+  discountAmount Decimal     @default(0)
+  totalAmount    Decimal     @default(0)
+  depositRequired Decimal?
+  depositPaid    Decimal?
+  approvalToken  String?     @unique
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  job       Job      @relation(fields: [jobId], references: [id])
+  customer  Customer @relation(fields: [customerId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+  lineItems LineItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([quoteNumber])
+}
+
+// ─── INVOICES ─────────────────────────────────────────────────────────────────
+
+model Invoice {
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique
+  jobId          String        @unique
+  customerId     String
+  createdById    String
+  status         InvoiceStatus @default(DRAFT)
+  notes          String?
+  internalNotes  String?
+  dueDate        DateTime?
+  sentAt         DateTime?
+  viewedAt       DateTime?
+  paidAt         DateTime?
+  voidedAt          DateTime?
+  voidReason        String?
+  stripeSessionId   String?
+  stripePaymentUrl  String?
+  subtotal          Decimal       @default(0)
+  taxRate        Decimal       @default(0)
+  taxAmount      Decimal       @default(0)
+  discountAmount Decimal       @default(0)
+  totalAmount    Decimal       @default(0)
+  amountPaid     Decimal       @default(0)
+  amountDue      Decimal       @default(0)
+  qbSyncedAt     DateTime?
+  qbInvoiceId    String?
+  xeroSyncedAt   DateTime?
+  xeroInvoiceId  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  job           Job      @relation(fields: [jobId], references: [id])
+  customer      Customer @relation(fields: [customerId], references: [id])
+  createdBy     User     @relation(fields: [createdById], references: [id])
+  lineItems     LineItem[]
+  payments      Payment[]
+  installments  PaymentPlanInstallment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([invoiceNumber])
+}
+
+// ─── LINE ITEMS ───────────────────────────────────────────────────────────────
+
+model LineItem {
+  id          String       @id @default(cuid())
+  quoteId     String?
+  invoiceId   String?
+  type        LineItemType @default(LABOR)
+  sortOrder   Int          @default(0)
+  description String
+  partNumber  String?
+  quantity    Decimal      @default(1)
+  unitPrice   Decimal      @default(0)
+  markup      Decimal?
+  discount    Decimal?
+  taxable     Boolean      @default(true)
+  total       Decimal      @default(0)
+  notes       String?
+  createdAt   DateTime     @default(now())
+
+  quote   Quote?   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+  @@index([invoiceId])
+}
+
+// ─── PAYMENTS ─────────────────────────────────────────────────────────────────
+
+model Payment {
+  id         String        @id @default(cuid())
+  invoiceId  String
+  amount     Decimal
+  method     PaymentMethod
+  reference  String?
+  notes      String?
+  receivedAt DateTime      @default(now())
+  createdAt  DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+}
+
+// ─── PARTS ────────────────────────────────────────────────────────────────────
+
+model PartsVendor {
+  id          String   @id @default(cuid())
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  city        String?
+  state       String?
+  zip         String?
+  accountNum  String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parts JobPart[]
+
+  @@index([name])
+}
+
+model JobPart {
+  id           String     @id @default(cuid())
+  jobId        String
+  vendorId     String?
+  status       PartStatus @default(REQUESTED)
+  partNumber   String?
+  description  String
+  quantity     Decimal    @default(1)
+  unitCost     Decimal?
+  unitPrice    Decimal?
+  markup       Decimal?
+  totalCost    Decimal?
+  totalPrice   Decimal?
+  requestedAt  DateTime   @default(now())
+  quotedAt     DateTime?
+  orderedAt    DateTime?
+  shippedAt    DateTime?
+  receivedAt   DateTime?
+  installedAt  DateTime?
+  returnedAt   DateTime?
+  creditedAt   DateTime?
+  creditAmount Decimal?
+  returnReason String?
+  notes        String?
+  poNumber     String?
+  coreReturn   Boolean    @default(false)
+  coreCharge   Decimal?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  job    Job          @relation(fields: [jobId], references: [id])
+  vendor PartsVendor? @relation(fields: [vendorId], references: [id])
+
+  @@index([jobId])
+  @@index([vendorId])
+  @@index([status])
+}
+
+// ─── PHOTOS ───────────────────────────────────────────────────────────────────
+
+model JobPhoto {
+  id           String   @id @default(cuid())
+  jobId        String
+  uploadedById String
+  url          String
+  caption      String?
+  takenAt      DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  job        Job  @relation(fields: [jobId], references: [id])
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([jobId])
+}
+
+// ─── SIGNATURES ───────────────────────────────────────────────────────────────
+
+model Signature {
+  id         String   @id @default(cuid())
+  jobId      String
+  signerName String
+  signerRole String   @default("Customer")
+  imageData  String
+  ipAddress  String?
+  userAgent  String?
+  signedAt   DateTime @default(now())
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+}
+
+// ─── NOTES ────────────────────────────────────────────────────────────────────
+
+model Note {
+  id         String   @id @default(cuid())
+  jobId      String?
+  customerId String?
+  authorId   String
+  content    String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  job      Job?      @relation(fields: [jobId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+  author   User      @relation(fields: [authorId], references: [id])
+
+  @@index([jobId])
+  @@index([customerId])
+}
+
+// ─── COMMUNICATIONS ───────────────────────────────────────────────────────────
+
+model Communication {
+  id         String           @id @default(cuid())
+  customerId String
+  type       NotificationType
+  direction  String
+  subject    String?
+  body       String
+  status     String           @default("sent")
+  metadata   Json?
+  sentAt     DateTime         @default(now())
+  createdAt  DateTime         @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType @default(IN_APP)
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([read])
+}
+
+// ─── FOLLOW-UPS ───────────────────────────────────────────────────────────────
+
+model FollowUp {
+  id          String    @id @default(cuid())
+  customerId  String
+  jobId       String?
+  title       String
+  notes       String?
+  dueAt       DateTime
+  completedAt DateTime?
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([dueAt])
+}
+
+// ─── AUDIT LOG ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  userId    String?
+  action    AuditAction
+  entity    String
+  entityId  String
+  before    Json?
+  after     Json?
+  notes     String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+
+model Settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}
+
+// ─── SERVICE REQUESTS (ONLINE BOOKING) ───────────────────────────────────────
+
+model ServiceRequest {
+  id            String    @id @default(cuid())
+  name          String
+  phone         String
+  email         String?
+  vehicleYear   Int?
+  vehicleMake   String?
+  vehicleModel  String?
+  serviceType   String
+  description   String
+  photoUrl      String?
+  preferredDate String?
+  status        String    @default("PENDING")
+  notes         String?
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  createdAt     DateTime  @default(now())
+
+  @@index([status])
+  @@index([customerId])
+}
+
+// ─── MAINTENANCE INTERVALS ────────────────────────────────────────────────────
+
+model MaintenanceInterval {
+  id               String    @id @default(cuid())
+  vehicleId        String
+  serviceName      String
+  intervalMiles    Int?
+  intervalDays     Int?
+  lastServiceMiles Int?
+  lastServiceDate  DateTime?
+  nextDueMiles     Int?
+  nextDueDate      DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId])
+}
+
+// ─── SMS MESSAGES ─────────────────────────────────────────────────────────────
+
+model SmsMessage {
+  id         String   @id @default(cuid())
+  customerId String
+  direction  String
+  body       String
+  fromNumber String
+  toNumber   String
+  twilioSid  String?
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+}
+
+// ─── TIME LOGS ────────────────────────────────────────────────────────────────
+
+model TimeLog {
+  id           String    @id @default(cuid())
+  jobId        String
+  technicianId String
+  clockedIn    DateTime  @default(now())
+  clockedOut   DateTime?
+  notes        String?
+  lat          Float?
+  lng          Float?
+  createdAt    DateTime  @default(now())
+
+  job        Job  @relation(fields: [jobId], references: [id])
+  technician User @relation("TechTimeLog", fields: [technicianId], references: [id])
+
+  @@index([jobId])
+  @@index([technicianId])
+}
+
+// ─── INVENTORY ────────────────────────────────────────────────────────────────
+
+model InventoryItem {
+  id             String   @id @default(cuid())
+  name           String
+  partNumber     String?
+  description    String?
+  category       String?
+  quantityOnHand Int      @default(0)
+  reorderPoint   Int      @default(0)
+  unitCost       Decimal  @default(0) @db.Decimal(10, 2)
+  location       String?
+  notes          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category])
+  @@index([location])
+}
+
+// ─── REVIEW REQUESTS ─────────────────────────────────────────────────────────
+
+model ReviewRequest {
+  id          String    @id @default(cuid())
+  jobId       String    @unique
+  customerId  String
+  sentAt      DateTime?
+  clickedAt   DateTime?
+  reviewToken String    @unique @default(cuid())
+  createdAt   DateTime  @default(now())
+
+  job      Job      @relation(fields: [jobId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+}
+
+// ─── PAYMENT PLAN INSTALLMENTS ────────────────────────────────────────────────
+
+model PaymentPlanInstallment {
+  id         String    @id @default(cuid())
+  invoiceId  String
+  dueDate    DateTime
+  amount     Decimal   @db.Decimal(10, 2)
+  paidAt     DateTime?
+  paidAmount Decimal?  @db.Decimal(10, 2)
+  status     String    @default("PENDING")
+  createdAt  DateTime  @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+}
+
+// ─── FLEET ACCOUNTS ──────────────────────────────────────────────────────────
+
+model FleetAccount {
+  id              String   @id @default(cuid())
+  name            String
+  contactName     String?
+  email           String?
+  phone           String?
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  billingTerms    String   @default("NET_30")
+  customLaborRate Decimal? @db.Decimal(10, 2)
+  poRequired      Boolean  @default(false)
+  creditLimit     Decimal? @db.Decimal(10, 2)
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  jobs Job[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+// ─── MARKETING CAMPAIGNS ──────────────────────────────────────────────────────
+
+model MarketingCampaign {
+  id           String    @id @default(cuid())
+  name         String
+  type         String
+  triggerType  String
+  triggerValue String?
+  messageTemplate String
+  isActive     Boolean   @default(true)
+  sentCount    Int       @default(0)
+  lastRunAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([type])
+  @@index([isActive])
+}
+
+// ─── LABOR TIME CACHE ─────────────────────────────────────────────────────────
+
+model LaborTimeCache {
+  id         String   @id @default(cuid())
+  cacheKey   String   @unique
+  year       String
+  make       String
+  model      String
+  repair     String
+  laborHours Decimal  @db.Decimal(6, 2)
+  skillLevel String   @default("Intermediate")
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([cacheKey])
+  @@index([make, model])
+}
+
+// ─── CANNED SERVICES (PRICE BOOK) ────────────────────────────────────────────
+
+model CannedService {
+  id          String   @id @default(cuid())
+  name        String
+  category    String?
+  description String?
+  laborHours  Decimal  @default(0) @db.Decimal(6, 2)
+  laborPrice  Decimal  @default(0) @db.Decimal(10, 2)
+  parts       Json?
+  totalPrice  Decimal  @default(0) @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([isActive])
+}
+
+// ─── SHOPS / LOCATIONS ────────────────────────────────────────────────────────
+
+model Shop {
+  id          String   @id @default(cuid())
+  name        String
+  address     String?
+  city        String?
+  state       String?
+  zip         String?
+  phone       String?
+  email       String?
+  taxRate     Decimal  @default(0) @db.Decimal(5, 4)
+  laborRate   Decimal  @default(0) @db.Decimal(10, 2)
+  logoUrl     String?
+  googleReviewUrl String?
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobs  Job[]
+  users User[]
+
+  @@index([isActive])
+}
+
+// ─── DECLINED SERVICES ────────────────────────────────────────────────────────
+
+model DeclinedService {
+  id             String    @id @default(cuid())
+  jobId          String
+  customerId     String
+  vehicleId      String
+  description    String
+  reason         String?
+  estimatedPrice Decimal?  @db.Decimal(10, 2)
+  followUpAt     DateTime?
+  followedUp     Boolean   @default(false)
+  followUpNote   String?
+  createdAt      DateTime  @default(now())
+
+  job      Job      @relation(fields: [jobId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([followedUp])
+  @@index([followUpAt])
+}
+
+// ─── WARRANTIES ───────────────────────────────────────────────────────────────
+
+model Warranty {
+  id              String        @id @default(cuid())
+  jobId           String
+  customerId      String
+  vehicleId       String
+  type            WarrantyType  @default(PARTS)
+  description     String
+  partNumber      String?
+  laborCode       String?
+  startDate       DateTime      @default(now())
+  expiryDate      DateTime?
+  mileageAtService Int?
+  mileageLimit    Int?
+  durationDays    Int?
+  status          WarrantyStatus @default(ACTIVE)
+  claimedAt       DateTime?
+  claimNotes      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  job      Job      @relation(fields: [jobId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([jobId])
+  @@index([status])
+  @@index([expiryDate])
+}
+
+enum WarrantyType {
+  PARTS
+  LABOR
+  PARTS_AND_LABOR
+}
+
+enum WarrantyStatus {
+  ACTIVE
+  CLAIMED
+  EXPIRED
+  VOIDED
+}
+
+// ─── COMMUNICATION SEQUENCES ──────────────────────────────────────────────────
+
+model CommSequence {
+  id           String   @id @default(cuid())
+  name         String
+  triggerEvent String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  steps       CommSequenceStep[]
+  enrollments CommEnrollment[]
+
+  @@index([triggerEvent])
+  @@index([isActive])
+}
+
+model CommSequenceStep {
+  id           String   @id @default(cuid())
+  sequenceId   String
+  stepNumber   Int
+  delayHours   Int      @default(0)
+  messageTemplate String
+  channel      String   @default("SMS")
+
+  sequence CommSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@index([sequenceId])
+}
+
+model CommEnrollment {
+  id           String    @id @default(cuid())
+  sequenceId   String
+  customerId   String
+  jobId        String?
+  currentStep  Int       @default(0)
+  status       String    @default("ACTIVE")
+  nextStepAt   DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  sequence CommSequence @relation(fields: [sequenceId], references: [id])
+  customer Customer     @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([sequenceId])
+  @@index([nextStepAt])
+  @@index([status])
+}
+
+// ─── INSURANCE CLAIMS ─────────────────────────────────────────────────────────
+
+model InsuranceClaim {
+  id                String   @id @default(cuid())
+  jobId             String   @unique
+  claimNumber       String?
+  insuranceCompany  String
+  adjusterName      String?
+  adjusterPhone     String?
+  adjusterEmail     String?
+  deductible        Decimal  @default(0) @db.Decimal(10, 2)
+  approvedAmount    Decimal? @db.Decimal(10, 2)
+  paidAmount        Decimal  @default(0) @db.Decimal(10, 2)
+  status            String   @default("PENDING")
+  notes             String?
+  submittedAt       DateTime?
+  approvedAt        DateTime?
+  paidAt            DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([status])
+  @@index([claimNumber])
+}
+
+// ─── SUBLETS ──────────────────────────────────────────────────────────────────
+
+model Sublet {
+  id           String   @id @default(cuid())
+  jobId        String
+  vendorName   String
+  description  String
+  vendorInvoice String?
+  ourCost      Decimal  @default(0) @db.Decimal(10, 2)
+  ourCharge    Decimal  @default(0) @db.Decimal(10, 2)
+  markup       Decimal  @default(0) @db.Decimal(5, 2)
+  status       String   @default("PENDING")
+  completedAt  DateTime?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@index([status])
+}
+
+// ─── PAYROLL RATES ────────────────────────────────────────────────────────────
+
+model PayrollRate {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  rateType   String   @default("HOURLY")
+  hourlyRate Decimal? @db.Decimal(10, 2)
+  flatRateMul Decimal @default(1.0) @db.Decimal(5, 2)
+  commissionPct Decimal @default(0) @db.Decimal(5, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}

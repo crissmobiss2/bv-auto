@@ -1,0 +1,78 @@
+appId: com.bvauto.app
+productName: "B&V Auto"
+copyright: "© 2025 B&V Mobile Auto"
+
+# Icon files in build/ directory
+directories:
+  buildResources: build
+
+files:
+  - electron/**/*
+  - build/**/*
+  - package.json
+
+# Remove Next.js web app files from electron build
+extraFiles: []
+
+win:
+  target:
+    - target: zip
+      arch: [x64]
+  icon: build/icon.ico
+  publisherName: "B&V Mobile Auto"
+  # Code signing disabled — add cert later via CSC_LINK + CSC_KEY_PASSWORD env vars
+  sign: false
+
+# To build a full NSIS .exe installer (requires Windows Developer Mode enabled):
+#   1. Settings → Privacy & Security → For Developers → Developer Mode: ON
+#   2. Change target above to: nsis
+# nsis:
+#   oneClick: false
+#   allowToChangeInstallationDirectory: true
+#   createDesktopShortcut: true
+#   createStartMenuShortcut: true
+#   shortcutName: "B&V Auto"
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  icon: build/icon.icns
+  category: "public.app-category.business"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+dmg:
+  title: "B&V Auto"
+  icon: build/icon.icns
+  iconSize: 100
+  contents:
+    - x: 130
+      y: 200
+    - x: 400
+      y: 200
+      type: link
+      path: /Applications
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: deb
+      arch: [x64]
+  icon: build/icon.png
+  category: Office
+  desktop:
+    Name: "B&V Auto"
+    Comment: "Mobile Auto Repair Business OS"
+    Categories: Office;Finance;
+
+publish:
+  provider: github
+  owner: bvauto
+  repo: bv-auto-desktop
+  releaseType: release

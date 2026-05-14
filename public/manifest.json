@@ -1,0 +1,78 @@
+{
+  "name": "B&V Mobile Auto",
+  "short_name": "BV Auto",
+  "description": "Mobile auto repair — service history, invoices, and scheduling at your fingertips",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#1e40af",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "id": "bv-auto-pwa",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book Service",
+      "short_name": "Book",
+      "description": "Book a service appointment",
+      "url": "/book",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "New Job",
+      "short_name": "New Job",
+      "description": "Create a new repair job",
+      "url": "/jobs/new",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Jobs",
+      "short_name": "My Jobs",
+      "description": "Technician job view",
+      "url": "/tech",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Shop Board",
+      "short_name": "Board",
+      "description": "Live shop board",
+      "url": "/shop-board",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["automotive", "business", "productivity"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.bvauto.app",
+      "id": "com.bvauto.app"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/bv-auto/id0000000000"
+    }
+  ]
+}
