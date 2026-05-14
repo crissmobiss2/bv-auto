@@ -9,11 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Download, Send, DollarSign, CreditCard, Phone, QrCode, Smartphone, CheckCircle } from "lucide-react";
+import { ArrowLeft, Download, Send, DollarSign, Phone, Smartphone, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS } from "@/lib/utils";
 import { useState } from "react";
-import Image from "next/image";
+import { CollectPaymentButton } from "@/components/collect-payment-button";
 
 const PAYMENT_METHODS = ["CASH", "CHECK", "CREDIT_CARD", "DEBIT_CARD", "ZELLE", "VENMO", "CASHAPP", "ACH", "OTHER"];
 
@@ -125,7 +125,6 @@ export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [showPayment, setShowPayment] = useState(false);
-  const [showQR, setShowQR] = useState(false);
   const [textPaySent, setTextPaySent] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     amount: "", method: "CASH", reference: "", notes: "",
@@ -139,11 +138,6 @@ export default function InvoiceDetailPage() {
   const sendMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/send`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["invoice", id] }),
-  });
-
-  const stripeMutation = useMutation({
-    mutationFn: () => axios.post("/api/stripe/checkout", { invoiceId: id }),
-    onSuccess: (res) => { if (res.data.url) window.open(res.data.url, "_blank"); },
   });
 
   const textToPayMutation = useMutation({
@@ -192,12 +186,11 @@ export default function InvoiceDetailPage() {
               <Button variant="outline" size="sm" onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending}>
                 <Send className="h-4 w-4 mr-1" /> {sendMutation.isPending ? "Sending..." : "Send"}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => stripeMutation.mutate()} disabled={stripeMutation.isPending}>
-                <CreditCard className="h-4 w-4 mr-1" /> {stripeMutation.isPending ? "..." : "Pay Link"}
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowQR(true)}>
-                <QrCode className="h-4 w-4 mr-1" /> QR Pay
-              </Button>
+              <CollectPaymentButton
+                invoiceId={id}
+                amountDue={Number(invoice.amountDue)}
+                invoiceNumber={invoice.invoiceNumber}
+              />
               <Button variant="outline" size="sm"
                 onClick={() => textToPayMutation.mutate()}
                 disabled={textToPayMutation.isPending || textPaySent}
@@ -336,39 +329,6 @@ export default function InvoiceDetailPage() {
 
       {/* Payment Plan */}
       <PaymentPlanSection invoiceId={id} amountDue={Number(invoice.amountDue)} />
-
-      {/* QR Code / Text-to-Pay Dialog */}
-      <Dialog open={showQR} onOpenChange={setShowQR}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><QrCode className="h-5 w-5 text-blue-600" /> QR Code Payment</DialogTitle></DialogHeader>
-          <div className="space-y-4 text-center">
-            <p className="text-sm text-gray-600">Customer scans this code to pay <strong>{formatCurrency(invoice.amountDue)}</strong> online</p>
-            <div className="flex justify-center">
-              <Image
-                src={`/api/invoices/${id}/qr`}
-                alt="Payment QR Code"
-                width={240}
-                height={240}
-                className="rounded-lg border shadow-sm"
-                unoptimized
-              />
-            </div>
-            <div className="text-xs text-gray-500 space-y-1">
-              <p>Invoice: <strong>{invoice.invoiceNumber}</strong></p>
-              <p>Amount Due: <strong className="text-orange-600">{formatCurrency(invoice.amountDue)}</strong></p>
-            </div>
-            <div className="flex gap-2">
-              <Button className="flex-1" variant="outline" onClick={() => window.print()}>Print QR</Button>
-              <Button className="flex-1 bg-blue-600 hover:bg-blue-700"
-                onClick={() => { textToPayMutation.mutate(); setShowQR(false); }}
-                disabled={textToPayMutation.isPending || textPaySent}>
-                <Smartphone className="h-4 w-4 mr-1" />
-                {textPaySent ? "Link Sent!" : "Also Text Customer"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Record Payment Dialog */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>

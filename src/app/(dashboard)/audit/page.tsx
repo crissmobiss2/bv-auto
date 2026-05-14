@@ -6,7 +6,7 @@ import axios from "axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Shield, ChevronLeft, ChevronRight } from "lucide-react";
+import { Shield, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 const ENTITIES = ["ALL", "Job", "Customer", "Vehicle", "Quote", "Invoice", "Payment", "JobPart", "User"];
@@ -25,13 +25,36 @@ const ACTION_COLORS: Record<string, string> = {
 
 export default function AuditLogPage() {
   const [entityFilter, setEntityFilter] = useState("ALL");
+  const [userFilter, setUserFilter] = useState("ALL");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
 
+  // Fetch users for the user filter dropdown
+  const { data: usersData } = useQuery({
+    queryKey: ["users-for-audit"],
+    queryFn: () => axios.get("/api/users").then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const users: { id: string; name: string; email: string }[] = usersData || [];
+
+  function buildQueryString(extra: Record<string, string> = {}) {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", "50");
+    if (entityFilter !== "ALL") params.set("entity", entityFilter);
+    if (userFilter !== "ALL") params.set("userId", userFilter);
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
+    for (const [k, v] of Object.entries(extra)) params.set(k, v);
+    return params.toString();
+  }
+
   const { data, isLoading } = useQuery({
-    queryKey: ["audit", entityFilter, page],
+    queryKey: ["audit", entityFilter, userFilter, startDate, endDate, page],
     queryFn: () =>
-      axios.get(`/api/audit?page=${page}&limit=50${entityFilter !== "ALL" ? `&entity=${entityFilter}` : ""}`)
-        .then((r) => r.data),
+      axios.get(`/api/audit?${buildQueryString()}`).then((r) => r.data),
   });
 
   const logs: {
@@ -46,6 +69,22 @@ export default function AuditLogPage() {
 
   const totalPages = Math.ceil((data?.total || 0) / 50);
 
+  function handleExportCsv() {
+    const qs = buildQueryString({ export: "csv" });
+    window.location.href = `/api/audit?${qs}`;
+  }
+
+  function resetFilters() {
+    setEntityFilter("ALL");
+    setUserFilter("ALL");
+    setStartDate("");
+    setEndDate("");
+    setPage(1);
+  }
+
+  const hasActiveFilters =
+    entityFilter !== "ALL" || userFilter !== "ALL" || startDate || endDate;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -55,20 +94,88 @@ export default function AuditLogPage() {
           </h1>
           <p className="text-sm text-gray-500">{data?.total || 0} entries</p>
         </div>
+        <Button
+          variant="outline"
+          onClick={handleExportCsv}
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
 
+      {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <Select value={entityFilter} onValueChange={(v) => { setEntityFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Entities" />
-            </SelectTrigger>
-            <SelectContent>
-              {ENTITIES.map((e) => (
-                <SelectItem key={e} value={e}>{e === "ALL" ? "All Entities" : e}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-3 items-end">
+            {/* Entity filter */}
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">Entity</label>
+              <Select
+                value={entityFilter}
+                onValueChange={(v) => { setEntityFilter(v); setPage(1); }}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All Entities" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ENTITIES.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e === "ALL" ? "All Entities" : e}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* User filter */}
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">User</label>
+              <Select
+                value={userFilter}
+                onValueChange={(v) => { setUserFilter(v); setPage(1); }}
+              >
+                <SelectTrigger className="w-52">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Users</SelectItem>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date range */}
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">From</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">To</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-gray-500">
+                Clear filters
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -85,7 +192,9 @@ export default function AuditLogPage() {
                   <div key={log.id} className="px-4 py-3 flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-xs rounded px-1.5 py-0.5 font-medium ${ACTION_COLORS[log.action] || "bg-gray-100 text-gray-700"}`}>
+                        <span
+                          className={`text-xs rounded px-1.5 py-0.5 font-medium ${ACTION_COLORS[log.action] || "bg-gray-100 text-gray-700"}`}
+                        >
                           {log.action.replace(/_/g, " ")}
                         </span>
                         <span className="text-sm font-medium text-gray-900">{log.entity}</span>
@@ -104,18 +213,22 @@ export default function AuditLogPage() {
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t">
-                  <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+                  <p className="text-sm text-gray-500">
+                    Page {page} of {totalPages}
+                  </p>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline" size="sm"
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="outline" size="sm"
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
                     >
                       <ChevronRight className="h-4 w-4" />

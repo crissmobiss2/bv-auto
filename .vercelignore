@@ -1,0 +1,12 @@
+android/
+ios/
+electron/
+dist/
+build/
+resources/
+node_modules/
+scripts/
+APP_STORE_GUIDE.md
+capacitor.config.ts
+electron-builder.yml
+codemagic.yaml

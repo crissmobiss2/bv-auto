@@ -5,6 +5,8 @@ import { Providers } from "./providers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+import { AppUpdateChecker } from "@/components/app-update-checker";
+import { PushNotificationSetup } from "@/components/push-notification-setup";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -37,6 +39,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} h-full antialiased bg-gray-50`}>
         <Providers>{children}</Providers>
         <PwaInstallPrompt />
+        <AppUpdateChecker />
+        <PushNotificationSetup />
         <Analytics />
         <SpeedInsights />
       </body>

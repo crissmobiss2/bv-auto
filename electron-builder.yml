@@ -72,7 +72,8 @@ linux:
     Categories: Office;Finance;
 
 publish:
-  provider: github
-  owner: bvauto
-  repo: bv-auto-desktop
-  releaseType: release
+  - provider: github
+    owner: crissmobiss2     # ← your GitHub username
+    repo: bv-auto
+    releaseType: release
+    publishAutoUpdate: true

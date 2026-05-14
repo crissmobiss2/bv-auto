@@ -13,6 +13,7 @@ import { ArrowLeft, Phone, MapPin, ClipboardCheck, Camera, FileText, Clock, Chec
 import { JOB_STATUS_COLORS, formatDateTime } from "@/lib/utils";
 import { InspectionChecklist } from "@/components/features/inspection-checklist";
 import { PhotoUpload } from "@/components/features/photo-upload";
+import TechLocationTracker from "@/components/tech-location-tracker";
 import { useState, useEffect } from "react";
 
 const TECH_STATUSES = ["SCHEDULED", "IN_PROGRESS", "PARTS_WAITING", "COMPLETED"];
@@ -89,6 +90,9 @@ export default function TechJobDetailPage() {
           <p className="text-sm text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
         </div>
       </div>
+
+      {/* Location tracker — active while IN_PROGRESS */}
+      <TechLocationTracker jobId={job.id} active={job.status === "IN_PROGRESS"} />
 
       {/* Status */}
       <Select value={job.status} onValueChange={(v) => statusMutation.mutate(v)}>
@@ -176,6 +180,55 @@ export default function TechJobDetailPage() {
           </Card>
         );
       })()}
+
+      {/* DVI Link Card */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <ClipboardCheck className="h-5 w-5 text-blue-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900">Digital Vehicle Inspection</p>
+                {job.checklist ? (
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    {(["CRITICAL", "NEEDS_ATTENTION", "FAIR", "GOOD"] as const).map((cond) => {
+                      const colors: Record<string, string> = {
+                        CRITICAL: "bg-red-600",
+                        NEEDS_ATTENTION: "bg-orange-500",
+                        FAIR: "bg-yellow-500",
+                        GOOD: "bg-green-500",
+                      };
+                      const labels: Record<string, string> = {
+                        CRITICAL: "Critical",
+                        NEEDS_ATTENTION: "Attn",
+                        FAIR: "Fair",
+                        GOOD: "Good",
+                      };
+                      const count = (job.checklist?.items as Array<{ condition: string }> | undefined)?.filter(
+                        (i) => i.condition === cond
+                      ).length ?? 0;
+                      if (count === 0) return null;
+                      return (
+                        <span key={cond} className="flex items-center gap-1 text-xs text-gray-600">
+                          <span className={`inline-block w-2 h-2 rounded-full ${colors[cond]}`} />
+                          {count} {labels[cond]}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">Not started</p>
+                )}
+              </div>
+            </div>
+            <Link href={`/tech/jobs/${job.id}/inspection`}>
+              <Button size="sm" variant={job.checklist ? "outline" : "default"} className={job.checklist ? "" : "bg-blue-600 hover:bg-blue-700"}>
+                {job.checklist ? "View / Edit" : "Start DVI"}
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Vehicle Health Score */}
       {job.checklist && (

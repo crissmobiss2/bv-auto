@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, JobStatus } from "@prisma/client";
 import twilio from "twilio";
+import { sendPushToUser, sendPushToRole } from "@/lib/push";
 
 const STATUS_SMS: Partial<Record<JobStatus, string>> = {
   IN_PROGRESS: "Hi {name}, your {vehicle} has been checked in and work has started. We'll keep you updated!",
@@ -43,6 +44,28 @@ async function sendStatusSms(jobId: string, status: JobStatus) {
         toNumber: job.customer.phone,
       },
     });
+  } catch { /* non-fatal */ }
+}
+
+async function sendJobStatusPush(jobId: string, oldStatus: JobStatus, newStatus: JobStatus, techId: string | null) {
+  try {
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      select: { title: true, technicianId: true },
+    });
+    if (!job) return;
+
+    if (newStatus === JobStatus.COMPLETED) {
+      // Notify dispatcher/admin that job is done
+      sendPushToRole("ADMIN", { title: "Job Completed", body: `${job.title} has been marked complete.`, url: `/jobs/${jobId}`, tag: `job-${jobId}` });
+    }
+    if (newStatus === JobStatus.PARTS_WAITING) {
+      sendPushToRole("ADMIN", { title: "Parts Needed", body: `${job.title} is waiting on parts.`, url: `/jobs/${jobId}`, tag: `job-${jobId}` });
+    }
+    // Notify assigned tech when job is approved/scheduled
+    if ((newStatus === JobStatus.APPROVED || newStatus === JobStatus.SCHEDULED) && job.technicianId) {
+      sendPushToUser(job.technicianId, { title: "Job Assigned", body: `You've been assigned: ${job.title}`, url: `/tech/jobs/${jobId}`, tag: `job-${jobId}` });
+    }
   } catch { /* non-fatal */ }
 }
 
@@ -116,8 +139,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     );
     // Auto-send SMS on key status transitions
     sendStatusSms(id, updated.status as JobStatus);
+    // Push notifications for key transitions
+    sendJobStatusPush(id, existing.status as JobStatus, updated.status as JobStatus, existing.technicianId).catch(() => {});
   } else {
     await logAudit(session!.user.id, AuditAction.UPDATE, "Job", id, existing, updated);
+  }
+
+  // Push when technician is newly assigned
+  if (body.technicianId && body.technicianId !== existing.technicianId) {
+    const jobTitle = (await prisma.job.findUnique({ where: { id }, select: { title: true } }))?.title ?? "a job";
+    sendPushToUser(body.technicianId, { title: "Job Assigned to You", body: jobTitle, url: `/tech/jobs/${id}`, tag: `assign-${id}` }).catch(() => {});
   }
 
   return apiSuccess(updated);

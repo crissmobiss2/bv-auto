@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, InvoiceStatus, PaymentMethod } from "@prisma/client";
 import { z } from "zod";
+import { sendPushToRole } from "@/lib/push";
 
 const paymentSchema = z.object({
   action: z.literal("payment"),
@@ -81,6 +82,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (newStatus === InvoiceStatus.PAID) {
       await prisma.job.update({ where: { id: existing.jobId }, data: { status: "PAID" } });
     }
+
+    // Notify admin of payment
+    sendPushToRole("ADMIN", {
+      title: newStatus === InvoiceStatus.PAID ? "Invoice Paid in Full" : "Partial Payment Received",
+      body: `$${parsed.data.amount.toFixed(2)} via ${parsed.data.method.replace(/_/g, " ")}`,
+      url: `/invoices/${id}`,
+      tag: `payment-${id}`,
+    }).catch(() => {});
 
     await logAudit(session!.user.id, AuditAction.PAYMENT, "Invoice", id, null, {
       paymentId: payment.id,

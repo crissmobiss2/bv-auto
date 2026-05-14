@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, FileText, Clock, Home, LogOut, Wrench, Phone, Menu, X } from "lucide-react";
+import { Car, FileText, Clock, Home, LogOut, Wrench, Phone, Menu, X, Shield } from "lucide-react";
 import { useState } from "react";
 
 const NAV = [
@@ -11,6 +11,7 @@ const NAV = [
   { href: "/customer/vehicles", label: "My Vehicles", icon: Car },
   { href: "/customer/history", label: "Service History", icon: Clock },
   { href: "/customer/invoices", label: "Invoices", icon: FileText },
+  { href: "/customer/privacy", label: "Privacy", icon: Shield },
 ];
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
