@@ -72,9 +72,10 @@ const SECTIONS: NavSection[] = [
     label: "Tools",
     icon: Brain,
     items: [
-      { name: "Diagnostics", href: "/diagnostics", icon: Brain,  roles: null },
-      { name: "Labor Times", href: "/labor-times", icon: Timer,  roles: ["ADMIN","DISPATCHER","TECHNICIAN"] },
-      { name: "Warranty",    href: "/warranty",    icon: Shield, roles: ["ADMIN","DISPATCHER"] },
+      { name: "Diagnostics", href: "/diagnostics", icon: Brain,    roles: null },
+      { name: "Specs",        href: "/specs",       icon: BookOpen, roles: null },
+      { name: "Labor Times", href: "/labor-times", icon: Timer,    roles: ["ADMIN","DISPATCHER","TECHNICIAN"] },
+      { name: "Warranty",    href: "/warranty",    icon: Shield,   roles: ["ADMIN","DISPATCHER"] },
     ],
   },
   {

@@ -1153,6 +1153,122 @@ model PayrollRate {
   user User @relation(fields: [userId], references: [id])
 }
 
+// ─── VEHICLE SPECS DATABASE ───────────────────────────────────────────────────
+
+model VehicleSpec {
+  id        String  @id @default(cuid())
+  year      Int
+  make      String
+  model     String
+  trim      String? // null = applies to all trims
+  engine    String? // "2.5L 4-cyl", "5.0L V8"
+
+  // Engine
+  engineDisplacement String?
+  engineCylinders    Int?
+  compressionRatio   String?
+  firingOrder        String?
+  timingType         String? // "chain" | "belt" | "gear"
+  timingBeltMiles    Int?    // miles if belt
+
+  // Oil
+  oilType            String? // "0W-20", "5W-30 Full Synthetic"
+  oilCapacityQts     Float?  // with filter
+  oilFilterPN        String?
+
+  // Coolant
+  coolantType        String? // "Toyota Pink SLLC", "Dex-Cool", "Green IAT"
+  coolantCapacityQts Float?
+
+  // Transmission
+  transType          String? // "CVT", "6-Speed Auto", "10-Speed Auto"
+  transFluidType     String? // "ATF WS", "Mercon LV", "ZF Lifeguard 8"
+  transFluidQts      Float?
+
+  // Other fluids
+  brakeFluidType     String? // "DOT 3", "DOT 4"
+  powerSteeringFluid String? // "Honda PSF-S", "Dexron VI", "EPS (no fluid)"
+  diffFluidFrontType String?
+  diffFluidFrontQts  Float?
+  diffFluidRearType  String?
+  diffFluidRearQts   Float?
+  transferCaseFluid  String?
+  transferCaseQts    Float?
+
+  // Battery
+  batteryGroup       String? // "35", "24F", "H6 (48)", "H7 (94R)"
+  batteryCCA         Int?
+  batteryRC          Int?    // reserve capacity minutes
+
+  // Tires
+  tireSizeFront      String? // "225/50R17"
+  tireSizeRear       String?
+  tirePressureFront  Int?    // PSI
+  tirePressureRear   Int?
+  spareTireSize      String?
+
+  // Brakes
+  frontRotorDia      Float?  // inches
+  rearRotorDia       Float?
+  frontRotorMinMM    Float?  // minimum thickness mm
+  rearRotorMinMM     Float?
+  frontPadMinMM      Float?  // minimum pad thickness mm
+  rearPadMinMM       Float?
+  wheelNutTorque     Int?    // ft-lbs
+  frontCaliperTorque Int?    // ft-lbs
+  rearCaliperTorque  Int?
+
+  // Spark plugs
+  sparkPlugPN        String? // "NGK ILTR5A-13G"
+  sparkPlugGapIn     Float?  // inches
+  sparkPlugMiles     Int?    // replacement interval
+
+  // A/C
+  refrigerantType    String? // "R-134a", "R-1234yf"
+  refrigerantOz      Float?
+  acOilType          String? // "PAG 46", "PAG 100"
+
+  // ADAS
+  adasFeatures       String[] // ["Forward Collision Warning", "Lane Keep Assist"]
+  adasCalRequired    String[] // events that require recalibration
+
+  // Emissions
+  obd2Protocol       String? // "CAN", "ISO 9141-2"
+  evapSystemType     String? // "Enhanced EVAP", "Standard EVAP"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, make, model, trim, engine])
+  @@index([make, model])
+  @@index([year, make, model])
+}
+
+// ─── PATTERN FAILURES ─────────────────────────────────────────────────────────
+
+model PatternFailure {
+  id           String   @id @default(cuid())
+  year         Int
+  make         String
+  model        String
+  engine       String?
+  dtcCodes     String[] // ["P0420", "P0171"]
+  symptoms     String[] // ["rough idle", "check engine light"]
+  confirmedFix String   // "Replaced upstream O2 sensor Bank 1"
+  partNumbers  String[] // ["234-4209"]
+  laborHours   Float?
+  successCount Int      @default(1)
+  notes        String?
+  techId       String?
+  shopId       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([make, model])
+  @@index([dtcCodes])
+  @@index([year, make, model])
+}
+
 // ─── GPS TRACKING ─────────────────────────────────────────────────────────────
 
 model TechnicianLocation {

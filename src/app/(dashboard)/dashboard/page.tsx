@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Wrench, DollarSign, FileText, AlertTriangle,
-  Calendar, Package, ArrowRight, Clock,
+  Calendar, Package, ArrowRight, Clock, TrendingUp, Users, CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDateTime, JOB_STATUS_COLORS } from "@/lib/utils";
@@ -14,6 +14,8 @@ async function getDashboardData() {
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  const tomorrow = new Date(startOfToday.getTime() + 86400000);
+
   const [
     openJobs,
     jobsToday,
@@ -21,6 +23,9 @@ async function getDashboardData() {
     overdueInvoices,
     partsWaiting,
     revenueMonth,
+    completedToday,
+    invoicesThisMonth,
+    inProgressNow,
     recentJobs,
     upcomingJobs,
   ] = await Promise.all([
@@ -28,12 +33,19 @@ async function getDashboardData() {
       where: { status: { in: ["ESTIMATE", "PENDING_APPROVAL", "APPROVED", "SCHEDULED", "IN_PROGRESS", "PARTS_WAITING"] } },
     }),
     prisma.job.count({
-      where: { scheduledAt: { gte: startOfToday, lt: new Date(startOfToday.getTime() + 86400000) } },
+      where: { scheduledAt: { gte: startOfToday, lt: tomorrow } },
     }),
     prisma.invoice.count({ where: { status: { in: ["SENT", "VIEWED", "PARTIAL"] } } }),
     prisma.invoice.count({ where: { status: "OVERDUE" } }),
     prisma.jobPart.count({ where: { status: { in: ["REQUESTED", "QUOTED", "ORDERED", "SHIPPED"] } } }),
     prisma.payment.aggregate({ where: { receivedAt: { gte: startOfMonth } }, _sum: { amount: true } }),
+    prisma.job.count({ where: { completedAt: { gte: startOfToday, lt: tomorrow } } }),
+    prisma.invoice.aggregate({
+      where: { createdAt: { gte: startOfMonth }, status: { in: ["PAID", "PARTIAL", "SENT", "VIEWED"] } },
+      _avg: { totalAmount: true },
+      _count: true,
+    }),
+    prisma.job.count({ where: { status: "IN_PROGRESS" } }),
     prisma.job.findMany({
       where: { status: { notIn: ["CANCELLED", "PAID"] } },
       include: {
@@ -56,10 +68,14 @@ async function getDashboardData() {
     }),
   ]);
 
+  const avgRoValue = Number(invoicesThisMonth._avg.totalAmount ?? 0);
+  const roCount = invoicesThisMonth._count;
+
   return {
     stats: {
       openJobs, jobsToday, pendingInvoices, overdueInvoices,
       partsWaiting, revenueMonth: Number(revenueMonth._sum.amount ?? 0),
+      completedToday, avgRoValue, roCount, inProgressNow,
     },
     recentJobs,
     upcomingJobs,
@@ -95,7 +111,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Stats Grid — 2 col mobile, 3 col sm, 6 col lg */}
+      {/* Primary Stats — 2 col mobile, 3 col sm, 6 col lg */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard title="Open Jobs"         value={stats.openJobs}                      icon={Wrench}        color="blue"   href="/jobs" />
         <StatCard title="Today"             value={stats.jobsToday}                     icon={Calendar}      color="indigo" href="/dispatch" />
@@ -103,6 +119,38 @@ export default async function DashboardPage() {
         <StatCard title="Overdue"           value={stats.overdueInvoices}               icon={AlertTriangle} color="red"    href="/invoices?status=OVERDUE" urgent={stats.overdueInvoices > 0} />
         <StatCard title="Parts Pending"     value={stats.partsWaiting}                  icon={Package}       color="purple" href="/parts" />
         <StatCard title="Revenue (MTD)"     value={formatCurrency(stats.revenueMonth)}  icon={DollarSign}    color="green"  href="/reports" />
+      </div>
+
+      {/* KPI Row — business intelligence at a glance */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <KpiCard
+          label="Avg RO Value"
+          value={stats.avgRoValue > 0 ? formatCurrency(stats.avgRoValue) : "—"}
+          sub={stats.roCount > 0 ? `${stats.roCount} ROs this month` : "No invoices yet"}
+          icon={<TrendingUp className="h-4 w-4 text-emerald-600" />}
+          href="/reports"
+        />
+        <KpiCard
+          label="Completed Today"
+          value={String(stats.completedToday)}
+          sub="vehicles finished"
+          icon={<CheckCircle className="h-4 w-4 text-green-600" />}
+          href="/jobs?status=COMPLETED"
+        />
+        <KpiCard
+          label="In Bay Now"
+          value={String(stats.inProgressNow)}
+          sub="actively being worked on"
+          icon={<Wrench className="h-4 w-4 text-blue-600" />}
+          href="/jobs?status=IN_PROGRESS"
+        />
+        <KpiCard
+          label="Customers"
+          value="—"
+          sub="view in Reports"
+          icon={<Users className="h-4 w-4 text-violet-600" />}
+          href="/customers"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -254,6 +302,27 @@ function StatCard({
           </div>
           <p className="text-xl font-bold text-gray-900 leading-none">{value}</p>
           <p className="text-[11px] text-gray-500 mt-1 leading-tight">{title}</p>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function KpiCard({ label, value, sub, icon, href }: {
+  label: string; value: string; sub: string; icon: React.ReactNode; href: string;
+}) {
+  return (
+    <Link href={href}>
+      <Card className="group hover:shadow-md transition-all duration-150 cursor-pointer border-gray-200/80 shadow-none bg-white">
+        <CardContent className="p-4 flex items-center gap-3">
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+            {icon}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-lg font-bold text-gray-900 leading-none truncate">{value}</p>
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mt-0.5">{label}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5 truncate">{sub}</p>
+          </div>
         </CardContent>
       </Card>
     </Link>

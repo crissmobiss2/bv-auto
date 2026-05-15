@@ -1,14 +1,12 @@
 "use client";
 
-import { Search, Bell, Menu, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { openGlobalSearch } from "@/components/global-search";
 
 interface TopbarProps {
   onMenuToggle?: () => void;
@@ -40,10 +38,7 @@ function avatarColor(name?: string | null) {
 }
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
-  const router = useRouter();
   const { data: session } = useSession();
-  const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data: notifData } = useQuery({
     queryKey: ["notifications-count"],
@@ -56,37 +51,11 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
     ? (notifData.counts.overdue || 0) + (notifData.counts.unassigned || 0) + (notifData.counts.partsToOrder || 0)
     : 0;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query)}`);
-      setSearchOpen(false);
-    }
-  };
-
   const userName = session?.user?.name;
   const userRole = session?.user?.role as string | undefined;
 
   return (
-    <header className="h-14 border-b bg-white flex items-center justify-between px-3 md:px-5 gap-3 flex-shrink-0 relative">
-
-      {/* Mobile search overlay */}
-      {searchOpen && (
-        <div className="md:hidden absolute inset-x-0 top-0 h-14 bg-white z-50 flex items-center px-3 gap-2 border-b shadow-sm">
-          <form onSubmit={handleSearch} className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-2 h-4 w-4 text-gray-400 pointer-events-none" />
-              <Input type="search" placeholder="Search customers, jobs..."
-                className="pl-9 h-8 bg-gray-50 text-sm" value={query}
-                onChange={e => setQuery(e.target.value)} autoFocus />
-            </div>
-          </form>
-          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0"
-            onClick={() => { setSearchOpen(false); setQuery(""); }}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+    <header className="h-14 border-b bg-white flex items-center justify-between px-3 md:px-5 gap-3 flex-shrink-0">
 
       {/* Left: hamburger (mobile) + breadcrumb (desktop) */}
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -104,20 +73,22 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
         </div>
       </div>
 
-      {/* Center: search bar (desktop) */}
-      <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
-          <Input type="search" placeholder="Search customers, jobs, vehicles..."
-            className="pl-9 h-8 bg-gray-50 border-gray-200 text-sm rounded-lg focus:bg-white transition-colors"
-            value={query} onChange={e => setQuery(e.target.value)} />
-        </div>
-      </form>
+      {/* Center: Cmd+K search trigger (desktop) */}
+      <button
+        onClick={openGlobalSearch}
+        className="hidden md:flex flex-1 max-w-md items-center gap-2 h-8 px-3 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-400 hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
+      >
+        <Search className="h-3.5 w-3.5 flex-shrink-0" />
+        <span className="flex-1 text-left">Search customers, jobs, vehicles…</span>
+        <kbd className="hidden lg:inline-flex h-5 items-center gap-0.5 rounded border border-gray-200 bg-white px-1.5 text-[10px] font-mono text-gray-400 flex-shrink-0">
+          ⌘K
+        </kbd>
+      </button>
 
       {/* Right: search icon (mobile) + bell + avatar */}
       <div className="flex items-center gap-1 flex-shrink-0">
         <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 text-gray-500"
-          onClick={() => setSearchOpen(true)} aria-label="Search">
+          onClick={openGlobalSearch} aria-label="Search">
           <Search className="h-4 w-4" />
         </Button>
 

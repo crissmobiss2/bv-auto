@@ -7,6 +7,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { AppUpdateChecker } from "@/components/app-update-checker";
 import { PushNotificationSetup } from "@/components/push-notification-setup";
+import { GlobalSearch } from "@/components/global-search";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -37,7 +39,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} h-full antialiased bg-gray-50`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <GlobalSearch />
+          <KeyboardShortcuts />
+        </Providers>
         <PwaInstallPrompt />
         <AppUpdateChecker />
         <PushNotificationSetup />
