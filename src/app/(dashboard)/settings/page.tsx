@@ -10,7 +10,7 @@ import { TotpSettings } from "./totp-settings";
 export default async function SettingsPage() {
   const session = await auth();
   if (!session) redirect("/login");
-  if (!["ADMIN", "ACCOUNTANT"].includes(session.user.role)) redirect("/dashboard");
+  if (!["ADMIN", "ACCOUNTANT"].includes((session.user.role || "").toUpperCase())) redirect("/dashboard");
 
   const users = await prisma.user.findMany({
     where: { isActive: true },
