@@ -111,7 +111,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [openSections, setOpenSections] = useState<Set<string>>(DEFAULT_OPEN);
 
-  const role = session?.user?.role || "";
+  const role = (session?.user?.role || "").toUpperCase();
 
   // Persist section open state
   useEffect(() => {

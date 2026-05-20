@@ -69,7 +69,7 @@ export default function ShopsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6 text-indigo-600" /> Shops & Locations</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Building2 className="h-6 w-6 text-indigo-600" /> Shops & Locations</h1>
           <p className="text-sm text-gray-500">Manage your shop locations, labor rates, and tax rates</p>
         </div>
         <Button onClick={() => setShowAdd(true)} className="bg-indigo-600 hover:bg-indigo-700"><Plus className="h-4 w-4 mr-2" /> Add Shop</Button>

@@ -75,7 +75,7 @@ function NewJobForm() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/jobs"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
-        <h1 className="text-2xl font-bold">New Job</h1>
+        <h1 className="text-2xl font-bold text-gray-900">New Job</h1>
       </div>
 
       <Card>

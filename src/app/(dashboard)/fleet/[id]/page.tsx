@@ -36,7 +36,7 @@ export default function FleetDetailPage() {
       <div className="flex items-center gap-4">
         <Link href="/fleet"><Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button></Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6 text-blue-600" />{account.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Building2 className="h-6 w-6 text-blue-600" />{account.name}</h1>
           <Badge variant="outline">{account.billingTerms.replace("_", " ")}</Badge>
           {account.poRequired && <Badge className="ml-2 bg-orange-100 text-orange-700">PO Required</Badge>}
         </div>

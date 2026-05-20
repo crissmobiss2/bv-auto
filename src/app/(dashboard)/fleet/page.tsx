@@ -56,7 +56,7 @@ export default function FleetPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6 text-blue-600" /> Fleet Accounts</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Building2 className="h-6 w-6 text-blue-600" /> Fleet Accounts</h1>
           <p className="text-sm text-gray-500">{totalAccounts} accounts · {formatCurrency(totalOpenAR)} open AR</p>
         </div>
         <Button onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-2" /> New Fleet Account</Button>

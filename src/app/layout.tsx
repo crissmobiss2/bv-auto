@@ -37,7 +37,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <head>
+        {/* Force light mode — app UI is not dark-mode compatible */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.classList.remove('dark');localStorage.removeItem('theme');`,
+          }}
+        />
+      </head>
       <body className={`${inter.className} h-full antialiased bg-gray-50`}>
         <Providers>
           {children}

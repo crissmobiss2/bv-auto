@@ -5,7 +5,7 @@ import axios from "axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, Car, Calendar, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Phone, Mail, Car, Calendar, CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
 import { formatDate, formatPhone } from "@/lib/utils";
 import Link from "next/link";
 
@@ -39,9 +39,16 @@ export default function ServiceRequestsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Service Requests</h1>
-        {pending.length > 0 && (
-          <Badge className="bg-yellow-100 text-yellow-800 text-sm">{pending.length} pending</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {pending.length > 0 && (
+            <Badge className="bg-yellow-100 text-yellow-800 text-sm">{pending.length} pending</Badge>
+          )}
+          <Link href="/book" target="_blank">
+            <Button size="sm" variant="outline">
+              <ExternalLink className="h-4 w-4 mr-1" /> Booking Form
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {pending.length === 0 && others.length === 0 && (

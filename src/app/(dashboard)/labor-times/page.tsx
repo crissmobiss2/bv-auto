@@ -77,7 +77,7 @@ export default function LaborTimesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Timer className="h-6 w-6 text-blue-600" /> Flat Rate Labor Guide</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Timer className="h-6 w-6 text-blue-600" /> Flat Rate Labor Guide</h1>
         <p className="text-sm text-gray-500">AI-powered labor time estimates for any repair — backed by real-world data</p>
       </div>
 

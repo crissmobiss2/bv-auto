@@ -102,7 +102,7 @@ export default function PartsSearchPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Package className="h-6 w-6 text-green-600" /> Live Parts Search</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Package className="h-6 w-6 text-green-600" /> Live Parts Search</h1>
         <p className="text-sm text-gray-500">Search NAPA, Worldpac, and O'Reilly simultaneously — AI-powered catalog</p>
       </div>
 

@@ -101,7 +101,7 @@ export default function SchedulePage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Calendar className="h-6 w-6" /> Schedule</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Calendar className="h-6 w-6 text-blue-600" /> Schedule</h1>
           <p className="text-sm text-gray-500">Week of {format(weekStart, "MMMM d, yyyy")}</p>
         </div>
         <div className="flex gap-2">

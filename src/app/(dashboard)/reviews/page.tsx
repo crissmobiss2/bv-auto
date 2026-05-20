@@ -45,7 +45,7 @@ export default function ReviewsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Star className="h-6 w-6 text-yellow-500" /> Review Requests</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Star className="h-6 w-6 text-yellow-500" /> Review Requests</h1>
         <p className="text-sm text-gray-500">Track and send review requests — every 5-star review is worth thousands in future business</p>
       </div>
 
