@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
+import { assertCron } from "@/lib/api-helpers";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = "B&V Auto Monitor <service@bvauto.com>";
@@ -8,10 +9,8 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "crissmobiss@gmail.com";
 const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = assertCron(req);
+  if (unauthorized) return unauthorized;
 
   const now = new Date();
   const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);

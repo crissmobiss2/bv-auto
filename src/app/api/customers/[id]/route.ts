@@ -1,16 +1,22 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit, pick } from "@/lib/api-helpers";
 import { AuditAction } from "@prisma/client";
 
+const CUSTOMER_FIELDS = [
+  "type", "firstName", "lastName", "company", "email", "phone", "altPhone",
+  "address", "city", "state", "zip", "leadSource", "referredBy", "taxExempt",
+  "taxExemptId", "notes", "tags", "isActive",
+] as const;
+
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const customer = await prisma.customer.findUnique({
-    where: { id },
+  const customer = await prisma.customer.findFirst({
+    where: { id, shopId },
     include: {
       vehicles: { where: { isActive: true } },
       jobs: {
@@ -46,16 +52,20 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
   const body = await req.json();
 
-  const existing = await prisma.customer.findUnique({ where: { id } });
+  const existing = await prisma.customer.findFirst({ where: { id, shopId } });
   if (!existing) return apiError("Customer not found", 404);
 
-  const updated = await prisma.customer.update({ where: { id }, data: body });
+  // Allowlist only — never let a client set portalToken / shopId / id.
+  const updated = await prisma.customer.update({
+    where: { id },
+    data: pick(body, CUSTOMER_FIELDS),
+  });
 
   await logAudit(session!.user.id, AuditAction.UPDATE, "Customer", id, existing, updated);
 
@@ -63,12 +73,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const customer = await prisma.customer.update({
+  const existing = await prisma.customer.findFirst({ where: { id, shopId } });
+  if (!existing) return apiError("Customer not found", 404);
+
+  await prisma.customer.update({
     where: { id },
     data: { isActive: false },
   });

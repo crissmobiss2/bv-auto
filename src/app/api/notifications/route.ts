@@ -1,8 +1,8 @@
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const now = new Date();
@@ -22,7 +22,7 @@ export async function GET() {
   ] = await Promise.all([
     // Overdue invoices
     prisma.invoice.findMany({
-      where: { status: "OVERDUE" },
+      where: { shopId, status: "OVERDUE" },
       select: {
         id: true, invoiceNumber: true, amountDue: true, dueDate: true,
         customer: { select: { firstName: true, lastName: true } },
@@ -33,7 +33,7 @@ export async function GET() {
 
     // Jobs with quotes awaiting customer approval
     prisma.job.findMany({
-      where: { status: "PENDING_APPROVAL" },
+      where: { shopId, status: "PENDING_APPROVAL" },
       select: {
         id: true, jobNumber: true, title: true, createdAt: true,
         customer: { select: { firstName: true, lastName: true } },
@@ -43,7 +43,7 @@ export async function GET() {
 
     // Parts that need to be ordered
     prisma.jobPart.findMany({
-      where: { status: "REQUESTED" },
+      where: { job: { shopId }, status: "REQUESTED" },
       select: {
         id: true, description: true, partNumber: true, requestedAt: true,
         job: { select: { id: true, jobNumber: true } },
@@ -54,7 +54,7 @@ export async function GET() {
 
     // Jobs without a technician assigned that are scheduled
     prisma.job.findMany({
-      where: { status: "SCHEDULED", technicianId: null, scheduledAt: { gte: todayStart } },
+      where: { shopId, status: "SCHEDULED", technicianId: null, scheduledAt: { gte: todayStart } },
       select: {
         id: true, jobNumber: true, title: true, scheduledAt: true,
         customer: { select: { firstName: true, lastName: true } },
@@ -66,6 +66,7 @@ export async function GET() {
     // Jobs scheduled for today
     prisma.job.findMany({
       where: {
+        shopId,
         status: { in: ["SCHEDULED", "IN_PROGRESS"] },
         scheduledAt: { gte: todayStart, lt: new Date(todayStart.getTime() + 86400000) },
       },
@@ -80,7 +81,7 @@ export async function GET() {
 
     // Warranties expiring in 14 days
     prisma.warranty.findMany({
-      where: { status: "ACTIVE", expiryDate: { gte: now, lte: in14Days } },
+      where: { job: { shopId }, status: "ACTIVE", expiryDate: { gte: now, lte: in14Days } },
       select: {
         id: true, description: true, expiryDate: true,
         job: { select: { id: true, jobNumber: true, customer: { select: { firstName: true, lastName: true } } } },
@@ -90,7 +91,7 @@ export async function GET() {
 
     // Maintenance due in 7 days
     prisma.maintenanceInterval.findMany({
-      where: { nextDueDate: { gte: now, lte: in7Days } },
+      where: { vehicle: { shopId }, nextDueDate: { gte: now, lte: in7Days } },
       select: {
         id: true, serviceName: true, nextDueDate: true,
         vehicle: { select: { id: true, year: true, make: true, model: true, customer: { select: { firstName: true, lastName: true } } } },
@@ -100,7 +101,7 @@ export async function GET() {
 
     // Low inventory items (quantityOnHand <= reorderPoint, only items with a reorder point set)
     prisma.inventoryItem.findMany({
-      where: { isActive: true, reorderPoint: { gt: 0 } },
+      where: { shopId, isActive: true, reorderPoint: { gt: 0 } },
       select: { id: true, name: true, partNumber: true, quantityOnHand: true, reorderPoint: true },
       take: 50,
     }).then(items => items.filter(i => i.quantityOnHand <= i.reorderPoint)).catch(() => []),

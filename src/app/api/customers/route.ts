@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { z } from "zod";
-import { AuditAction, CustomerType, LeadSource } from "@prisma/client";
+import { AuditAction, CustomerType, LeadSource, Prisma } from "@prisma/client";
 
 const createSchema = z.object({
   type: z.nativeEnum(CustomerType).optional(),
@@ -25,7 +25,7 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -34,18 +34,16 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "25");
   const skip = (page - 1) * limit;
 
-  const where = search
-    ? {
-        OR: [
-          { firstName: { contains: search, mode: "insensitive" as const } },
-          { lastName: { contains: search, mode: "insensitive" as const } },
-          { phone: { contains: search } },
-          { email: { contains: search, mode: "insensitive" as const } },
-          { company: { contains: search, mode: "insensitive" as const } },
-        ],
-        isActive: true,
-      }
-    : { isActive: true };
+  const where: Prisma.CustomerWhereInput = { isActive: true, shopId };
+  if (search) {
+    where.OR = [
+      { firstName: { contains: search, mode: "insensitive" } },
+      { lastName: { contains: search, mode: "insensitive" } },
+      { phone: { contains: search } },
+      { email: { contains: search, mode: "insensitive" } },
+      { company: { contains: search, mode: "insensitive" } },
+    ];
+  }
 
   const [customers, total] = await Promise.all([
     prisma.customer.findMany({
@@ -85,12 +83,11 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  void session; // session available but not needed here
   return apiSuccess({ customers: enriched, total, page, limit });
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
@@ -104,6 +101,7 @@ export async function POST(req: NextRequest) {
       ...parsed.data,
       email: parsed.data.email || null,
       tags: parsed.data.tags || [],
+      shopId,
     },
   });
 

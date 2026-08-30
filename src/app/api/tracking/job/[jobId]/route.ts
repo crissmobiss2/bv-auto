@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-helpers";
 
-// GET /api/tracking/job/[jobId] — public endpoint for customer to track their technician
+// GET /api/tracking/job/[jobId] — live technician tracking.
+// Restricted to staff of the job's shop or the customer who owns the job.
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
+  const { error, session } = await requireAuth();
+  if (error) return error;
+
   const { jobId } = await params;
 
   const since = new Date(Date.now() - 30 * 60 * 1000); // last 30 minutes
@@ -22,6 +27,8 @@ export async function GET(
         title: true,
         status: true,
         scheduledAt: true,
+        shopId: true,
+        customerId: true,
         customer: { select: { firstName: true, lastName: true } },
         technician: { select: { name: true } },
       },
@@ -29,6 +36,17 @@ export async function GET(
   ]);
 
   if (!job) {
+    return NextResponse.json({ error: "Job not found" }, { status: 404 });
+  }
+
+  // Ownership check: staff must share the shop; a customer must own the job.
+  const u = session!.user;
+  const allowed =
+    u.role === "CUSTOMER"
+      ? await prisma.user.findUnique({ where: { id: u.id }, select: { customerId: true } })
+          .then((me) => !!me?.customerId && me.customerId === job.customerId)
+      : !!u.shopId && u.shopId === job.shopId;
+  if (!allowed) {
     return NextResponse.json({ error: "Job not found" }, { status: 404 });
   }
 

@@ -59,8 +59,8 @@ function VehiclesContent() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Vehicles</h1>
-          <p className="text-sm text-gray-500">{vehicles.length} total</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Vehicles</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{vehicles.length} total</p>
         </div>
         <Button onClick={() => setShowPickCustomer(true)}>
           <Plus className="h-4 w-4 mr-2" /> Add Vehicle
@@ -84,9 +84,9 @@ function VehiclesContent() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
           ) : vehicles.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 flex flex-col items-center gap-2">
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400 flex flex-col items-center gap-2">
               <Car className="h-8 w-8 text-gray-300" />
               <p>No vehicles found.</p>
               <Button variant="outline" size="sm" onClick={() => setShowPickCustomer(true)}>
@@ -111,14 +111,14 @@ function VehiclesContent() {
                   <TableRow key={v.id}>
                     <TableCell>
                       <p className="font-medium text-sm">{v.year} {v.make} {v.model}</p>
-                      {v.trim && <p className="text-xs text-gray-500">{v.trim}</p>}
+                      {v.trim && <p className="text-xs text-gray-500 dark:text-gray-400">{v.trim}</p>}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-gray-600">{v.color || "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell font-mono text-xs text-gray-500">{v.vin || "—"}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-gray-600">
+                    <TableCell className="hidden sm:table-cell text-sm text-gray-600 dark:text-gray-400">{v.color || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell font-mono text-xs text-gray-500 dark:text-gray-400">{v.vin || "—"}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-sm text-gray-600 dark:text-gray-400">
                       {v.plate ? `${v.plate}${v.plateState ? ` (${v.plateState})` : ""}` : "—"}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-gray-500">
+                    <TableCell className="hidden lg:table-cell text-sm text-gray-500 dark:text-gray-400">
                       {v.mileage ? v.mileage.toLocaleString() : "—"}
                     </TableCell>
                     <TableCell>
@@ -157,7 +157,7 @@ function VehiclesContent() {
               {(customersData || []).map((c: { id: string; firstName: string; lastName: string; phone: string }) => (
                 <button
                   key={c.id}
-                  className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 text-sm"
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-white/10 text-sm"
                   onClick={() => {
                     setSelectedCustomerId(c.id);
                     setShowPickCustomer(false);
@@ -169,7 +169,7 @@ function VehiclesContent() {
                 </button>
               ))}
               {customersData?.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                   No customers found.{" "}
                   <Link href="/customers" className="text-blue-600 underline">Add a customer first</Link>
                 </p>
@@ -194,7 +194,7 @@ function VehiclesContent() {
 
 export default function VehiclesPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>}>
       <VehiclesContent />
     </Suspense>
   );

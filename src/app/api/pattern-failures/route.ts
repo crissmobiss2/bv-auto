@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireStaff, requireShop } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
+  const { error } = await requireStaff();
+  if (error) return error;
+
   const { searchParams } = new URL(req.url);
   const year  = searchParams.get("year");
   const make  = searchParams.get("make");
@@ -24,7 +28,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const { error, session, shopId } = await requireShop();
+  if (error) return error;
+
+  const body = await req.json().catch(() => ({}));
   const { year, make, model, engine, dtcCodes, symptoms, confirmedFix, partNumbers, laborHours, notes } = body;
 
   if (!year || !make || !model || !confirmedFix || !dtcCodes?.length) {
@@ -62,6 +69,8 @@ export async function POST(req: NextRequest) {
       partNumbers: partNumbers || [],
       laborHours: laborHours ? parseFloat(laborHours) : null,
       notes: notes || null,
+      techId: session!.user.id,
+      shopId,
     },
   });
 

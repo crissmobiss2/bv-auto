@@ -13,7 +13,7 @@ export default function PipelinePage() {
     queryFn: () => axios.get("/api/pipeline").then((r) => r.data),
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading pipeline...</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading pipeline...</div>;
 
   const summary = data?.summary || {};
   const forecast = data?.forecast || {};
@@ -25,8 +25,8 @@ export default function PipelinePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Revenue Pipeline</h1>
-        <p className="text-sm text-gray-500">Forecasted revenue and sales funnel overview</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Revenue Pipeline</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Forecasted revenue and sales funnel overview</p>
       </div>
 
       {/* KPI Cards */}
@@ -35,7 +35,7 @@ export default function PipelinePage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-blue-50 rounded-lg"><DollarSign className="h-5 w-5 text-blue-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Total Pipeline</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Total Pipeline</p>
               <p className="text-xl font-bold">{formatCurrency(summary.totalPipeline || 0)}</p>
             </div>
           </CardContent>
@@ -44,7 +44,7 @@ export default function PipelinePage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-green-50 rounded-lg"><TrendingUp className="h-5 w-5 text-green-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Weighted Value</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Weighted Value</p>
               <p className="text-xl font-bold">{formatCurrency(summary.weightedPipeline || 0)}</p>
             </div>
           </CardContent>
@@ -53,7 +53,7 @@ export default function PipelinePage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-purple-50 rounded-lg"><Clock className="h-5 w-5 text-purple-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Scheduled Jobs</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Scheduled Jobs</p>
               <p className="text-xl font-bold">{formatCurrency(summary.scheduledRevenue || 0)}</p>
             </div>
           </CardContent>
@@ -62,7 +62,7 @@ export default function PipelinePage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-orange-50 rounded-lg"><Building2 className="h-5 w-5 text-orange-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Fleet MRR</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Fleet MRR</p>
               <p className="text-xl font-bold">{formatCurrency(summary.fleetMonthlyValue || 0)}</p>
             </div>
           </CardContent>
@@ -82,10 +82,10 @@ export default function PipelinePage() {
               ].map((item) => (
                 <div key={item.label}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">{item.label}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
                     <span className="font-semibold">{formatCurrency(item.value)}</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-2">
                     <div
                       className={`${item.color} h-2 rounded-full`}
                       style={{ width: `${Math.min(100, (item.value / Math.max(forecast.days90 || 1, 1)) * 100)}%` }}
@@ -119,7 +119,7 @@ export default function PipelinePage() {
         <CardHeader><CardTitle className="text-base">Open Quotes (Pipeline)</CardTitle></CardHeader>
         <CardContent className="p-0">
           {quotes.length === 0 ? (
-            <p className="text-sm text-gray-500 p-4">No open quotes in pipeline.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 p-4">No open quotes in pipeline.</p>
           ) : (
             <div className="divide-y">
               {quotes.map((q: {
@@ -136,14 +136,14 @@ export default function PipelinePage() {
                 <div key={q.id} className="flex items-center justify-between px-4 py-3">
                   <div>
                     <p className="text-sm font-medium">{q.title}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {q.customer.firstName} {q.customer.lastName} · {q.vehicle.year} {q.vehicle.make} {q.vehicle.model}
                     </p>
                     <p className="text-xs text-gray-400">{q.quoteNumber} · {new Date(q.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-sm">{formatCurrency(q.totalAmount)}</p>
-                    <p className="text-xs text-gray-500">{q.probability}% close probability</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{q.probability}% close probability</p>
                     <p className="text-xs text-green-600 font-medium">Weighted: {formatCurrency(q.weightedValue)}</p>
                   </div>
                 </div>
@@ -159,7 +159,7 @@ export default function PipelinePage() {
           <CardHeader><CardTitle className="text-base">Upcoming Scheduled Jobs</CardTitle></CardHeader>
           <CardContent className="p-0">
             {scheduledJobs.length === 0 ? (
-              <p className="text-sm text-gray-500 p-4">No upcoming jobs.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 p-4">No upcoming jobs.</p>
             ) : (
               <div className="divide-y max-h-64 overflow-y-auto">
                 {scheduledJobs.map((j: {
@@ -172,7 +172,7 @@ export default function PipelinePage() {
                   <div key={j.id} className="flex items-center justify-between px-4 py-2">
                     <div>
                       <p className="text-sm font-medium truncate max-w-[200px]">{j.title}</p>
-                      <p className="text-xs text-gray-500">{j.customer.firstName} {j.customer.lastName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{j.customer.firstName} {j.customer.lastName}</p>
                       <p className="text-xs text-gray-400">{new Date(j.scheduledAt).toLocaleDateString()}</p>
                     </div>
                     <p className="font-medium text-sm">{formatCurrency(j.estimatedTotal || 0)}</p>
@@ -188,7 +188,7 @@ export default function PipelinePage() {
           <CardHeader><CardTitle className="text-base">Fleet Accounts</CardTitle></CardHeader>
           <CardContent className="p-0">
             {fleetAccounts.length === 0 ? (
-              <p className="text-sm text-gray-500 p-4">No fleet accounts yet.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 p-4">No fleet accounts yet.</p>
             ) : (
               <div className="divide-y max-h-64 overflow-y-auto">
                 {fleetAccounts.map((f: {
@@ -201,7 +201,7 @@ export default function PipelinePage() {
                   <div key={f.id} className="flex items-center justify-between px-4 py-2">
                     <div>
                       <p className="text-sm font-medium">{f.company}</p>
-                      <p className="text-xs text-gray-500">{f.vehicleCount} vehicles</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{f.vehicleCount} vehicles</p>
                       {f.lastJobAt && <p className="text-xs text-gray-400">Last job: {new Date(f.lastJobAt).toLocaleDateString()}</p>}
                     </div>
                     <div className="text-right">

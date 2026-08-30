@@ -24,7 +24,7 @@ export default function FleetDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fleet", id] }),
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
   if (!account) return <div className="p-8 text-center text-red-500">Account not found</div>;
 
   const unpaidJobs = (account.jobs || []).filter((j: { invoice?: { status: string } }) =>
@@ -45,19 +45,19 @@ export default function FleetDetailPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Total Revenue</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Total Revenue</p>
           <p className="text-2xl font-bold text-green-600">{formatCurrency(account.totalRevenue)}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Open Balance</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Open Balance</p>
           <p className={`text-2xl font-bold ${account.openBalance > 0 ? "text-red-600" : "text-green-600"}`}>{formatCurrency(account.openBalance)}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Total Jobs</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Total Jobs</p>
           <p className="text-2xl font-bold">{account.jobs?.length || 0}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Custom Labor Rate</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Custom Labor Rate</p>
           <p className="text-2xl font-bold">{account.customLaborRate ? `${formatCurrency(account.customLaborRate)}/hr` : "Standard"}</p>
         </CardContent></Card>
       </div>
@@ -71,14 +71,14 @@ export default function FleetDetailPage() {
             {account.phone && <a href={`tel:${account.phone}`} className="flex items-center gap-2 text-blue-600 hover:underline"><Phone className="h-3 w-3" />{account.phone}</a>}
             {account.email && <a href={`mailto:${account.email}`} className="flex items-center gap-2 text-blue-600 hover:underline"><Mail className="h-3 w-3" />{account.email}</a>}
             {account.address && (
-              <div className="flex items-start gap-2 text-gray-600">
+              <div className="flex items-start gap-2 text-gray-600 dark:text-gray-400">
                 <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
                 <span>{account.address}, {account.city}, {account.state} {account.zip}</span>
               </div>
             )}
             {account.creditLimit && (
               <div>
-                <p className="text-xs text-gray-500 mt-2">Credit Limit</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Credit Limit</p>
                 <p className="font-medium">{formatCurrency(account.creditLimit)}</p>
                 {account.openBalance > account.creditLimit * 0.8 && (
                   <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
@@ -87,7 +87,7 @@ export default function FleetDetailPage() {
                 )}
               </div>
             )}
-            {account.notes && <p className="text-xs text-gray-500 mt-2 border-t pt-2">{account.notes}</p>}
+            {account.notes && <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 border-t pt-2">{account.notes}</p>}
           </CardContent>
         </Card>
 
@@ -98,14 +98,14 @@ export default function FleetDetailPage() {
           </CardHeader>
           <CardContent>
             {unpaidJobs.length === 0 ? (
-              <p className="text-sm text-gray-500">No outstanding invoices.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No outstanding invoices.</p>
             ) : (
               <div className="space-y-2">
                 {unpaidJobs.map((j: { id: string; jobNumber: string; title: string; vehicle: { year: number; make: string; model: string }; fleetPoNumber?: string; invoice: { invoiceNumber: string; totalAmount: number; amountDue: number; status: string } }) => (
                   <div key={j.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
                     <div>
                       <Link href={`/jobs/${j.id}`} className="font-medium text-blue-700 hover:underline">{j.title}</Link>
-                      <p className="text-xs text-gray-500">{j.invoice.invoiceNumber} · {j.vehicle.year} {j.vehicle.make} {j.vehicle.model}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{j.invoice.invoiceNumber} · {j.vehicle.year} {j.vehicle.make} {j.vehicle.model}</p>
                       {j.fleetPoNumber && <p className="text-xs text-gray-400">PO: {j.fleetPoNumber}</p>}
                     </div>
                     <div className="text-right">
@@ -129,7 +129,7 @@ export default function FleetDetailPage() {
               <div key={j.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
                 <div>
                   <Link href={`/jobs/${j.id}`} className="font-medium text-blue-700 hover:underline">{j.title}</Link>
-                  <p className="text-xs text-gray-500">{j.jobNumber} · {j.vehicle.year} {j.vehicle.make} {j.vehicle.model} {j.vehicle.plate && `· ${j.vehicle.plate}`} · {formatDate(j.createdAt)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{j.jobNumber} · {j.vehicle.year} {j.vehicle.make} {j.vehicle.model} {j.vehicle.plate && `· ${j.vehicle.plate}`} · {formatDate(j.createdAt)}</p>
                   {j.fleetPoNumber && <p className="text-xs text-gray-400">PO: {j.fleetPoNumber}</p>}
                 </div>
                 <div className="text-right">

@@ -1,11 +1,13 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { generateInvoiceNumber } from "@/lib/utils";
 import { AuditAction } from "@prisma/client";
 
+const INVOICE_ROLES = ["ADMIN", "DISPATCHER", "ACCOUNTANT", "SERVICE_ADVISOR"] as const;
+
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(INVOICE_ROLES);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -15,7 +17,7 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "25");
   const skip = (page - 1) * limit;
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { shopId };
   if (customerId) where.customerId = customerId;
   if (status) where.status = status;
 
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop(INVOICE_ROLES);
   if (error) return error;
 
   const body = await req.json();
@@ -46,9 +48,9 @@ export async function POST(req: NextRequest) {
 
   if (!jobId) return apiError("jobId is required");
 
-  // Get the job with its approved quote
-  const job = await prisma.job.findUnique({
-    where: { id: jobId },
+  // Get the job with its approved quote (scoped to this shop)
+  const job = await prisma.job.findFirst({
+    where: { id: jobId, shopId },
     include: {
       quote: { include: { lineItems: true } },
       customer: true,
@@ -71,6 +73,7 @@ export async function POST(req: NextRequest) {
       jobId,
       customerId: job.customerId,
       createdById: session!.user.id,
+      shopId,
       subtotal: quote.subtotal,
       taxRate: quote.taxRate,
       taxAmount: quote.taxAmount,

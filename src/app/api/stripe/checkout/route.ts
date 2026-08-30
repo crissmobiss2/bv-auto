@@ -1,17 +1,19 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
-import { createInvoiceCheckoutSession } from "@/lib/stripe";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
+import { createInvoiceCheckoutSession, stripe } from "@/lib/stripe";
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
+
+  if (!stripe) return apiError("Stripe is not configured. Add STRIPE_SECRET_KEY to enable online payments.", 503);
 
   const { invoiceId } = await req.json();
   if (!invoiceId) return apiError("invoiceId required");
 
-  const invoice = await prisma.invoice.findUnique({
-    where: { id: invoiceId },
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: invoiceId, shopId },
     include: {
       customer: true,
       job: { include: { vehicle: true } },
@@ -37,7 +39,8 @@ export async function POST(req: NextRequest) {
     });
 
     return apiSuccess({ url: session.url, sessionId: session.id });
-  } catch {
-    return apiError("Stripe is not configured. Add STRIPE_SECRET_KEY to enable online payments.", 503);
+  } catch (e) {
+    console.error("[stripe/checkout]", e);
+    return apiError("Could not start checkout. Please try again.", 502);
   }
 }

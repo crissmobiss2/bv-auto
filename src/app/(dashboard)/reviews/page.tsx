@@ -31,7 +31,7 @@ export default function ReviewsPage() {
     onSettled: () => setSentId(null),
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading reviews...</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading reviews...</div>;
 
   const d = data || {};
 
@@ -46,7 +46,7 @@ export default function ReviewsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Star className="h-6 w-6 text-yellow-500" /> Review Requests</h1>
-        <p className="text-sm text-gray-500">Track and send review requests — every 5-star review is worth thousands in future business</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Track and send review requests — every 5-star review is worth thousands in future business</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -56,7 +56,7 @@ export default function ReviewsPage() {
               <div className={`p-2 rounded-lg ${s.color}`}><s.icon className="h-5 w-5" /></div>
               <div>
                 <p className="text-2xl font-bold">{s.value}</p>
-                <p className="text-xs text-gray-500">{s.label}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
               </div>
             </CardContent>
           </Card>
@@ -83,7 +83,7 @@ export default function ReviewsPage() {
                 <div key={r.id} className="flex items-center justify-between py-2 border-b last:border-0 gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{r.customer.firstName} {r.customer.lastName}</p>
-                    <p className="text-xs text-gray-500">{r.job.vehicle.year} {r.job.vehicle.make} {r.job.vehicle.model} · {r.job.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{r.job.vehicle.year} {r.job.vehicle.make} {r.job.vehicle.model} · {r.job.title}</p>
                     <Link href={`/jobs/${r.jobId}`} className="text-xs text-blue-600 hover:underline">{r.job.jobNumber}</Link>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">

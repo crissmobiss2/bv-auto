@@ -35,12 +35,12 @@ function JobCard({ job, technicians }: { job: Job; technicians: { id: string; na
 
   const statusMutation = useMutation({
     mutationFn: (status: string) => axios.patch(`/api/jobs/${job.id}`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shop-board"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shop-board-active"] }),
   });
 
   const techMutation = useMutation({
     mutationFn: (technicianId: string) => axios.patch(`/api/jobs/${job.id}`, { technicianId: technicianId === "unassigned" ? null : technicianId }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shop-board"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shop-board-active"] }),
   });
 
   return (
@@ -154,8 +154,8 @@ export default function ShopBoardPage() {
     refetchInterval: autoRefresh ? 30000 : false,
   });
 
-  // Also fetch all active jobs (not just today's)
-  const { data: activeData } = useQuery({
+  // Also fetch all active jobs (not just today's) — this drives the board render.
+  const { data: activeData, refetch: refetchActive } = useQuery({
     queryKey: ["shop-board-active"],
     queryFn: () =>
       Promise.all([
@@ -206,7 +206,7 @@ export default function ShopBoardPage() {
             <RefreshCw className={`h-4 w-4 mr-1 ${autoRefresh ? "animate-spin-slow" : ""}`} />
             {autoRefresh ? "Auto" : "Manual"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <Button variant="outline" size="sm" onClick={() => { refetch(); refetchActive(); }}>
             <RefreshCw className="h-4 w-4 mr-1" /> Refresh
           </Button>
           <Button variant="outline" size="sm" onClick={() => setFullscreen(!fullscreen)}>

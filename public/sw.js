@@ -128,9 +128,11 @@ self.addEventListener("fetch", (e) => {
   }
 
   // ── Everything else: network with offline fallback ───────────────────────────
+  // caches.match() resolves to a Promise (always truthy), so the old `|| offline`
+  // never fired — resolve the cache lookup first, then fall back to the page.
   e.respondWith(
     fetch(request).catch(() =>
-      caches.match(request) || caches.match("/offline.html")
+      caches.match(request).then((cached) => cached || caches.match("/offline.html"))
     )
   );
 });

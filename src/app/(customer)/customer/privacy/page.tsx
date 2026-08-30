@@ -44,10 +44,10 @@ export default function PrivacyPage() {
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <Shield className="h-6 w-6 text-blue-600" /> My Privacy &amp; Data
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Your rights under the California Consumer Privacy Act (CCPA) and how we handle your data.
         </p>
       </div>
@@ -60,12 +60,12 @@ export default function PrivacyPage() {
               <Download className="h-5 w-5 text-blue-600" />
             </div>
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">Download My Data</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">Download My Data</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 You have the right to know what personal information we have collected about you.
                 Download a complete copy of your data as a JSON file, including:
               </p>
-              <ul className="mt-2 text-sm text-gray-600 list-disc list-inside space-y-0.5">
+              <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-0.5">
                 <li>Your profile and contact information</li>
                 <li>Vehicles registered with us</li>
                 <li>Service and repair history</li>
@@ -89,17 +89,17 @@ export default function PrivacyPage() {
               <Trash2 className="h-5 w-5 text-red-600" />
             </div>
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">Delete My Account</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">Delete My Account</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 You have the right to request deletion of your personal information. Once processed:
               </p>
-              <ul className="mt-2 text-sm text-gray-600 list-disc list-inside space-y-0.5">
+              <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-0.5">
                 <li>Your profile, contact info, and account will be permanently removed</li>
                 <li>Service history and vehicle records will be deleted</li>
                 <li>This action <strong>cannot be undone</strong></li>
                 <li>We may retain certain records required by law (e.g., financial records)</li>
               </ul>
-              <p className="text-sm text-gray-500 mt-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
                 Deletion requests are processed within <strong>30 days</strong> per CCPA requirements.
               </p>
 
@@ -127,15 +127,15 @@ export default function PrivacyPage() {
       <Card>
         <CardContent className="p-5 space-y-3">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-gray-50 rounded-lg shrink-0">
-              <Shield className="h-5 w-5 text-gray-600" />
+            <div className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg shrink-0">
+              <Shield className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             </div>
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">Data We Collect</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">Data We Collect</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 We collect only the information necessary to provide our mobile auto repair services:
               </p>
-              <ul className="mt-2 text-sm text-gray-600 list-disc list-inside space-y-1">
+              <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
                 <li><strong>Name &amp; contact info</strong> — to identify you and communicate about your service</li>
                 <li><strong>Email address</strong> — for invoices, receipts, and service updates</li>
                 <li><strong>Phone number</strong> — for appointment reminders and SMS updates</li>
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
                 <li><strong>Service history</strong> — jobs performed, parts used, and technician notes</li>
                 <li><strong>Payment records</strong> — invoices, amounts, and payment methods (no card numbers stored)</li>
               </ul>
-              <p className="text-sm text-gray-500 mt-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
                 We do not sell your personal information to third parties. Data is used solely to provide and improve our services.
               </p>
             </div>
@@ -172,7 +172,7 @@ export default function PrivacyPage() {
                 onChange={(e) => setConfirmed(e.target.checked)}
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-red-600"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-700 dark:text-gray-300">
                 I understand this will permanently delete all my data from B&amp;V Auto and cannot be undone.
               </span>
             </label>

@@ -67,8 +67,8 @@ export default function PayrollPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payroll Export</h1>
-          <p className="text-sm text-gray-500">Calculate and export technician pay</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Payroll Export</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Calculate and export technician pay</p>
         </div>
         <Button onClick={downloadCSV} className="gap-2">
           <Download className="h-4 w-4" /> Export CSV
@@ -108,7 +108,7 @@ export default function PayrollPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-blue-50 rounded-lg"><Users className="h-5 w-5 text-blue-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Technicians</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Technicians</p>
               <p className="text-xl font-bold">{summary.techCount || 0}</p>
             </div>
           </CardContent>
@@ -117,7 +117,7 @@ export default function PayrollPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-green-50 rounded-lg"><DollarSign className="h-5 w-5 text-green-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Total Payroll</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Total Payroll</p>
               <p className="text-xl font-bold">{formatCurrency(summary.totalPayroll || 0)}</p>
             </div>
           </CardContent>
@@ -126,7 +126,7 @@ export default function PayrollPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-purple-50 rounded-lg"><Clock className="h-5 w-5 text-purple-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Total Hours</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Total Hours</p>
               <p className="text-xl font-bold">{(summary.totalHours || 0).toFixed(1)}</p>
             </div>
           </CardContent>
@@ -135,7 +135,7 @@ export default function PayrollPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-orange-50 rounded-lg"><DollarSign className="h-5 w-5 text-orange-600" /></div>
             <div>
-              <p className="text-xs text-gray-500">Avg per Tech</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Avg per Tech</p>
               <p className="text-xl font-bold">{formatCurrency(summary.avgPay || 0)}</p>
             </div>
           </CardContent>
@@ -144,9 +144,9 @@ export default function PayrollPage() {
 
       {/* Tech Table */}
       {isLoading ? (
-        <div className="text-center text-gray-500 py-8">Calculating payroll...</div>
+        <div className="text-center text-gray-500 dark:text-gray-400 py-8">Calculating payroll...</div>
       ) : techs.length === 0 ? (
-        <div className="text-center text-gray-500 py-12">
+        <div className="text-center text-gray-500 dark:text-gray-400 py-12">
           <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
           <p>No payroll data for this period.</p>
         </div>
@@ -158,7 +158,7 @@ export default function PayrollPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-base">{tech.name}</CardTitle>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {tech.payType === "HOURLY" && `$${tech.rate}/hr · ${tech.totalHours.toFixed(1)} hrs`}
                       {tech.payType === "FLAT_RATE" && `$${tech.rate}/hr flat rate · ${tech.totalHours.toFixed(1)} billed hrs`}
                       {tech.payType === "COMMISSION" && `${tech.rate}% commission`}
@@ -193,7 +193,7 @@ export default function PayrollPage() {
                         <span className={`ml-2 px-1 rounded text-[10px] ${
                           d.type === "FLAT_RATE" ? "bg-blue-50 text-blue-600" :
                           d.type === "COMMISSION" ? "bg-purple-50 text-purple-600" :
-                          "bg-gray-50 text-gray-600"
+                          "bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400"
                         }`}>{d.type}</span>
                       </div>
                       <span className="font-medium">{formatCurrency(d.pay)}</span>

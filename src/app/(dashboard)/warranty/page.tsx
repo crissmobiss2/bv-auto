@@ -34,7 +34,7 @@ type Warranty = {
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   ACTIVE: { label: "Active", color: "bg-green-100 text-green-800", icon: <CheckCircle className="h-3 w-3" /> },
   CLAIMED: { label: "Claimed", color: "bg-orange-100 text-orange-800", icon: <AlertTriangle className="h-3 w-3" /> },
-  EXPIRED: { label: "Expired", color: "bg-gray-100 text-gray-600", icon: <Clock className="h-3 w-3" /> },
+  EXPIRED: { label: "Expired", color: "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400", icon: <Clock className="h-3 w-3" /> },
   VOIDED: { label: "Voided", color: "bg-red-100 text-red-700", icon: <XCircle className="h-3 w-3" /> },
 };
 
@@ -75,8 +75,8 @@ export default function WarrantyPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Warranty Tracker</h1>
-        <p className="text-sm text-gray-500">Manage parts and labor warranties for your jobs</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Warranty Tracker</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Manage parts and labor warranties for your jobs</p>
       </div>
 
       {/* Stats */}
@@ -85,11 +85,11 @@ export default function WarrantyPage() {
           { label: "Active", value: stats.active || 0, color: "text-green-600", bg: "bg-green-50" },
           { label: "Expiring Soon", value: stats.expiringSoon || 0, color: "text-yellow-600", bg: "bg-yellow-50" },
           { label: "Claimed", value: stats.claimed || 0, color: "text-orange-600", bg: "bg-orange-50" },
-          { label: "Expired", value: stats.expired || 0, color: "text-gray-600", bg: "bg-gray-50" },
+          { label: "Expired", value: stats.expired || 0, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-white/5" },
         ].map((s) => (
           <Card key={s.label}>
             <CardContent className={`p-4 ${s.bg} rounded-lg`}>
-              <p className="text-xs text-gray-500">{s.label}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             </CardContent>
           </Card>
@@ -118,9 +118,9 @@ export default function WarrantyPage() {
 
       {/* Warranty List */}
       {isLoading ? (
-        <div className="text-center text-gray-500 py-8">Loading warranties...</div>
+        <div className="text-center text-gray-500 dark:text-gray-400 py-8">Loading warranties...</div>
       ) : warranties.length === 0 ? (
-        <div className="text-center text-gray-500 py-12">
+        <div className="text-center text-gray-500 dark:text-gray-400 py-12">
           <Shield className="h-12 w-12 text-gray-300 mx-auto mb-3" />
           <p>No warranties found for this filter.</p>
           <p className="text-xs text-gray-400 mt-1">Warranties are created automatically when jobs are completed.</p>
@@ -143,7 +143,7 @@ export default function WarrantyPage() {
                           {status.icon} {status.label}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mb-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                         {w.customer.firstName} {w.customer.lastName} · {w.vehicle.year} {w.vehicle.make} {w.vehicle.model}
                         {w.vehicle.plate && ` · ${w.vehicle.plate}`}
                       </p>
@@ -172,10 +172,10 @@ export default function WarrantyPage() {
                         </div>
                       </div>
                       {w.partsWarranty && (
-                        <p className="text-xs text-gray-500 mt-1">Parts: {w.partsWarranty}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Parts: {w.partsWarranty}</p>
                       )}
                       {w.laborWarranty && (
-                        <p className="text-xs text-gray-500">Labor: {w.laborWarranty}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Labor: {w.laborWarranty}</p>
                       )}
                       {w.claimNotes && (
                         <p className="text-xs text-orange-700 mt-1 bg-orange-50 p-2 rounded">Claim: {w.claimNotes}</p>
@@ -219,10 +219,10 @@ export default function WarrantyPage() {
           </DialogHeader>
           {claimDialog && (
             <div className="space-y-4">
-              <div className="p-3 bg-gray-50 rounded text-sm">
+              <div className="p-3 bg-gray-50 dark:bg-white/5 rounded text-sm">
                 <p className="font-medium">{claimDialog.job.title}</p>
-                <p className="text-gray-500">{claimDialog.customer.firstName} {claimDialog.customer.lastName}</p>
-                <p className="text-gray-500">{claimDialog.vehicle.year} {claimDialog.vehicle.make} {claimDialog.vehicle.model}</p>
+                <p className="text-gray-500 dark:text-gray-400">{claimDialog.customer.firstName} {claimDialog.customer.lastName}</p>
+                <p className="text-gray-500 dark:text-gray-400">{claimDialog.vehicle.year} {claimDialog.vehicle.make} {claimDialog.vehicle.model}</p>
               </div>
               <div className="space-y-2">
                 <Label>Claim Notes *</Label>

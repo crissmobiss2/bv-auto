@@ -1,8 +1,8 @@
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const now = new Date();
@@ -10,7 +10,7 @@ export async function GET() {
   const cutoff365 = new Date(now.getTime() - 365 * 86400000);
 
   const customers = await prisma.customer.findMany({
-    where: { isActive: true },
+    where: { isActive: true, shopId },
     include: {
       invoices: { where: { status: "PAID" }, select: { totalAmount: true, paidAt: true } },
       jobs: { select: { id: true, createdAt: true, status: true } },

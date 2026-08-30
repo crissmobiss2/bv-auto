@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError } from "@/lib/api-helpers";
+import { requireStaff, requireShop, apiError } from "@/lib/api-helpers";
 
 // POST /api/tracking/location — technician posts their GPS location
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session } = await requireStaff();
   if (error) return error;
 
   const body = await req.json() as {
@@ -51,15 +51,16 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// GET /api/tracking/location — admin/dispatcher sees all active technician locations
+// GET /api/tracking/location — admin/dispatcher sees active technician locations
+// for their own shop only.
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "DISPATCHER"]);
   if (error) return error;
 
   const since = new Date(Date.now() - 5 * 60 * 1000); // last 5 minutes
 
   const locations = await prisma.technicianLocation.findMany({
-    where: { createdAt: { gte: since } },
+    where: { createdAt: { gte: since }, user: { shopId } },
     orderBy: { createdAt: "desc" },
     include: {
       user: { select: { id: true, name: true } },

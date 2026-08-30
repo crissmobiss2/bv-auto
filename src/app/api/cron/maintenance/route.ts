@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { apiError, apiSuccess, assertCron } from "@/lib/api-helpers";
 
 // Weekly: find vehicles with maintenance intervals due soon (within 500 miles or 14 days)
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (secret !== process.env.CRON_SECRET) return apiError("Unauthorized", 401);
+  const unauthorized = assertCron(req);
+  if (unauthorized) return unauthorized;
 
   const now = new Date();
   const in14Days = new Date(now.getTime() + 14 * 86400000);

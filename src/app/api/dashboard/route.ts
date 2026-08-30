@@ -1,9 +1,8 @@
-import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const now = new Date();
@@ -26,6 +25,7 @@ export async function GET() {
   ] = await Promise.all([
     prisma.job.count({
       where: {
+        shopId,
         status: {
           in: ["ESTIMATE", "PENDING_APPROVAL", "APPROVED", "SCHEDULED", "IN_PROGRESS", "PARTS_WAITING"],
         },
@@ -33,32 +33,33 @@ export async function GET() {
     }),
     prisma.job.count({
       where: {
+        shopId,
         scheduledAt: { gte: startOfToday, lt: new Date(startOfToday.getTime() + 86400000) },
       },
     }),
     prisma.invoice.count({
-      where: { status: { in: ["SENT", "VIEWED", "PARTIAL"] } },
+      where: { shopId, status: { in: ["SENT", "VIEWED", "PARTIAL"] } },
     }),
     prisma.invoice.count({
-      where: { status: "OVERDUE" },
+      where: { shopId, status: "OVERDUE" },
     }),
     prisma.jobPart.count({
-      where: { status: { in: ["REQUESTED", "QUOTED", "ORDERED", "SHIPPED"] } },
+      where: { job: { shopId }, status: { in: ["REQUESTED", "QUOTED", "ORDERED", "SHIPPED"] } },
     }),
     prisma.payment.aggregate({
-      where: { receivedAt: { gte: startOfToday } },
+      where: { invoice: { shopId }, receivedAt: { gte: startOfToday } },
       _sum: { amount: true },
     }),
     prisma.payment.aggregate({
-      where: { receivedAt: { gte: startOfWeek } },
+      where: { invoice: { shopId }, receivedAt: { gte: startOfWeek } },
       _sum: { amount: true },
     }),
     prisma.payment.aggregate({
-      where: { receivedAt: { gte: startOfMonth } },
+      where: { invoice: { shopId }, receivedAt: { gte: startOfMonth } },
       _sum: { amount: true },
     }),
     prisma.job.findMany({
-      where: { status: { notIn: ["CANCELLED", "PAID"] } },
+      where: { shopId, status: { notIn: ["CANCELLED", "PAID"] } },
       include: {
         customer: { select: { firstName: true, lastName: true } },
         vehicle: { select: { year: true, make: true, model: true } },
@@ -68,7 +69,7 @@ export async function GET() {
       take: 10,
     }),
     prisma.customer.findMany({
-      where: { isActive: true },
+      where: { isActive: true, shopId },
       include: {
         _count: { select: { jobs: true, invoices: true } },
       },

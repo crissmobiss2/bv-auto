@@ -1,9 +1,16 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit, pick } from "@/lib/api-helpers";
 import { AuditAction, JobStatus } from "@prisma/client";
 import twilio from "twilio";
 import { sendPushToUser, sendPushToRole } from "@/lib/push";
+
+const JOB_FIELDS = [
+  "status", "title", "description", "serviceLocation", "scheduledAt", "startedAt",
+  "completedAt", "estimatedHours", "actualHours", "mileageIn", "mileageOut",
+  "internalNotes", "customerNotes", "checklist", "requiresReturn", "fleetAccountId",
+  "fleetPoNumber", "technicianId", "vehicleHealthScore",
+] as const;
 
 const STATUS_SMS: Partial<Record<JobStatus, string>> = {
   IN_PROGRESS: "Hi {name}, your {vehicle} has been checked in and work has started. We'll keep you updated!",
@@ -70,13 +77,13 @@ async function sendJobStatusPush(jobId: string, oldStatus: JobStatus, newStatus:
 }
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const job = await prisma.job.findUnique({
-    where: { id },
+  const job = await prisma.job.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       vehicle: true,
@@ -102,17 +109,17 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
   const body = await req.json();
 
-  const existing = await prisma.job.findUnique({ where: { id } });
+  const existing = await prisma.job.findFirst({ where: { id, shopId } });
   if (!existing) return apiError("Job not found", 404);
 
-  // Handle status transitions
-  const updateData: Record<string, unknown> = { ...body };
+  // Handle status transitions — allowlist fields (no id/jobNumber/customerId/vehicleId/shopId)
+  const updateData: Record<string, unknown> = pick(body, JOB_FIELDS);
   if (body.status && body.status !== existing.status) {
     if (body.status === JobStatus.IN_PROGRESS && !existing.startedAt) {
       updateData.startedAt = new Date();

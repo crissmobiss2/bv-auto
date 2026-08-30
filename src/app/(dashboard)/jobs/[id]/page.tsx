@@ -8,18 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Phone, Wrench, FileText, Package, Camera, ClipboardCheck, PenLine, Clock, Play, Square, Brain, X, Plus, AlertTriangle, DollarSign } from "lucide-react";
+import { ArrowLeft, Phone, Wrench, FileText, Package, Camera, ClipboardCheck, PenLine, Clock, Play, Square, Brain, X, Plus, AlertTriangle, DollarSign, MessageSquare } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { formatCurrency, formatDate, formatDateTime, JOB_STATUS_COLORS, PART_STATUS_COLORS } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 import { QuoteBuilder } from "@/components/features/quote-builder";
 import { InspectionChecklist } from "@/components/features/inspection-checklist";
 import { PartsTab } from "@/components/features/parts-tab";
 import { NotesTab } from "@/components/features/notes-tab";
 import { SignaturePad } from "@/components/features/signature-pad";
 import { PhotoUpload } from "@/components/features/photo-upload";
+import { SmsThread } from "@/components/features/sms-thread";
 
 function TimeTracker({ jobId }: { jobId: string }) {
   const queryClient = useQueryClient();
@@ -32,7 +34,10 @@ function TimeTracker({ jobId }: { jobId: string }) {
   const clockMutation = useMutation({
     mutationFn: (payload: { action: "clock-in" | "clock-out"; logId?: string }) =>
       axios.post(`/api/jobs/${jobId}/timelog`, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["timelog", jobId] }),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["timelog", jobId] });
+      toast.success(vars.action === "clock-in" ? "Clocked in" : "Clocked out");
+    },
   });
 
   const openLog = data?.logs?.find((l: { clockedOut: string | null }) => !l.clockedOut);
@@ -293,12 +298,20 @@ export default function JobDetailPage() {
 
   const statusMutation = useMutation({
     mutationFn: (status: string) => axios.patch(`/api/jobs/${id}`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["job", id] }),
+    onSuccess: (_, status) => {
+      queryClient.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Status updated", `Job moved to ${status.replace(/_/g, " ")}`);
+    },
+    onError: () => toast.error("Update failed", "Could not update job status."),
   });
 
   const createInvoiceMutation = useMutation({
     mutationFn: () => axios.post("/api/invoices", { jobId: id }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["job", id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Invoice created", "Invoice is ready to review and send.");
+    },
+    onError: () => toast.error("Invoice failed", "Could not create invoice."),
   });
 
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading...</div>;
@@ -333,6 +346,12 @@ export default function JobDetailPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <Link href={`/jobs/${job.id}/health-report`} target="_blank">
+            <Button size="sm" variant="outline">
+              <ClipboardCheck className="h-4 w-4 mr-1" /> Health Report
+            </Button>
+          </Link>
 
           {canCreateInvoice && (
             <Button size="sm" onClick={() => createInvoiceMutation.mutate()} disabled={createInvoiceMutation.isPending}>
@@ -454,6 +473,10 @@ export default function JobDetailPage() {
                 <Brain className="h-4 w-4 mr-1" />
                 AI Diagnose
               </TabsTrigger>
+              <TabsTrigger value="sms">
+                <MessageSquare className="h-4 w-4 mr-1" />
+                SMS
+              </TabsTrigger>
               <TabsTrigger value="declined">
                 <AlertTriangle className="h-4 w-4 mr-1" />
                 Declined
@@ -486,6 +509,10 @@ export default function JobDetailPage() {
 
             <TabsContent value="diagnose" className="mt-4">
               <QuickDiagnoseTab job={job} />
+            </TabsContent>
+
+            <TabsContent value="sms" className="mt-4">
+              <SmsThread jobId={job.id} />
             </TabsContent>
 
             <TabsContent value="declined" className="mt-4">

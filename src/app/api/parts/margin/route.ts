@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const parts = await prisma.jobPart.findMany({
-    where: { createdAt: { gte: since }, totalCost: { gt: 0 }, totalPrice: { gt: 0 } },
+    where: { job: { shopId }, createdAt: { gte: since }, totalCost: { gt: 0 }, totalPrice: { gt: 0 } },
     select: {
       id: true,
       description: true,

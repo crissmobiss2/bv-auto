@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { InvoiceStatus } from "@prisma/client";
 
 type SyncInvoice = {
@@ -75,7 +75,7 @@ async function syncToQuickBooks(invoices: SyncInvoice[], tokens: { accessToken: 
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN"]);
   if (error) return error;
 
   const { platform, invoiceIds } = await req.json();
@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
   }
 
   const where = invoiceIds?.length
-    ? { id: { in: invoiceIds as string[] } }
-    : { status: { in: [InvoiceStatus.SENT, InvoiceStatus.PAID] }, qbSyncedAt: null };
+    ? { id: { in: invoiceIds as string[] }, shopId }
+    : { status: { in: [InvoiceStatus.SENT, InvoiceStatus.PAID] }, qbSyncedAt: null, shopId };
 
   const invoices = await prisma.invoice.findMany({
     where,

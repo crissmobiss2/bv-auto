@@ -1,12 +1,16 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+
+  const job = await prisma.job.findFirst({ where: { id, shopId }, select: { id: true } });
+  if (!job) return apiError("Job not found", 404);
+
   const logs = await prisma.timeLog.findMany({
     where: { jobId: id },
     orderBy: { clockedIn: "asc" },
@@ -22,10 +26,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+
+  // The job must belong to the caller's shop.
+  const job = await prisma.job.findFirst({ where: { id, shopId }, select: { id: true } });
+  if (!job) return apiError("Job not found", 404);
+
   const { action, logId, notes, lat, lng } = await req.json();
 
   if (action === "clock-in") {
@@ -49,8 +58,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (action === "clock-out") {
     if (!logId) return apiError("logId required", 400);
+
+    // The log must belong to THIS job, and to the caller (managers may close any).
+    const isManager = ["ADMIN", "DISPATCHER"].includes(session!.user.role);
+    const existing = await prisma.timeLog.findFirst({
+      where: {
+        id: logId,
+        jobId: id,
+        ...(isManager ? {} : { technicianId: session!.user.id }),
+      },
+    });
+    if (!existing) return apiError("Time log not found", 404);
+
     const log = await prisma.timeLog.update({
-      where: { id: logId },
+      where: { id: existing.id },
       data: { clockedOut: new Date(), ...(notes && { notes }) },
       include: { technician: { select: { id: true, name: true } } },
     });

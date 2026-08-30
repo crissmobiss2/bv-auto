@@ -1,51 +1,100 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 84% 4.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(221.2 83.2% 53.3%);
-  --color-primary-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(221.2 83.2% 53.3%);
-  --radius: 0.5rem;
+/* ─── Design Tokens — runtime CSS var references so dark mode works ───────── */
+@theme inline {
+  --color-background:             hsl(var(--background));
+  --color-foreground:             hsl(var(--foreground));
+  --color-card:                   hsl(var(--card));
+  --color-card-foreground:        hsl(var(--card-foreground));
+  --color-popover:                hsl(var(--popover));
+  --color-popover-foreground:     hsl(var(--popover-foreground));
+  --color-primary:                hsl(var(--primary));
+  --color-primary-foreground:     hsl(var(--primary-foreground));
+  --color-secondary:              hsl(var(--secondary));
+  --color-secondary-foreground:   hsl(var(--secondary-foreground));
+  --color-muted:                  hsl(var(--muted));
+  --color-muted-foreground:       hsl(var(--muted-foreground));
+  --color-accent:                 hsl(var(--accent));
+  --color-accent-foreground:      hsl(var(--accent-foreground));
+  --color-destructive:            hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border:                 hsl(var(--border));
+  --color-input:                  hsl(var(--input));
+  --color-ring:                   hsl(var(--ring));
+  --radius:                       0.625rem;
 }
 
+/* ─── CSS Variables ───────────────────────────────────────────────────────── */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
+  color-scheme: light;
+
+  --background:             0 0% 100%;
+  --foreground:             222 47% 11%;
+  --card:                   0 0% 100%;
+  --card-foreground:        222 47% 11%;
+  --popover:                0 0% 100%;
+  --popover-foreground:     222 47% 11%;
+  --primary:                221 83% 53%;
+  --primary-foreground:     210 40% 98%;
+  --secondary:              215 28% 95%;
+  --secondary-foreground:   222 47% 11%;
+  --muted:                  215 28% 96%;
+  --muted-foreground:       215 16% 47%;
+  --accent:                 215 28% 95%;
+  --accent-foreground:      222 47% 11%;
+  --destructive:            0 84% 60%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.5rem;
+  --border:                 214 32% 91%;
+  --input:                  214 32% 91%;
+  --ring:                   221 83% 53%;
+  --radius:                 0.625rem;
+
+  /* Premium shadow tokens */
+  --shadow-xs:  0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.07), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.14);
+
+  /* Blue glow shadow */
+  --shadow-blue: 0 0 0 1px hsl(221 83% 53% / 0.15), 0 4px 12px -2px hsl(221 83% 53% / 0.2);
 }
 
+/* ─── Dark Mode ───────────────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+
+  --background:             222 47% 4%;
+  --foreground:             213 31% 92%;
+  --card:                   220 40% 7%;
+  --card-foreground:        213 31% 92%;
+  --popover:                220 40% 7%;
+  --popover-foreground:     213 31% 92%;
+  --primary:                217 91% 60%;
+  --primary-foreground:     222 47% 11%;
+  --secondary:              222 40% 12%;
+  --secondary-foreground:   213 31% 92%;
+  --muted:                  222 40% 12%;
+  --muted-foreground:       215 20% 50%;
+  --accent:                 222 40% 14%;
+  --accent-foreground:      213 31% 92%;
+  --destructive:            0 63% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --border:                 222 35% 13%;
+  --input:                  222 35% 12%;
+  --ring:                   217 91% 60%;
+
+  /* Dark shadow tokens */
+  --shadow-xs:  0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  --shadow-blue:0 0 0 1px hsl(217 91% 60% / 0.2), 0 4px 12px -2px hsl(217 91% 60% / 0.25);
+}
+
+/* ─── Base Styles ─────────────────────────────────────────────────────────── */
 * {
   border-color: hsl(var(--border));
   -webkit-tap-highlight-color: transparent;
@@ -62,52 +111,212 @@ body {
   color: hsl(var(--foreground));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "kern" 1, "liga" 1;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* ─── Premium Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(214.3 31.8% 82%); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(214.3 31.8% 65%); }
-
-/* Sidebar custom scrollbar (dark) */
-aside ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
-aside ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
-
-/* Skeleton shimmer */
-@keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+::-webkit-scrollbar-thumb {
+  background: hsl(214 32% 88%);
+  border-radius: 99px;
 }
-.skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-  background-size: 800px 100%;
-  animation: shimmer 1.5s infinite linear;
-  border-radius: 6px;
-}
+::-webkit-scrollbar-thumb:hover { background: hsl(214 32% 72%); }
+.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-/* Focus improvements */
+/* Sidebar scrollbar */
+aside ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+aside ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ─── Focus & Interactions ────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+  border-radius: 6px;
 }
 
-/* Print styles */
-@media print {
-  aside, header, nav { display: none !important; }
-  body { background: white !important; }
-}
-
-/* Smooth transitions on interactive elements */
 button, a, input, select, textarea {
-  transition-property: color, background-color, border-color, opacity, box-shadow;
-  transition-duration: 150ms;
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 120ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Mobile safe area padding */
+/* ─── Premium Animations ──────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 hsl(221 83% 53% / 0.4); }
+  70%  { box-shadow: 0 0 0 8px hsl(221 83% 53% / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(221 83% 53% / 0); }
+}
+
+.animate-fade-in     { animation: fade-in 0.25s cubic-bezier(0.4,0,0.2,1) both; }
+.animate-fade-in-up  { animation: fade-in-up 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+.animate-scale-in    { animation: scale-in 0.2s cubic-bezier(0.4,0,0.2,1) both; }
+.animate-slide-right { animation: slide-in-right 0.2s cubic-bezier(0.4,0,0.2,1) both; }
+.animate-count-up    { animation: count-up 0.4s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* Stagger delays for list items */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* ─── Skeleton Shimmer ────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(215 28% 95%) 0%,
+    hsl(215 28% 91%) 50%,
+    hsl(215 28% 95%) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.8s infinite linear;
+  border-radius: 8px;
+}
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(222 47% 11%) 0%,
+    hsl(222 47% 14%) 50%,
+    hsl(222 47% 11%) 100%
+  );
+  background-size: 800px 100%;
+}
+
+/* ─── Premium Card Styles ─────────────────────────────────────────────────── */
+.card-luxury {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-sm);
+  border-radius: calc(var(--radius) + 2px);
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+.card-luxury:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Glass Effects ───────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+.dark .glass {
+  background: rgba(15, 20, 40, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Premium Gradient Backgrounds ───────────────────────────────────────── */
+.gradient-blue {
+  background: linear-gradient(135deg, hsl(221 83% 53%), hsl(217 91% 45%));
+}
+.gradient-blue-soft {
+  background: linear-gradient(135deg, hsl(221 83% 53% / 0.08), hsl(217 91% 45% / 0.05));
+}
+.gradient-hero {
+  background: linear-gradient(135deg, hsl(224 71% 4%), hsl(222 55% 8%));
+}
+.dark .gradient-hero {
+  background: linear-gradient(135deg, hsl(224 71% 4%), hsl(222 55% 7%));
+}
+
+/* ─── Premium Input Styles ────────────────────────────────────────────────── */
+input, textarea, select {
+  font-feature-settings: "tnum" 1;
+}
+
+/* ─── Status Badge Dot ────────────────────────────────────────────────────── */
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── Print Styles ────────────────────────────────────────────────────────── */
+@media print {
+  aside, header, nav, [data-no-print] { display: none !important; }
+  body { background: white !important; color: black !important; }
+  .card-luxury { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+}
+
+/* ─── Mobile Safe Area ────────────────────────────────────────────────────── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-pt { padding-top: env(safe-area-inset-top); }
 }
+
+/* ─── Premium Number Display ─────────────────────────────────────────────── */
+.font-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "kern" 1;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Hover Lift Effect ───────────────────────────────────────────────────── */
+.hover-lift {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Premium Divider ─────────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, hsl(var(--border)), transparent);
+}
+
+/* ─── Toast Animations ────────────────────────────────────────────────────── */
+@keyframes slide-in-from-bottom-full {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes slide-out-to-right-full {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+@keyframes fade-out-80 {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* data-state animations for Radix */
+[data-state="open"].animate-in  { animation: slide-in-from-bottom-full 0.25s cubic-bezier(0.22,1,0.36,1) both; }
+[data-state="closed"].animate-out { animation: slide-out-to-right-full 0.2s cubic-bezier(0.4,0,1,1) both; }

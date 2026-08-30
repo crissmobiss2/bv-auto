@@ -57,7 +57,7 @@ export default function FleetPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6 text-blue-600" /> Fleet Accounts</h1>
-          <p className="text-sm text-gray-500">{totalAccounts} accounts · {formatCurrency(totalOpenAR)} open AR</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{totalAccounts} accounts · {formatCurrency(totalOpenAR)} open AR</p>
         </div>
         <Button onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-2" /> New Fleet Account</Button>
       </div>
@@ -65,15 +65,15 @@ export default function FleetPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Total Fleet Accounts</p>
-          <p className="text-2xl font-bold text-gray-900">{totalAccounts}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Total Fleet Accounts</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalAccounts}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Open A/R Balance</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Open A/R Balance</p>
           <p className="text-2xl font-bold text-red-600">{formatCurrency(totalOpenAR)}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Total Fleet Jobs</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Total Fleet Jobs</p>
           <p className="text-2xl font-bold text-blue-600">{accounts.reduce((s, a) => s + a.jobCount, 0)}</p>
         </CardContent></Card>
       </div>
@@ -86,7 +86,7 @@ export default function FleetPage() {
 
       {/* Account list */}
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500">Loading...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading...</div>
       ) : accounts.length === 0 ? (
         <Card><CardContent className="p-12 text-center text-gray-400">
           <Building2 className="h-12 w-12 mx-auto mb-3 opacity-20" />
@@ -107,7 +107,7 @@ export default function FleetPage() {
                       <Badge variant="outline" className="text-xs">{account.billingTerms.replace("_", " ")}</Badge>
                       {account.poRequired && <Badge className="bg-orange-100 text-orange-700 text-xs">PO Required</Badge>}
                     </div>
-                    <div className="flex gap-4 mt-1 text-sm text-gray-600 flex-wrap">
+                    <div className="flex gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
                       {account.contactName && <span>{account.contactName}</span>}
                       {account.phone && <a href={`tel:${account.phone}`} className="flex items-center gap-1 hover:text-blue-600"><Phone className="h-3 w-3" />{account.phone}</a>}
                       {account.email && <a href={`mailto:${account.email}`} className="flex items-center gap-1 hover:text-blue-600"><Mail className="h-3 w-3" />{account.email}</a>}
@@ -116,14 +116,14 @@ export default function FleetPage() {
                   <div className="text-right flex-shrink-0 space-y-1">
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-xs text-gray-500">Open Balance</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Open Balance</p>
                         <p className={`font-bold ${account.openBalance > 0 ? "text-red-600" : "text-green-600"}`}>
                           {formatCurrency(account.openBalance)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-500">Total Jobs</p>
-                        <p className="font-bold text-gray-800">{account.jobCount}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Total Jobs</p>
+                        <p className="font-bold text-gray-800 dark:text-gray-100">{account.jobCount}</p>
                       </div>
                     </div>
                     {account.customLaborRate && (

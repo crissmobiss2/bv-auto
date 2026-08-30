@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { verifyTotpCode } from "@/lib/totp";
+import { rateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -37,10 +38,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
+        const email = parsed.data.email.trim().toLowerCase();
+
+        // Brute-force throttle (best-effort, per-instance): 8 attempts / 15 min / email.
+        if (!rateLimit(`login:${email}`, 8, 15 * 60_000)) return null;
+
         const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
+          where: { email },
           select: {
-            id: true, email: true, name: true, role: true, image: true,
+            id: true, email: true, name: true, role: true, image: true, shopId: true,
             passwordHash: true, isActive: true, totpEnabled: true, totpSecret: true,
           },
         });
@@ -57,7 +63,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (!verifyTotpCode(user.totpSecret, code)) return null;
         }
 
-        return { id: user.id, email: user.email, name: user.name, role: user.role, image: user.image };
+        return { id: user.id, email: user.email, name: user.name, role: user.role, image: user.image, shopId: user.shopId };
       },
     }),
   ],
@@ -66,6 +72,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
+        token.shopId = (user as { shopId?: string | null }).shopId ?? null;
       }
       return token;
     },
@@ -73,6 +80,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.shopId = (token.shopId as string | null) ?? null;
       }
       return session;
     },

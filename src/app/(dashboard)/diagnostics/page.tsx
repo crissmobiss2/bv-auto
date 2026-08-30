@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { VehicleSelector, type VehicleValue as VehicleVal } from "@/components/vehicle-selector";
 import {
   Brain, Search, AlertTriangle, CheckCircle, Clock, Wrench, DollarSign,
   Plus, X, FileText, Shield, Star, BookOpen, Calendar, ChevronDown, ChevronUp,
@@ -16,84 +17,6 @@ import {
   Copy, Check, MessageCircle, Briefcase, TrendingUp, Gauge, Navigation,
   Crosshair,
 } from "lucide-react";
-
-// ── Common makes datalist ────────────────────────────────────────────────────
-const COMMON_MAKES = [
-  "Acura","Alfa Romeo","Audi","BMW","Buick","Cadillac","Chevrolet","Chrysler",
-  "Dodge","Ferrari","Fiat","Ford","Genesis","GMC","Honda","Hyundai","Infiniti",
-  "Jaguar","Jeep","Kia","Land Rover","Lexus","Lincoln","Maserati","Mazda",
-  "Mercedes-Benz","Mercury","MINI","Mitsubishi","Nissan","Oldsmobile","Pontiac",
-  "Porsche","Ram","Rivian","Rolls-Royce","Saturn","Scion","Subaru","Tesla",
-  "Toyota","Volkswagen","Volvo",
-];
-
-const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: CURRENT_YEAR - 1989 }, (_, i) => String(CURRENT_YEAR - i));
-
-// ── SmartVehicleInputs ───────────────────────────────────────────────────────
-interface VehicleVal { year: string; make: string; model: string; mileage?: string }
-
-function SmartVehicleInputs({
-  val, set, includeMileage = false, compact = false,
-}: {
-  val: VehicleVal;
-  set: (v: VehicleVal) => void;
-  includeMileage?: boolean;
-  compact?: boolean;
-}) {
-  const cols = includeMileage ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3";
-  return (
-    <div className={`grid gap-2 ${compact ? "gap-1.5" : ""} ${cols}`}>
-      <datalist id="makes-list">
-        {COMMON_MAKES.map(m => <option key={m} value={m} />)}
-      </datalist>
-
-      <div className="space-y-1">
-        <Label className="text-xs">Year</Label>
-        <select
-          className="w-full border rounded-md px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={val.year}
-          onChange={e => set({ ...val, year: e.target.value })}
-        >
-          <option value="">Select year</option>
-          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-      </div>
-
-      <div className="space-y-1">
-        <Label className="text-xs">Make *</Label>
-        <input
-          list="makes-list"
-          className="w-full border rounded-md px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Toyota"
-          value={val.make}
-          onChange={e => set({ ...val, make: e.target.value })}
-        />
-      </div>
-
-      <div className="space-y-1">
-        <Label className="text-xs">Model</Label>
-        <Input
-          placeholder="Camry"
-          value={val.model}
-          onChange={e => set({ ...val, model: e.target.value })}
-        />
-      </div>
-
-      {includeMileage && (
-        <div className="space-y-1">
-          <Label className="text-xs">Mileage</Label>
-          <Input
-            type="number"
-            placeholder="85000"
-            value={val.mileage ?? ""}
-            onChange={e => set({ ...val, mileage: e.target.value })}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -596,7 +519,7 @@ export default function DiagnosticsPage() {
             <Card>
               <CardHeader><CardTitle className="text-sm">Vehicle Information</CardTitle></CardHeader>
               <CardContent>
-                <SmartVehicleInputs val={vehicle} set={setVehicle} includeMileage />
+                <VehicleSelector value={vehicle} onChange={setVehicle} showMileage />
               </CardContent>
             </Card>
             <Card>
@@ -777,7 +700,7 @@ export default function DiagnosticsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-2">Add vehicle context for AI-enhanced analysis:</p>
-                  <SmartVehicleInputs val={vehicle} set={setVehicle} />
+                  <VehicleSelector value={vehicle} onChange={setVehicle} />
                 </div>
                 <Button className="w-full" onClick={() => dtcMutation.mutate()} disabled={!dtcCode || dtcMutation.isPending}>
                   <Search className="h-4 w-4 mr-2" />{dtcMutation.isPending ? "Looking up..." : "Look Up Code"}
@@ -879,7 +802,7 @@ export default function DiagnosticsPage() {
             <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Database className="h-4 w-4 text-blue-600" /> OEM Vehicle Specifications</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-gray-500">Look up factory-spec fluids, capacities, battery, tires, brakes, and ADAS systems from our OEM database.</p>
-              <SmartVehicleInputs val={specsVehicle} set={setSpecsVehicle} />
+              <VehicleSelector value={specsVehicle} onChange={setSpecsVehicle} />
               <Button onClick={handleLookupSpecs} disabled={!specsVehicle.make || specsLoading}>
                 {specsLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading...</> : <><Database className="h-4 w-4 mr-2" /> Look Up Specs</>}
               </Button>
@@ -1009,7 +932,7 @@ export default function DiagnosticsPage() {
               <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Thermometer className="h-4 w-4 text-blue-600" /> Freeze Frame AI Interpreter</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-gray-500">Paste your OBD-II freeze frame data (JSON, key=value, or plain text) and let AI explain every PID reading and identify root causes.</p>
-                <SmartVehicleInputs val={freezeVehicle} set={setFreezeVehicle} />
+                <VehicleSelector value={freezeVehicle} onChange={setFreezeVehicle} />
                 <div className="space-y-1">
                   <Label className="text-xs">Freeze Frame Data *</Label>
                   <Textarea
@@ -1116,7 +1039,7 @@ export default function DiagnosticsPage() {
             <CardHeader><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600" /> Confirmed Pattern Fix Database</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-gray-500">Identifix-style database of confirmed fixes submitted by technicians. Ranked by success count.</p>
-              <SmartVehicleInputs val={patternVehicle} set={setPatternVehicle} />
+              <VehicleSelector value={patternVehicle} onChange={setPatternVehicle} />
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
                   <Label className="text-xs">Filter by DTC (optional)</Label>
@@ -1223,7 +1146,7 @@ export default function DiagnosticsPage() {
             <CardHeader><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-orange-500" /> Technical Service Bulletins (NHTSA Database)</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-gray-500">TSBs are manufacturer-issued repair instructions for known issues. Data sourced directly from NHTSA.</p>
-              <SmartVehicleInputs val={tsbSearch} set={setTsbSearch} />
+              <VehicleSelector value={tsbSearch} onChange={setTsbSearch} />
               <Button onClick={() => { setTsbTrigger(false); setTimeout(() => setTsbTrigger(true), 0); }} disabled={!tsbSearch.make || tsbQuery.isFetching}>
                 <Search className="h-4 w-4 mr-2" />{tsbQuery.isFetching ? "Searching NHTSA..." : "Search TSBs"}
               </Button>
@@ -1279,7 +1202,7 @@ export default function DiagnosticsPage() {
                 <CardHeader><CardTitle className="text-sm flex items-center gap-2"><BookOpen className="h-4 w-4 text-green-600" /> AI Repair Guide Generator</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-xs text-gray-500">Generate professional step-by-step repair procedures with torque specs, tools, and parts lists.</p>
-                  <SmartVehicleInputs val={guideForm} set={v => setGuideForm({ ...guideForm, ...v })} includeMileage />
+                  <VehicleSelector value={guideForm} onChange={v => setGuideForm({ ...guideForm, ...v })} showMileage />
                   <div className="space-y-1">
                     <Label className="text-xs">Repair / Service Needed *</Label>
                     <Input placeholder="e.g. Replace front brake pads and rotors" value={guideForm.repair} onChange={e => setGuideForm({ ...guideForm, repair: e.target.value })} />
@@ -1419,7 +1342,7 @@ export default function DiagnosticsPage() {
             <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Calendar className="h-4 w-4 text-purple-600" /> AI Maintenance Schedule</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-gray-500">Get a complete, vehicle-specific maintenance schedule with manufacturer-recommended intervals.</p>
-              <SmartVehicleInputs val={maintForm} set={setMaintForm} includeMileage />
+              <VehicleSelector value={maintForm} onChange={setMaintForm} showMileage />
               <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => { setMaintTrigger(false); setTimeout(() => setMaintTrigger(true), 0); }} disabled={!maintForm.make || !maintForm.model || maintQuery.isFetching}>
                 {maintQuery.isFetching ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating...</> : <><Calendar className="h-4 w-4 mr-2" /> Generate Schedule</>}
               </Button>
@@ -1503,7 +1426,7 @@ export default function DiagnosticsPage() {
             <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Crosshair className="h-4 w-4 text-indigo-600" /> ADAS Calibration Requirements</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-gray-500">Get AI-generated calibration procedures for Advanced Driver Assistance Systems (forward cameras, radar, lane keep, blind spot, etc.) after common repair events.</p>
-              <SmartVehicleInputs val={adasVehicle} set={setAdasVehicle} />
+              <VehicleSelector value={adasVehicle} onChange={setAdasVehicle} />
               <div className="space-y-1">
                 <Label className="text-xs">Repair Event *</Label>
                 <select className="w-full border rounded-md px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" value={adasEvent} onChange={e => setAdasEvent(e.target.value)}>
@@ -1590,7 +1513,7 @@ export default function DiagnosticsPage() {
                   {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <SmartVehicleInputs val={emissionsVehicle} set={setEmissionsVehicle} />
+              <VehicleSelector value={emissionsVehicle} onChange={setEmissionsVehicle} />
               <div className="space-y-1">
                 <Label className="text-xs">Incomplete OBD Monitors (optional, comma-separated)</Label>
                 <Input placeholder="e.g. Catalyst, Evap, O2 Sensor" value={incompleteMonitors} onChange={e => setIncompleteMonitors(e.target.value)} />
@@ -1666,7 +1589,7 @@ export default function DiagnosticsPage() {
             <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Shield className="h-4 w-4 text-blue-600" /> NHTSA Safety Data</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-gray-500">Official safety ratings and owner complaints from the NHTSA database.</p>
-              <SmartVehicleInputs val={safetyForm} set={setSafetyForm} />
+              <VehicleSelector value={safetyForm} onChange={setSafetyForm} />
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setSafetyTrigger("safety")} disabled={!safetyForm.make || safetyQuery.isFetching}>
                   <Star className="h-4 w-4 mr-2" />{safetyQuery.isFetching ? "Loading..." : "Safety Ratings"}

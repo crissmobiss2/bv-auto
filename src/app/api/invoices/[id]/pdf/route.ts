@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError } from "@/lib/api-helpers";
+import { requireShop, apiError } from "@/lib/api-helpers";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+// Escape user-controlled values before interpolating into the served HTML —
+// this document is returned as text/html and rendered in the browser.
+function esc(v: unknown): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const invoice = await prisma.invoice.findUnique({
-    where: { id },
+  const invoice = await prisma.invoice.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       job: { include: { vehicle: true } },
@@ -27,7 +38,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `inline; filename="${invoice.invoiceNumber}.html"`,
+      "Content-Disposition": `inline; filename="${esc(invoice.invoiceNumber)}.html"`,
     },
   });
 }
@@ -111,7 +122,7 @@ function generateInvoiceHTML(invoice: {
   <div class="invoice-meta">
     <h2>INVOICE</h2>
     <p class="number">${invoice.invoiceNumber}</p>
-    <span class="status">${invoice.status}</span>
+    <span class="status">${esc(invoice.status)}</span>
     <p style="margin-top:8px;font-size:13px;color:#6b7280;">Date: ${formatDate(invoice.createdAt)}</p>
     ${invoice.dueDate ? `<p style="font-size:13px;color:#6b7280;">Due: ${formatDate(invoice.dueDate)}</p>` : ""}
   </div>
@@ -120,16 +131,16 @@ function generateInvoiceHTML(invoice: {
 <div class="billing">
   <div class="billing-block">
     <h3>Bill To</h3>
-    <p><strong>${invoice.customer.firstName} ${invoice.customer.lastName}</strong></p>
-    ${invoice.customer.company ? `<p>${invoice.customer.company}</p>` : ""}
-    <p>${invoice.customer.phone}</p>
-    ${invoice.customer.email ? `<p>${invoice.customer.email}</p>` : ""}
-    ${invoice.customer.address ? `<p>${invoice.customer.address}, ${invoice.customer.city || ""} ${invoice.customer.state || ""} ${invoice.customer.zip || ""}</p>` : ""}
+    <p><strong>${esc(invoice.customer.firstName)} ${esc(invoice.customer.lastName)}</strong></p>
+    ${invoice.customer.company ? `<p>${esc(invoice.customer.company)}</p>` : ""}
+    <p>${esc(invoice.customer.phone)}</p>
+    ${invoice.customer.email ? `<p>${esc(invoice.customer.email)}</p>` : ""}
+    ${invoice.customer.address ? `<p>${esc(invoice.customer.address)}, ${esc(invoice.customer.city || "")} ${esc(invoice.customer.state || "")} ${esc(invoice.customer.zip || "")}</p>` : ""}
   </div>
   <div class="billing-block">
     <h3>Vehicle</h3>
-    <p><strong>${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model}</strong></p>
-    ${invoice.job.vehicle.vin ? `<p>VIN: ${invoice.job.vehicle.vin}</p>` : ""}
+    <p><strong>${invoice.job.vehicle.year} ${esc(invoice.job.vehicle.make)} ${esc(invoice.job.vehicle.model)}</strong></p>
+    ${invoice.job.vehicle.vin ? `<p>VIN: ${esc(invoice.job.vehicle.vin)}</p>` : ""}
   </div>
 </div>
 
@@ -146,8 +157,8 @@ function generateInvoiceHTML(invoice: {
   <tbody>
     ${invoice.lineItems.map((li) => `
     <tr>
-      <td>${li.description}</td>
-      <td style="color:#9ca3af;font-size:12px">${li.type}</td>
+      <td>${esc(li.description)}</td>
+      <td style="color:#9ca3af;font-size:12px">${esc(li.type)}</td>
       <td style="text-align:center">${li.quantity}</td>
       <td style="text-align:right">${formatCurrency(Number(li.unitPrice))}</td>
       <td style="text-align:right;font-weight:500">${formatCurrency(Number(li.total))}</td>
@@ -164,7 +175,7 @@ function generateInvoiceHTML(invoice: {
   <div class="totals-due"><span>Balance Due</span><span>${formatCurrency(Number(invoice.amountDue))}</span></div>
 </div>
 
-${invoice.notes ? `<div style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;font-size:13px;color:#374151"><strong>Notes:</strong> ${invoice.notes}</div>` : ""}
+${invoice.notes ? `<div style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;font-size:13px;color:#374151"><strong>Notes:</strong> ${esc(invoice.notes)}</div>` : ""}
 
 <div class="footer">
   <p>Thank you for choosing B&V Mobile Auto! · For questions call (555) 000-0000</p>

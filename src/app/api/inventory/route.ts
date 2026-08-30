@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -16,7 +16,7 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
 
   const items = await prisma.inventoryItem.findMany({
     where: {
+      shopId,
       isActive: true,
       ...(location && { location }),
       ...(search && {
@@ -43,13 +44,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return apiError("Invalid data", 400);
 
-  const item = await prisma.inventoryItem.create({ data: parsed.data });
+  const item = await prisma.inventoryItem.create({ data: { ...parsed.data, shopId } });
   return apiSuccess(item, 201);
 }

@@ -49,6 +49,13 @@ export default function ShopsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shops"] }),
   });
 
+  // Dedicated set-default that takes the shop id — the old code reused
+  // updateMutation, which dereferenced `editing!.id` (null from a card) and crashed.
+  const setDefaultMutation = useMutation({
+    mutationFn: (id: string) => axios.patch(`/api/shops/${id}`, { isDefault: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shops"] }),
+  });
+
   const openEdit = (shop: Shop) => {
     setEditing(shop);
     setForm({
@@ -115,7 +122,7 @@ export default function ShopsPage() {
                 )}
                 {!shop.isDefault && (
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => updateMutation.mutate()}>Set Default</Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setDefaultMutation.mutate(shop.id)}>Set Default</Button>
                     <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-50" onClick={() => deleteMutation.mutate(shop.id)}>Remove</Button>
                   </div>
                 )}

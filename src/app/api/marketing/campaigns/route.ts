@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError } from "@/lib/api-helpers";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "DISPATCHER"]);
   if (error) return error;
 
   const campaigns = await prisma.marketingCampaign.findMany({
+    where: { shopId },
     orderBy: { createdAt: "desc" },
   });
 
@@ -14,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "DISPATCHER"]);
   if (error) return error;
 
   const body = await req.json();
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
 
   const campaign = await prisma.marketingCampaign.create({
     data: {
+      shopId,
       name: body.name,
       type: body.type,
       triggerType: body.triggerType,

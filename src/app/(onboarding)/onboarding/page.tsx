@@ -145,11 +145,11 @@ export default function OnboardingPage() {
                 { icon: BookOpen, label: "Price book", desc: "Common service prices" },
                 { icon: UserPlus, label: "First customer", desc: "Ready to take jobs" },
               ].map(({ icon: Icon, label, desc }) => (
-                <div key={label} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 border">
+                <div key={label} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-white/5 border">
                   <Icon className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{label}</p>
-                    <p className="text-xs text-gray-500">{desc}</p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -240,7 +240,7 @@ export default function OnboardingPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {services.map((svc, i) => (
-              <div key={i} className="p-3 rounded-lg border bg-gray-50 space-y-2">
+              <div key={i} className="p-3 rounded-lg border bg-gray-50 dark:bg-white/5 space-y-2">
                 <Input
                   value={svc.name}
                   onChange={e => setServices(prev => prev.map((s, j) => j === i ? { ...s, name: e.target.value } : s))}
@@ -336,7 +336,7 @@ export default function OnboardingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2 text-sm text-gray-600">
+            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               {[
                 "Shop info saved",
                 "Technician account created",

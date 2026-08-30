@@ -95,10 +95,10 @@ export default function PriceBookPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <BookOpen className="h-6 w-6" /> Price Book
           </h1>
-          <p className="text-sm text-gray-500">Canned services — one click to add to any estimate</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Canned services — one click to add to any estimate</p>
         </div>
         <Button onClick={() => { setEditItem(null); setForm(BLANK); setShowForm(true); }}>
           <Plus className="h-4 w-4 mr-2" /> Add Service
@@ -121,7 +121,7 @@ export default function PriceBookPage() {
       <Card>
         <CardContent className="p-0">
           {services.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
+            <div className="p-12 text-center text-gray-500 dark:text-gray-400">
               <BookOpen className="h-10 w-10 mx-auto mb-3 text-gray-300" />
               <p className="font-medium">No services yet</p>
               <p className="text-sm mt-1">Add canned services to speed up estimating</p>
@@ -143,7 +143,7 @@ export default function PriceBookPage() {
                   <TableRow key={s.id}>
                     <TableCell>
                       <p className="font-medium text-sm">{s.name}</p>
-                      {s.description && <p className="text-xs text-gray-500 truncate max-w-xs">{s.description}</p>}
+                      {s.description && <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{s.description}</p>}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {s.category && <Badge variant="outline">{s.category}</Badge>}

@@ -33,6 +33,17 @@ export function formatDateTime(date: Date | string | null | undefined): string {
   }).format(new Date(date));
 }
 
+/**
+ * Escapes a value for a CSV cell AND neutralizes spreadsheet formula injection:
+ * a cell beginning with = + - @ (or tab/CR) is prefixed with `'` so Excel/Sheets
+ * treat it as text, not a formula.
+ */
+export function csvCell(value: unknown): string {
+  let s = value == null ? "" : String(value);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
 export function formatPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, "");
   if (cleaned.length === 10) {
@@ -78,24 +89,42 @@ export function calculateLineItemTotal(
   return Math.round(total * 100) / 100;
 }
 
-export function calculateTotals(
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Single source of truth for quote/invoice totals.
+ *
+ * Discounts are entered as DISCOUNT-type line items whose `total` is the positive
+ * amount to take off. They are SUBTRACTED from the subtotal (previously they were
+ * silently dropped), and the discount is allocated proportionally against the
+ * taxable base so it never inflates tax. Everything is quantized to cents.
+ */
+export function computeTotals(
   lineItems: { total: number; taxable: boolean; type: string }[],
-  taxRate: number,
-  additionalDiscount = 0
+  taxRate: number
 ) {
-  const subtotal = lineItems
-    .filter((li) => li.type !== "TAX" && li.type !== "DISCOUNT")
-    .reduce((sum, li) => sum + li.total, 0);
+  const isCharge = (t: string) => t !== "TAX" && t !== "DISCOUNT";
 
-  const taxableAmount = lineItems
-    .filter((li) => li.taxable && li.type !== "TAX" && li.type !== "DISCOUNT")
-    .reduce((sum, li) => sum + li.total, 0);
+  const subtotal = round2(
+    lineItems.filter((li) => isCharge(li.type)).reduce((s, li) => s + Number(li.total), 0)
+  );
+  const discountAmount = round2(
+    lineItems.filter((li) => li.type === "DISCOUNT").reduce((s, li) => s + Math.abs(Number(li.total)), 0)
+  );
+  const taxableCharges = lineItems
+    .filter((li) => li.taxable && isCharge(li.type))
+    .reduce((s, li) => s + Number(li.total), 0);
 
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-  const discountAmount = Math.round(subtotal * (additionalDiscount / 100) * 100) / 100;
-  const total = Math.round((subtotal + taxAmount - discountAmount) * 100) / 100;
+  // Spread the discount across the taxable portion so tax is charged on the net.
+  const taxableBase =
+    subtotal > 0
+      ? Math.max(0, taxableCharges - discountAmount * (taxableCharges / subtotal))
+      : Math.max(0, taxableCharges - discountAmount);
 
-  return { subtotal, taxAmount, discountAmount, total };
+  const taxAmount = round2(taxableBase * (taxRate / 100));
+  const totalAmount = round2(Math.max(0, subtotal - discountAmount + taxAmount));
+
+  return { subtotal, discountAmount, taxAmount, totalAmount };
 }
 
 export const JOB_STATUS_COLORS: Record<string, string> = {

@@ -91,8 +91,8 @@ export default function SequencesPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Communication Sequences</h1>
-          <p className="text-sm text-gray-500">Automated SMS follow-up workflows · {activeEnrollments} active enrollments</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Communication Sequences</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Automated SMS follow-up workflows · {activeEnrollments} active enrollments</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4 mr-2" /> New Sequence
@@ -101,9 +101,9 @@ export default function SequencesPage() {
 
       {/* Sequences */}
       {isLoading ? (
-        <div className="text-center text-gray-500 py-8">Loading sequences...</div>
+        <div className="text-center text-gray-500 dark:text-gray-400 py-8">Loading sequences...</div>
       ) : sequences.length === 0 ? (
-        <div className="text-center text-gray-500 py-12">
+        <div className="text-center text-gray-500 dark:text-gray-400 py-12">
           <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-3" />
           <p>No sequences yet. Create your first automated workflow.</p>
         </div>
@@ -121,7 +121,7 @@ export default function SequencesPage() {
                         {TRIGGER_EVENTS.find((t) => t.value === seq.triggerEvent)?.label || seq.triggerEvent}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
                       <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {seq._count.enrollments} enrolled</span>
                       <span>{seq.steps.length} step{seq.steps.length !== 1 ? "s" : ""}</span>
                       <span>Created {new Date(seq.createdAt).toLocaleDateString()}</span>
@@ -131,8 +131,8 @@ export default function SequencesPage() {
                     <div className="flex items-center gap-1 flex-wrap">
                       {seq.steps.map((step, i) => (
                         <div key={i} className="flex items-center gap-1">
-                          <div className="bg-gray-50 border rounded px-2 py-1 text-xs">
-                            <span className="font-medium text-gray-600">Step {step.stepNumber}</span>
+                          <div className="bg-gray-50 dark:bg-white/5 border rounded px-2 py-1 text-xs">
+                            <span className="font-medium text-gray-600 dark:text-gray-400">Step {step.stepNumber}</span>
                             <span className="text-gray-400 ml-1">
                               {step.delayHours === 0 ? "immediately" : `+${step.delayHours}h`}
                             </span>
@@ -186,8 +186,8 @@ export default function SequencesPage() {
               </div>
             </div>
 
-            <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-              Template variables: {TEMPLATE_VARS.map((v) => <code key={v} className="bg-white border px-1 rounded mx-0.5">{v}</code>)}
+            <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 p-2 rounded">
+              Template variables: {TEMPLATE_VARS.map((v) => <code key={v} className="bg-white dark:bg-gray-900 border px-1 rounded mx-0.5">{v}</code>)}
             </div>
 
             {/* Steps */}
@@ -200,7 +200,7 @@ export default function SequencesPage() {
               </div>
 
               {steps.map((step, index) => (
-                <div key={index} className="border rounded-lg p-3 space-y-2 bg-gray-50">
+                <div key={index} className="border rounded-lg p-3 space-y-2 bg-gray-50 dark:bg-white/5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium flex items-center gap-2">
                       <GripVertical className="h-4 w-4 text-gray-400" />

@@ -244,6 +244,8 @@ model Customer {
   updatedAt    DateTime     @updatedAt
 
   portalToken    String?      @unique
+  shopId         String?
+  shop           Shop?        @relation(fields: [shopId], references: [id])
   vehicles       Vehicle[]
   jobs           Job[]
   quotes         Quote[]
@@ -261,6 +263,7 @@ model Customer {
   @@index([phone])
   @@index([email])
   @@index([lastName])
+  @@index([shopId])
 }
 
 // ─── VEHICLES ─────────────────────────────────────────────────────────────────
@@ -286,6 +289,8 @@ model Vehicle {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  shopId       String?
+  shop         Shop?    @relation(fields: [shopId], references: [id])
   customer             Customer              @relation(fields: [customerId], references: [id])
   jobs                 Job[]
   carfaxRecords        CarfaxRecord[]
@@ -296,6 +301,7 @@ model Vehicle {
   @@index([vin])
   @@index([plate])
   @@index([customerId])
+  @@index([shopId])
 }
 
 // ─── CARFAX INTEGRATION ───────────────────────────────────────────────────────
@@ -416,6 +422,8 @@ model Quote {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
+  shopId    String?
+  shop      Shop?    @relation(fields: [shopId], references: [id])
   job       Job      @relation(fields: [jobId], references: [id])
   customer  Customer @relation(fields: [customerId], references: [id])
   createdBy User     @relation(fields: [createdById], references: [id])
@@ -424,6 +432,7 @@ model Quote {
   @@index([customerId])
   @@index([status])
   @@index([quoteNumber])
+  @@index([shopId])
 }
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
@@ -459,6 +468,8 @@ model Invoice {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
+  shopId        String?
+  shop          Shop?    @relation(fields: [shopId], references: [id])
   job           Job      @relation(fields: [jobId], references: [id])
   customer      Customer @relation(fields: [customerId], references: [id])
   createdBy     User     @relation(fields: [createdById], references: [id])
@@ -469,6 +480,8 @@ model Invoice {
   @@index([customerId])
   @@index([status])
   @@index([invoiceNumber])
+  @@index([status, dueDate])
+  @@index([shopId])
 }
 
 // ─── LINE ITEMS ───────────────────────────────────────────────────────────────
@@ -512,6 +525,7 @@ model Payment {
   invoice Invoice @relation(fields: [invoiceId], references: [id])
 
   @@index([invoiceId])
+  @@index([receivedAt])
 }
 
 // ─── PARTS ────────────────────────────────────────────────────────────────────
@@ -532,9 +546,12 @@ model PartsVendor {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  shopId String?
+  shop   Shop?     @relation(fields: [shopId], references: [id])
   parts JobPart[]
 
   @@index([name])
+  @@index([shopId])
 }
 
 model JobPart {
@@ -738,10 +755,13 @@ model ServiceRequest {
   notes         String?
   customerId    String?
   customer      Customer? @relation(fields: [customerId], references: [id])
+  shopId        String?
+  shop          Shop?     @relation(fields: [shopId], references: [id])
   createdAt     DateTime  @default(now())
 
   @@index([status])
   @@index([customerId])
+  @@index([shopId])
 }
 
 // ─── MAINTENANCE INTERVALS ────────────────────────────────────────────────────
@@ -800,6 +820,7 @@ model TimeLog {
 
   @@index([jobId])
   @@index([technicianId])
+  @@index([clockedIn])
 }
 
 // ─── INVENTORY ────────────────────────────────────────────────────────────────
@@ -819,8 +840,12 @@ model InventoryItem {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  shopId String?
+  shop   Shop?   @relation(fields: [shopId], references: [id])
+
   @@index([category])
   @@index([location])
+  @@index([shopId])
 }
 
 // ─── REVIEW REQUESTS ─────────────────────────────────────────────────────────
@@ -878,10 +903,13 @@ model FleetAccount {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  shopId String?
+  shop   Shop?    @relation(fields: [shopId], references: [id])
   jobs Job[]
 
   @@index([name])
   @@index([isActive])
+  @@index([shopId])
 }
 
 // ─── MARKETING CAMPAIGNS ──────────────────────────────────────────────────────
@@ -899,8 +927,12 @@ model MarketingCampaign {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  shopId String?
+  shop   Shop?    @relation(fields: [shopId], references: [id])
+
   @@index([type])
   @@index([isActive])
+  @@index([shopId])
 }
 
 // ─── LABOR TIME CACHE ─────────────────────────────────────────────────────────
@@ -937,8 +969,12 @@ model CannedService {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  shopId String?
+  shop   Shop?   @relation(fields: [shopId], references: [id])
+
   @@index([category])
   @@index([isActive])
+  @@index([shopId])
 }
 
 // ─── SHOPS / LOCATIONS ────────────────────────────────────────────────────────
@@ -961,8 +997,18 @@ model Shop {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  jobs  Job[]
-  users User[]
+  jobs               Job[]
+  users              User[]
+  customers          Customer[]
+  vehicles           Vehicle[]
+  quotes             Quote[]
+  invoices           Invoice[]
+  partsVendors       PartsVendor[]
+  inventoryItems     InventoryItem[]
+  fleetAccounts      FleetAccount[]
+  marketingCampaigns MarketingCampaign[]
+  cannedServices     CannedService[]
+  serviceRequests    ServiceRequest[]
 
   @@index([isActive])
 }

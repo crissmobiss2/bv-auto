@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Suspense } from "react";
 import { IntegrationsPanel } from "./integrations-panel";
 import { TotpSettings } from "./totp-settings";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -45,6 +46,19 @@ export default async function SettingsPage() {
         <CardHeader><CardTitle className="text-base">Business Information</CardTitle></CardHeader>
         <CardContent className="text-sm text-gray-600 space-y-2">
           <p>Configure your business name, address, tax rates, and invoice templates in <strong>Shops &amp; Locations</strong>.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Appearance</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Theme</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Choose light, dark, or follow your system preference.</p>
+            </div>
+            <ThemeToggle />
+          </div>
         </CardContent>
       </Card>
 

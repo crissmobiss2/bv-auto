@@ -1,15 +1,16 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError } from "@/lib/api-helpers";
 import twilio from "twilio";
 import { NotificationType } from "@prisma/client";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  // Bulk SMS blast — managers only, and only ever targets this shop's customers.
+  const { error, shopId } = await requireShop(["ADMIN", "DISPATCHER"]);
   if (error) return error;
 
   const { id } = await params;
-  const campaign = await prisma.marketingCampaign.findUnique({ where: { id } });
+  const campaign = await prisma.marketingCampaign.findFirst({ where: { id, shopId } });
   if (!campaign) return apiError("Campaign not found", 404);
 
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_PHONE_NUMBER) {
@@ -28,6 +29,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     const rawCustomers = await prisma.customer.findMany({
       where: {
         isActive: true,
+        shopId,
         jobs: { none: { createdAt: { gte: cutoff } } },
       },
       select: { id: true, firstName: true, lastName: true, phone: true },
@@ -37,6 +39,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     const rawCustomers = await prisma.customer.findMany({
       where: {
         isActive: true,
+        shopId,
         vehicles: {
           some: {
             maintenanceIntervals: {
@@ -55,7 +58,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     customers = rawCustomers;
   } else if (campaign.triggerType === "ALL_ACTIVE") {
     const rawCustomers = await prisma.customer.findMany({
-      where: { isActive: true },
+      where: { isActive: true, shopId },
       select: { id: true, firstName: true, lastName: true, phone: true },
       take: 500,
     });

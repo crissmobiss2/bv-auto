@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const intervalSchema = z.object({
@@ -13,10 +13,13 @@ const intervalSchema = z.object({
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+  const vehicle = await prisma.vehicle.findFirst({ where: { id, shopId } });
+  if (!vehicle) return apiError("Vehicle not found", 404);
+
   const intervals = await prisma.maintenanceInterval.findMany({
     where: { vehicleId: id },
     orderBy: { serviceName: "asc" },
@@ -26,10 +29,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+  const vehicle = await prisma.vehicle.findFirst({ where: { id, shopId } });
+  if (!vehicle) return apiError("Vehicle not found", 404);
+
   const body = await req.json();
   const parsed = intervalSchema.safeParse(body);
   if (!parsed.success) return apiError("Invalid data", 400);

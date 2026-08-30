@@ -1,15 +1,18 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; intervalId: string }> }
 ) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
-  const { intervalId } = await params;
+  const { id, intervalId } = await params;
+  const vehicle = await prisma.vehicle.findFirst({ where: { id, shopId } });
+  if (!vehicle) return apiError("Vehicle not found", 404);
+
   const body = await req.json();
   const { serviceName, intervalMiles, intervalDays, lastServiceMiles, lastServiceDate, notes } = body;
 
@@ -39,10 +42,13 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; intervalId: string }> }
 ) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
-  const { intervalId } = await params;
+  const { id, intervalId } = await params;
+  const vehicle = await prisma.vehicle.findFirst({ where: { id, shopId } });
+  if (!vehicle) return apiError("Vehicle not found", 404);
+
   await prisma.maintenanceInterval.delete({ where: { id: intervalId } });
   return apiSuccess({ deleted: true });
 }

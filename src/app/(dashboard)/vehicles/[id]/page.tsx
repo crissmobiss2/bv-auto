@@ -68,7 +68,7 @@ function MaintenanceSection({ vehicleId }: { vehicleId: string }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {showAdd && (
-          <div className="border rounded-lg p-3 space-y-3 bg-gray-50">
+          <div className="border rounded-lg p-3 space-y-3 bg-gray-50 dark:bg-white/5">
             <div className="grid grid-cols-2 gap-2">
               <div className="col-span-2 space-y-1">
                 <Label className="text-xs">Service Name *</Label>
@@ -101,21 +101,21 @@ function MaintenanceSection({ vehicleId }: { vehicleId: string }) {
         )}
 
         {(!intervals || intervals.length === 0) && !showAdd && (
-          <p className="text-xs text-gray-500">No maintenance intervals tracked.</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">No maintenance intervals tracked.</p>
         )}
 
         {intervals?.map((interval: MaintenanceInterval) => (
-          <div key={interval.id} className={`flex items-center justify-between p-2 rounded-md text-sm ${isDueSoon(interval) ? "bg-orange-50 border border-orange-200" : "bg-gray-50"}`}>
+          <div key={interval.id} className={`flex items-center justify-between p-2 rounded-md text-sm ${isDueSoon(interval) ? "bg-orange-50 border border-orange-200" : "bg-gray-50 dark:bg-white/5"}`}>
             <div>
               <p className="font-medium">{interval.serviceName}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {interval.intervalMiles && `Every ${interval.intervalMiles.toLocaleString()} mi`}
                 {interval.intervalMiles && interval.intervalDays && " · "}
                 {interval.intervalDays && `Every ${interval.intervalDays} days`}
               </p>
-              {interval.nextDueMiles && <p className="text-xs text-gray-500">Next due: {interval.nextDueMiles.toLocaleString()} mi</p>}
+              {interval.nextDueMiles && <p className="text-xs text-gray-500 dark:text-gray-400">Next due: {interval.nextDueMiles.toLocaleString()} mi</p>}
               {interval.nextDueDate && (
-                <p className={`text-xs font-medium ${isDueSoon(interval) ? "text-orange-600" : "text-gray-500"}`}>
+                <p className={`text-xs font-medium ${isDueSoon(interval) ? "text-orange-600" : "text-gray-500 dark:text-gray-400"}`}>
                   Due: {new Date(interval.nextDueDate).toLocaleDateString()}
                   {isDueSoon(interval) && " ⚠️"}
                 </p>
@@ -162,7 +162,7 @@ function RecallAlerts({ vehicleId }: { vehicleId: string }) {
             <div>
               <p className="font-semibold text-red-800">{r.component}</p>
               <p className="text-xs text-red-700 mt-1">{r.summary}</p>
-              {r.remedy && <p className="text-xs text-gray-600 mt-1"><span className="font-medium">Remedy:</span> {r.remedy}</p>}
+              {r.remedy && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1"><span className="font-medium">Remedy:</span> {r.remedy}</p>}
             </div>
             <span className="text-xs font-mono text-gray-400 flex-shrink-0">{r.id}</span>
           </div>
@@ -192,7 +192,7 @@ export default function VehicleDetailPage() {
     },
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
   if (!vehicle) return <div className="p-8 text-center text-red-500">Vehicle not found.</div>;
 
   const openEdit = () => {
@@ -219,9 +219,9 @@ export default function VehicleDetailPage() {
           <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {vehicle.year} {vehicle.make} {vehicle.model}
-            {vehicle.trim && <span className="text-gray-500 ml-2 text-lg">{vehicle.trim}</span>}
+            {vehicle.trim && <span className="text-gray-500 dark:text-gray-400 ml-2 text-lg">{vehicle.trim}</span>}
           </h1>
           <Link href={`/customers/${vehicle.customer?.id}`} className="text-sm text-blue-600 hover:underline">
             {vehicle.customer?.firstName} {vehicle.customer?.lastName}
@@ -257,7 +257,7 @@ export default function VehicleDetailPage() {
                 ["Transmission", vehicle.transmission],
               ].filter(([, v]) => v).map(([label, value]) => (
                 <div key={String(label)} className="flex justify-between">
-                  <span className="text-gray-500">{label}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{label}</span>
                   <span className="font-medium text-right max-w-[60%] truncate">{String(value)}</span>
                 </div>
               ))}
@@ -270,7 +270,7 @@ export default function VehicleDetailPage() {
               <CardContent className="space-y-2 text-sm">
                 {vehicle.carfaxRecords.map((r: { id: string; createdAt: string; status: string }) => (
                   <div key={r.id} className="flex justify-between">
-                    <span className="text-gray-500">{formatDate(r.createdAt)}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{formatDate(r.createdAt)}</span>
                     <span className="text-xs font-medium">{r.status}</span>
                   </div>
                 ))}
@@ -288,7 +288,7 @@ export default function VehicleDetailPage() {
             <CardHeader><CardTitle className="text-sm">Service History ({vehicle.jobs?.length || 0} jobs)</CardTitle></CardHeader>
             <CardContent className="p-0">
               {!vehicle.jobs?.length ? (
-                <p className="text-sm text-gray-500 p-4">No service history yet.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 p-4">No service history yet.</p>
               ) : (
                 <div className="divide-y">
                   {vehicle.jobs.map((job: {
@@ -307,7 +307,7 @@ export default function VehicleDetailPage() {
                           <Link href={`/jobs/${job.id}`} className="text-sm font-medium text-blue-600 hover:underline">
                             {job.jobNumber} — {job.title}
                           </Link>
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             {formatDate(job.scheduledAt || job.createdAt)}
                           </p>
                         </div>

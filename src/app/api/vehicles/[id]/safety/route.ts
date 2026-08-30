@@ -1,16 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError } from "@/lib/api-helpers";
 
 const CACHE: Record<string, { data: unknown; ts: number }> = {};
 const TTL = 24 * 60 * 60 * 1000;
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
-  const vehicle = await prisma.vehicle.findUnique({
-    where: { id },
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id, shopId },
     select: { year: true, make: true, model: true },
   });
   if (!vehicle) return apiError("Vehicle not found", 404);

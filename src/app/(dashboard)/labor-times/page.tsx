@@ -78,7 +78,7 @@ export default function LaborTimesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Timer className="h-6 w-6 text-blue-600" /> Flat Rate Labor Guide</h1>
-        <p className="text-sm text-gray-500">AI-powered labor time estimates for any repair — backed by real-world data</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">AI-powered labor time estimates for any repair — backed by real-world data</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -112,7 +112,7 @@ export default function LaborTimesPage() {
               <div className="flex gap-1 flex-wrap">
                 {COMMON_REPAIRS.slice(0, 12).map(r => (
                   <button key={r} onClick={() => setForm({ ...form, repair: r })}
-                    className="text-xs px-2 py-1 bg-gray-100 hover:bg-blue-50 hover:text-blue-700 rounded border transition-colors">
+                    className="text-xs px-2 py-1 bg-gray-100 dark:bg-white/10 hover:bg-blue-50 hover:text-blue-700 rounded border transition-colors">
                     {r}
                   </button>
                 ))}
@@ -137,43 +137,43 @@ export default function LaborTimesPage() {
                   {result.cached && <Badge variant="outline" className="text-xs ml-auto">Cached</Badge>}
                 </CardTitle>
                 {(result.year || result.make || result.model) && (
-                  <p className="text-sm text-gray-500">{result.year} {result.make} {result.model}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{result.year} {result.make} {result.model}</p>
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-white rounded-lg p-3 border text-center">
-                    <p className="text-xs text-gray-500 mb-1">Labor Hours</p>
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Labor Hours</p>
                     <p className="text-3xl font-bold text-blue-600">{result.laborHours}</p>
                     <p className="text-xs text-gray-400">hours</p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border text-center">
-                    <p className="text-xs text-gray-500 mb-1">Labor Cost</p>
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Labor Cost</p>
                     <p className="text-3xl font-bold text-green-600">{formatCurrency(laborCost)}</p>
                     <p className="text-xs text-gray-400">@ {formatCurrency(laborRate)}/hr</p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border text-center">
-                    <p className="text-xs text-gray-500 mb-1">Skill Level</p>
-                    <Badge className={`${skillColors[result.skillLevel] || "bg-gray-100 text-gray-700"} mt-1`}>{result.skillLevel}</Badge>
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Skill Level</p>
+                    <Badge className={`${skillColors[result.skillLevel] || "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300"} mt-1`}>{result.skillLevel}</Badge>
                   </div>
                 </div>
 
                 {result.notes && (
-                  <div className="bg-white rounded-lg p-3 border">
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-gray-700">{result.notes}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{result.notes}</p>
                     </div>
                   </div>
                 )}
 
                 {/* Rate adjuster */}
-                <div className="bg-white rounded-lg p-3 border">
-                  <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><DollarSign className="h-3 w-3" /> Adjust Labor Rate</p>
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1"><DollarSign className="h-3 w-3" /> Adjust Labor Rate</p>
                   <div className="flex gap-2 flex-wrap">
                     {LABOR_RATES.map(rate => (
                       <button key={rate} onClick={() => setLaborRate(rate)}
-                        className={`px-3 py-1 text-sm rounded border transition-colors ${laborRate === rate ? "bg-blue-600 text-white border-blue-600" : "border-gray-200 hover:bg-gray-50"}`}>
+                        className={`px-3 py-1 text-sm rounded border transition-colors ${laborRate === rate ? "bg-blue-600 text-white border-blue-600" : "border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"}`}>
                         {formatCurrency(rate)}/hr
                       </button>
                     ))}
@@ -199,7 +199,7 @@ export default function LaborTimesPage() {
                       onClick={() => { setForm({ year: h.year, make: h.make, model: h.model, repair: h.repair }); setResult(h); }}>
                       <p className="text-sm font-medium truncate">{h.repair}</p>
                       <div className="flex items-center justify-between mt-0.5">
-                        <p className="text-xs text-gray-500">{h.year} {h.make} {h.model}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{h.year} {h.make} {h.model}</p>
                         <span className="text-xs font-bold text-blue-600">{h.laborHours}h</span>
                       </div>
                     </button>

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/api-helpers";
+import { requireShop } from "@/lib/api-helpers";
+import { csvCell } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -12,6 +13,7 @@ export async function GET(req: NextRequest) {
 
   const invoices = await prisma.invoice.findMany({
     where: {
+      shopId,
       status: { not: "VOID" },
       ...(from && { createdAt: { gte: new Date(from) } }),
       ...(to && { createdAt: { lte: new Date(to) } }),
@@ -31,7 +33,7 @@ export async function GET(req: NextRequest) {
     const primaryPayment = inv.payments[0];
     rows.push([
       inv.invoiceNumber,
-      `"${inv.customer.firstName} ${inv.customer.lastName}${inv.customer.company ? ` (${inv.customer.company})` : ""}"`,
+      `${inv.customer.firstName} ${inv.customer.lastName}${inv.customer.company ? ` (${inv.customer.company})` : ""}`,
       new Date(inv.createdAt).toLocaleDateString(),
       inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : "",
       inv.status,
@@ -42,7 +44,7 @@ export async function GET(req: NextRequest) {
       Number(inv.amountPaid).toFixed(2),
       Number(inv.amountDue).toFixed(2),
       primaryPayment?.method.replace(/_/g, " ") || "",
-    ].join(","));
+    ].map(csvCell).join(","));
   }
 
   const csv = rows.join("\n");

@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { InvoiceStatus } from "@prisma/client";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN"]);
   if (error) return error;
 
   const [qbSetting, xeroSetting] = await Promise.all([
@@ -16,8 +16,8 @@ export async function GET() {
   const xero = xeroSetting?.value as Record<string, unknown> | null;
 
   const [syncedCount, pendingCount] = await Promise.all([
-    prisma.invoice.count({ where: { qbSyncedAt: { not: null } } }),
-    prisma.invoice.count({ where: { status: { in: [InvoiceStatus.SENT, InvoiceStatus.PAID] }, qbSyncedAt: null } }),
+    prisma.invoice.count({ where: { shopId, qbSyncedAt: { not: null } } }),
+    prisma.invoice.count({ where: { shopId, status: { in: [InvoiceStatus.SENT, InvoiceStatus.PAID] }, qbSyncedAt: null } }),
   ]);
 
   return apiSuccess({
@@ -38,7 +38,7 @@ export async function GET() {
 }
 
 export async function DELETE(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireShop(["ADMIN"]);
   if (error) return error;
 
   const { platform } = await req.json();

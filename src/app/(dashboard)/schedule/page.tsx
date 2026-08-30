@@ -102,7 +102,7 @@ export default function SchedulePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Calendar className="h-6 w-6" /> Schedule</h1>
-          <p className="text-sm text-gray-500">Week of {format(weekStart, "MMMM d, yyyy")}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Week of {format(weekStart, "MMMM d, yyyy")}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={() => setWeekStart((w) => subWeeks(w, 1))}>
@@ -127,8 +127,8 @@ export default function SchedulePage() {
             <div className="p-2 text-xs text-gray-400 text-center">Time</div>
             {days.map((day) => (
               <div key={day.toISOString()} className={`p-2 text-center border-l ${isSameDay(day, today) ? "bg-blue-50" : ""}`}>
-                <p className="text-xs text-gray-500">{format(day, "EEE")}</p>
-                <p className={`text-lg font-semibold ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900"}`}>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{format(day, "EEE")}</p>
+                <p className={`text-lg font-semibold ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900 dark:text-gray-100"}`}>
                   {format(day, "d")}
                 </p>
                 <p className="text-xs text-gray-400">{jobsForDay(day).length} jobs</p>
@@ -156,7 +156,7 @@ export default function SchedulePage() {
                     <div
                       key={job.id}
                       className={`absolute left-0.5 right-0.5 rounded text-xs p-1 overflow-hidden cursor-pointer hover:opacity-90 border group ${
-                        JOB_STATUS_COLORS[job.status] || "bg-gray-100 text-gray-700 border-gray-200"
+                        JOB_STATUS_COLORS[job.status] || "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800"
                       }`}
                       style={{
                         top: `${slotTop(job.scheduledAt!)}%`,
@@ -187,10 +187,10 @@ export default function SchedulePage() {
             </h3>
             <div className="space-y-2">
               {unscheduled.map((job) => (
-                <div key={job.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 border">
+                <div key={job.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 border">
                   <div>
                     <p className="text-sm font-medium">{job.jobNumber} — {job.title}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {job.customer.firstName} {job.customer.lastName} · {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
                       {job.technician ? ` · ${job.technician.name}` : " · Unassigned"}
                     </p>
@@ -219,8 +219,8 @@ export default function SchedulePage() {
           </DialogHeader>
           {scheduling && (
             <div className="space-y-4 py-2">
-              <p className="text-sm font-medium text-gray-700">{scheduling.jobNumber} — {scheduling.title}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{scheduling.jobNumber} — {scheduling.title}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {scheduling.customer.firstName} {scheduling.customer.lastName} · {scheduling.vehicle.year} {scheduling.vehicle.make} {scheduling.vehicle.model}
               </p>
               <div className="grid grid-cols-2 gap-3">

@@ -58,7 +58,7 @@ function JobsContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Jobs</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {isLoading ? "Loading..." : `${data?.total ?? 0} total`}
             {isFetching && !isLoading && <span className="ml-2 text-blue-400 text-xs">Refreshing…</span>}
@@ -78,13 +78,13 @@ function JobsContent() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
             <Input
               placeholder="Search jobs, customers, vehicles..."
-              className="pl-9 h-9 text-sm bg-gray-50 border-gray-200 focus:bg-white"
+              className="pl-9 h-9 text-sm bg-gray-50 dark:bg-white/[0.04] border-gray-200 dark:border-white/[0.08] focus:bg-white dark:focus:bg-white/[0.07] dark:text-white/90 dark:placeholder:text-white/25"
               value={search}
               onChange={e => handleSearch(e.target.value)}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-44 text-sm border-gray-200 bg-gray-50">
+            <SelectTrigger className="h-9 w-full sm:w-44 text-sm border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.04]">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +144,7 @@ function JobsContent() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
+                  <TableRow className="bg-gray-50/80 dark:bg-white/[0.03] hover:bg-gray-50/80 dark:hover:bg-white/[0.03]">
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Job #</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Customer</TableHead>

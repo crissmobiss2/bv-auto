@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError } from "@/lib/api-helpers";
+
+// Escape user-controlled values before interpolating into served HTML.
+function esc(v: unknown): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const job = await prisma.job.findUnique({
-    where: { id },
+  const job = await prisma.job.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       vehicle: true,
@@ -75,8 +85,8 @@ function generateInspectionHTML(
 </head>
 <body>
 <h1>B&V Mobile Auto — Vehicle Inspection Report</h1>
-<p style="color:#6b7280;font-size:14px">${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}${job.vehicle.vin ? ` · VIN: ${job.vehicle.vin}` : ""}</p>
-<p style="color:#6b7280;font-size:14px">Customer: ${job.customer.firstName} ${job.customer.lastName}${checklist.mileage ? ` · Mileage: ${checklist.mileage.toLocaleString()}` : ""}</p>
+<p style="color:#6b7280;font-size:14px">${job.vehicle.year} ${esc(job.vehicle.make)} ${esc(job.vehicle.model)}${job.vehicle.vin ? ` · VIN: ${esc(job.vehicle.vin)}` : ""}</p>
+<p style="color:#6b7280;font-size:14px">Customer: ${esc(job.customer.firstName)} ${esc(job.customer.lastName)}${checklist.mileage ? ` · Mileage: ${checklist.mileage.toLocaleString()}` : ""}</p>
 ${checklist.completedAt ? `<p style="color:#9ca3af;font-size:12px">Inspected: ${new Date(checklist.completedAt).toLocaleString()}</p>` : ""}
 
 <div class="summary">
@@ -90,13 +100,13 @@ ${checklist.completedAt ? `<p style="color:#9ca3af;font-size:12px">Inspected: ${
 </div>
 
 ${categories.map((cat) => `
-  <h2>${cat}</h2>
+  <h2>${esc(cat)}</h2>
   ${checklist.items.filter((i) => i.category === cat).map((item) => `
     <div class="item">
-      <span>${item.item}</span>
+      <span>${esc(item.item)}</span>
       <div style="text-align:right">
-        <span class="condition" style="color:${conditionColor[item.condition]}">${item.condition.replace("_", " ")}</span>
-        ${item.notes ? `<p style="font-size:12px;color:#6b7280;margin-top:2px">${item.notes}</p>` : ""}
+        <span class="condition" style="color:${conditionColor[item.condition]}">${esc(item.condition.replace("_", " "))}</span>
+        ${item.notes ? `<p style="font-size:12px;color:#6b7280;margin-top:2px">${esc(item.notes)}</p>` : ""}
       </div>
     </div>`).join("")}
 `).join("")}
@@ -104,7 +114,7 @@ ${categories.map((cat) => `
 ${checklist.technicianNotes ? `
   <div class="notes">
     <strong>Technician Notes:</strong><br>
-    ${checklist.technicianNotes}
+    ${esc(checklist.technicianNotes)}
   </div>` : ""}
 
 <p style="margin-top:32px;font-size:12px;color:#9ca3af;text-align:center">

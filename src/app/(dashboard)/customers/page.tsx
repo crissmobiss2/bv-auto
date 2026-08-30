@@ -59,8 +59,8 @@ export default function CustomersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-500">{data?.total || 0} total customers</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Customers</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{data?.total || 0} total customers</p>
         </div>
         <Button onClick={() => setShowNew(true)}>
           <Plus className="h-4 w-4 mr-2" /> New Customer
@@ -84,9 +84,9 @@ export default function CustomersPage() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
           ) : customers.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               No customers found. <button onClick={() => setShowNew(true)} className="text-blue-600 hover:underline">Add your first customer.</button>
             </div>
           ) : (
@@ -107,7 +107,7 @@ export default function CustomersPage() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{c.firstName} {c.lastName}</p>
-                        {c.company && <p className="text-xs text-gray-500">{c.company}</p>}
+                        {c.company && <p className="text-xs text-gray-500 dark:text-gray-400">{c.company}</p>}
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
@@ -117,18 +117,18 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {c.email && (
-                        <a href={`mailto:${c.email}`} className="text-sm flex items-center gap-1 text-gray-600">
+                        <a href={`mailto:${c.email}`} className="text-sm flex items-center gap-1 text-gray-600 dark:text-gray-400">
                           <Mail className="h-3 w-3" /> {c.email}
                         </a>
                       )}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <span className="flex items-center gap-1 text-sm text-gray-600">
+                      <span className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                         <Car className="h-3 w-3" /> {c.vehicles.length}
                       </span>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <span className="flex items-center gap-1 text-sm text-gray-600">
+                      <span className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                         <Wrench className="h-3 w-3" /> {c._count.jobs}
                       </span>
                     </TableCell>

@@ -1,20 +1,20 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { sendInvoiceSMS } from "@/lib/sms";
 import { createInvoiceCheckoutSession } from "@/lib/stripe";
 import { formatCurrency } from "@/lib/utils";
 import { NotificationType } from "@prisma/client";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
   void req;
 
-  const invoice = await prisma.invoice.findUnique({
-    where: { id },
+  const invoice = await prisma.invoice.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       job: { include: { vehicle: true } },

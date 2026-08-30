@@ -1,13 +1,16 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ customerId: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { customerId } = await params;
+  const customer = await prisma.customer.findFirst({ where: { id: customerId, shopId } });
+  if (!customer) return apiError("Customer not found", 404);
+
   const messages = await prisma.smsMessage.findMany({
     where: { customerId },
     orderBy: { createdAt: "asc" },
@@ -17,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cust
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ customerId: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   // 5 SMS per minute per IP to prevent runaway Twilio charges
@@ -30,8 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cus
 
   if (!messageBody?.trim()) return apiError("Message body required", 400);
 
-  const customer = await prisma.customer.findUnique({
-    where: { id: customerId },
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, shopId },
     select: { phone: true },
   });
   if (!customer) return apiError("Customer not found", 404);

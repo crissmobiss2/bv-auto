@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const q = req.nextUrl.searchParams.get("q") || "";
@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     prisma.customer.findMany({
       where: {
         isActive: true,
+        shopId,
         OR: [
           { firstName: { contains: q, mode: "insensitive" } },
           { lastName: { contains: q, mode: "insensitive" } },
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest) {
     prisma.vehicle.findMany({
       where: {
         isActive: true,
+        shopId,
         OR: [
           { vin: { contains: q, mode: "insensitive" } },
           { plate: { contains: q, mode: "insensitive" } },
@@ -37,6 +39,7 @@ export async function GET(req: NextRequest) {
     }),
     prisma.job.findMany({
       where: {
+        shopId,
         OR: [
           { jobNumber: { contains: q, mode: "insensitive" } },
           { title: { contains: q, mode: "insensitive" } },
@@ -46,7 +49,7 @@ export async function GET(req: NextRequest) {
       take: 5,
     }),
     prisma.invoice.findMany({
-      where: { invoiceNumber: { contains: q, mode: "insensitive" } },
+      where: { shopId, invoiceNumber: { contains: q, mode: "insensitive" } },
       include: { customer: { select: { firstName: true, lastName: true } } },
       take: 5,
     }),

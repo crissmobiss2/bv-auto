@@ -18,10 +18,13 @@ export async function GET() {
 
   const customerId = user.customerId;
 
-  const [customer, vehicles, recentJobs, openInvoices] = await Promise.all([
+  const [customer, vehicles, recentJobs, openInvoices, allInvoices] = await Promise.all([
     prisma.customer.findUnique({
       where: { id: customerId },
-      select: { id: true, firstName: true, lastName: true, email: true, phone: true, city: true, state: true },
+      select: {
+        id: true, firstName: true, lastName: true, email: true, phone: true, city: true, state: true,
+        shop: { select: { name: true, phone: true } },
+      },
     }),
 
     prisma.vehicle.findMany({
@@ -61,6 +64,18 @@ export async function GET() {
       orderBy: { dueDate: "asc" },
       take: 10,
     }),
+
+    // Full invoice history (for the customer Invoices page)
+    prisma.invoice.findMany({
+      where: { customerId, status: { not: "VOID" } },
+      select: {
+        id: true, invoiceNumber: true, status: true,
+        totalAmount: true, amountDue: true, dueDate: true,
+        job: { select: { title: true, jobNumber: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
   ]);
 
   const totalSpend = await prisma.invoice.aggregate({
@@ -70,9 +85,11 @@ export async function GET() {
 
   return apiSuccess({
     customer,
+    shop: customer?.shop ?? null,
     vehicles,
     recentJobs,
     openInvoices,
+    allInvoices,
     stats: {
       totalVehicles: vehicles.length,
       totalJobs: recentJobs.length,

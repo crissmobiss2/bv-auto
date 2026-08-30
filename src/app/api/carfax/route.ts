@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, CarfaxStatus } from "@prisma/client";
 import { z } from "zod";
 
@@ -21,11 +21,12 @@ const exportSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const vehicleId = req.nextUrl.searchParams.get("vehicleId");
-  const where = vehicleId ? { vehicleId } : {};
+  const where: Record<string, unknown> = { vehicle: { shopId } };
+  if (vehicleId) where.vehicleId = vehicleId;
 
   const records = await prisma.carfaxRecord.findMany({
     where,
@@ -37,12 +38,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
   const parsed = exportSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
+
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: parsed.data.vehicleId, shopId },
+    select: { id: true },
+  });
+  if (!vehicle) return apiError("Vehicle not found", 404);
 
   // Build the CARFAX-compatible export payload
   const exportPayload = {
@@ -57,24 +64,42 @@ export async function POST(req: NextRequest) {
     exportedAt: new Date().toISOString(),
   };
 
+  // Actually transmit to CARFAX when configured. Otherwise the record is saved
+  // locally and clearly marked NOT transmitted — never falsely reported as sent.
+  const apiKey = process.env.CARFAX_API_KEY;
+  const apiUrl = process.env.CARFAX_API_URL;
+  let status: CarfaxStatus = CarfaxStatus.PENDING;
+  let transmitted = false;
+
+  if (apiKey && apiUrl) {
+    try {
+      const res = await fetch(`${apiUrl}/service-history`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(exportPayload),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (res.ok) {
+        status = CarfaxStatus.SUBMITTED;
+        transmitted = true;
+      } else {
+        status = CarfaxStatus.REJECTED;
+      }
+    } catch {
+      status = CarfaxStatus.PENDING; // network/timeout — keep for retry
+    }
+  }
+
   const record = await prisma.carfaxRecord.create({
     data: {
       vehicleId: parsed.data.vehicleId,
       vin: parsed.data.vin,
       serviceHistoryId: parsed.data.jobId,
       exportPayload,
-      status: CarfaxStatus.EXPORTED,
-      exportedAt: new Date(),
+      status,
+      exportedAt: transmitted ? new Date() : null,
     },
   });
-
-  // In production: POST to CARFAX API endpoint with exportPayload
-  // const apiKey = process.env.CARFAX_API_KEY;
-  // const response = await fetch(`${process.env.CARFAX_API_URL}/service-history`, {
-  //   method: "POST",
-  //   headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-  //   body: JSON.stringify(exportPayload),
-  // });
 
   await logAudit(
     session!.user.id,
@@ -82,8 +107,15 @@ export async function POST(req: NextRequest) {
     "CarfaxRecord",
     record.id,
     null,
-    { vin: parsed.data.vin, jobId: parsed.data.jobId }
+    { vin: parsed.data.vin, jobId: parsed.data.jobId, transmitted }
   );
 
-  return apiSuccess({ record, exportPayload, status: "exported" }, 201);
+  return apiSuccess({
+    record,
+    transmitted,
+    status: status.toLowerCase(),
+    message: transmitted
+      ? "Service history submitted to CARFAX."
+      : "Saved locally — NOT yet transmitted to CARFAX (integration not configured).",
+  }, 201);
 }

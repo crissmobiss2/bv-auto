@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError } from "@/lib/api-helpers";
+import { csvCell } from "@/lib/utils";
+
+const PAYROLL_ROLES = ["ADMIN", "ACCOUNTANT"] as const;
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(PAYROLL_ROLES);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -12,7 +15,7 @@ export async function GET(req: NextRequest) {
   const format = searchParams.get("format");
 
   const technicians = await prisma.user.findMany({
-    where: { role: { in: ["TECHNICIAN", "ADMIN"] }, isActive: true },
+    where: { role: { in: ["TECHNICIAN", "ADMIN"] }, isActive: true, shopId },
     include: {
       payrollRate: true,
       timeLogs: {
@@ -40,7 +43,17 @@ export async function GET(req: NextRequest) {
     if (rateType === "HOURLY") grossPay = totalHours * hourlyRate;
     else if (rateType === "FLAT_RATE") grossPay = totalHours * flatRateMul * (hourlyRate || 25);
     else if (rateType === "COMMISSION") {
-      const totalRevenue = logs.reduce((s, l) => s + Number(l.job?.invoice?.totalAmount || 0), 0);
+      // Count each job's invoice ONCE, even if the tech clocked in multiple times.
+      const seenJobs = new Set<string>();
+      let totalRevenue = 0;
+      for (const l of logs) {
+        const jid = l.job?.id;
+        const amt = l.job?.invoice?.totalAmount;
+        if (jid && amt != null && !seenJobs.has(jid)) {
+          seenJobs.add(jid);
+          totalRevenue += Number(amt);
+        }
+      }
       grossPay = totalRevenue * (commissionPct / 100);
     }
 
@@ -72,13 +85,13 @@ export async function GET(req: NextRequest) {
   if (format === "csv") {
     const rows = ["Name,Role,Rate Type,Hourly Rate,Total Hours,Gross Pay,Job Count"];
     for (const p of payroll) {
-      rows.push(`"${p.name}",${p.role},${p.rateType},${p.hourlyRate},${p.totalHours},${p.grossPay},${p.jobCount}`);
+      rows.push([p.name, p.role, p.rateType, p.hourlyRate, p.totalHours, p.grossPay, p.jobCount].map(csvCell).join(","));
     }
     // Detail rows
     rows.push("", "JOB DETAIL", "Tech Name,Job Number,Job Title,Clock In,Clock Out,Minutes");
     for (const p of payroll) {
       for (const j of p.jobBreakdown) {
-        rows.push(`"${p.name}","${j.jobNumber || ""}","${j.jobTitle || ""}",${j.clockedIn},${j.clockedOut || ""},${j.minutes || ""}`);
+        rows.push([p.name, j.jobNumber || "", j.jobTitle || "", j.clockedIn, j.clockedOut || "", j.minutes ?? ""].map(csvCell).join(","));
       }
     }
     return new NextResponse(rows.join("\n"), {
@@ -96,10 +109,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { error } = await requireAuth();
+  // Only ADMIN may set pay rates, and only for staff in their own shop.
+  const { error, shopId } = await requireShop(["ADMIN"]);
   if (error) return error;
 
   const { userId, rateType, hourlyRate, flatRateMul, commissionPct } = await req.json();
+
+  const target = await prisma.user.findFirst({ where: { id: userId, shopId }, select: { id: true } });
+  if (!target) return apiError("User not found in your shop", 404);
 
   const rate = await prisma.payrollRate.upsert({
     where: { userId },

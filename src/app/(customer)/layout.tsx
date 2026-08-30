@@ -1,6 +1,8 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Car, FileText, Clock, Home, LogOut, Wrench, Phone, Menu, X, Shield } from "lucide-react";
@@ -19,6 +21,15 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Shares the cached "customer-dashboard" query, so no extra fetch.
+  const { data: dash } = useQuery({
+    queryKey: ["customer-dashboard"],
+    queryFn: () => axios.get("/api/customer/dashboard").then(r => r.data),
+    staleTime: 60_000,
+  });
+  const shopPhone: string | undefined = dash?.shop?.phone || undefined;
+  const telHref = shopPhone ? `tel:${shopPhone.replace(/[^\d+]/g, "")}` : undefined;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top bar */}
@@ -31,9 +42,11 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             <span className="font-bold text-gray-900">B&V Auto</span>
           </div>
           <div className="flex items-center gap-2">
-            <a href="tel:+1" className="p-2 text-gray-500 hover:text-blue-600">
-              <Phone className="h-4 w-4" />
-            </a>
+            {telHref && (
+              <a href={telHref} className="p-2 text-gray-500 hover:text-blue-600" aria-label="Call the shop">
+                <Phone className="h-4 w-4" />
+              </a>
+            )}
             <button className="p-2 text-gray-500 md:hidden" onClick={() => setMobileOpen(o => !o)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>

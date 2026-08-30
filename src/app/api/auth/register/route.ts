@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-helpers";
+import { rateLimit, getIP } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -17,11 +18,17 @@ const schema = z.object({
 const STAFF_ROLES = ["TECHNICIAN", "SERVICE_ADVISOR", "PARTS_COORDINATOR", "DISPATCHER"];
 
 export async function POST(req: NextRequest) {
+  // Throttle: 5 registrations per 10 min per IP (anti-abuse / enumeration).
+  if (!rateLimit(`register:${getIP(req)}`, 5, 10 * 60_000)) {
+    return apiError("Too many attempts. Please try again later.", 429);
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) return apiError("Invalid registration data", 400);
 
-  const { name, email, phone, password, role, inviteCode } = parsed.data;
+  const { name, phone, password, role, inviteCode } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
 
   if (STAFF_ROLES.includes(role)) {
     const expected = process.env.STAFF_INVITE_CODE;
@@ -35,24 +42,19 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // For customers: find or create a Customer record linked to this account
+  // For customers, always create a FRESH Customer record for the login.
+  // SECURITY: never auto-link a self-registration to a shop-created customer by
+  // email alone — without email verification that is an account-takeover vector.
+  // Staff can merge the duplicate from the customer record once identity is confirmed.
   let customerId: string | undefined;
   if (role === "CUSTOMER") {
-    const existingCustomer = await prisma.customer.findFirst({
-      where: { email, isActive: true },
+    const nameParts = name.trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ") || "-";
+    const newCustomer = await prisma.customer.create({
+      data: { firstName, lastName, email, phone: phone || "", isActive: true },
     });
-
-    if (existingCustomer) {
-      customerId = existingCustomer.id;
-    } else {
-      const nameParts = name.trim().split(" ");
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(" ") || "-";
-      const newCustomer = await prisma.customer.create({
-        data: { firstName, lastName, email, phone: phone || "", isActive: true },
-      });
-      customerId = newCustomer.id;
-    }
+    customerId = newCustomer.id;
   }
 
   const user = await prisma.user.create({

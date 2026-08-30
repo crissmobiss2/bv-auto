@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { apiError, apiSuccess, assertCron } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (secret !== process.env.CRON_SECRET) return apiError("Unauthorized", 401);
+  const unauthorized = assertCron(req);
+  if (unauthorized) return unauthorized;
 
   const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 

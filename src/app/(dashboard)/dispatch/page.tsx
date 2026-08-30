@@ -55,7 +55,7 @@ export default function DispatchPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dispatch Calendar</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dispatch Calendar</h1>
         <div className="flex items-center gap-2">
           <Link href="/jobs/new">
             <Button className="bg-blue-600 hover:bg-blue-700" size="sm">
@@ -86,10 +86,10 @@ export default function DispatchPage() {
           const dayJobs = getJobsForDay(day);
           const isToday = day.toDateString() === today.toDateString();
           return (
-            <div key={day.toISOString()} className={`min-h-32 rounded-lg border p-2 ${isToday ? "border-blue-400 bg-blue-50" : "bg-white"}`}>
-              <div className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-500"}`}>
+            <div key={day.toISOString()} className={`min-h-32 rounded-lg border p-2 ${isToday ? "border-blue-400 bg-blue-50" : "bg-white dark:bg-gray-900"}`}>
+              <div className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-500 dark:text-gray-400"}`}>
                 <div>{day.toLocaleDateString("en-US", { weekday: "short" })}</div>
-                <div className={`text-lg ${isToday ? "text-blue-600" : "text-gray-800"}`}>{day.getDate()}</div>
+                <div className={`text-lg ${isToday ? "text-blue-600" : "text-gray-800 dark:text-gray-100"}`}>{day.getDate()}</div>
               </div>
               {dayJobs.map((job: {
                 id: string;
@@ -119,7 +119,7 @@ export default function DispatchPage() {
         <CardHeader><CardTitle className="text-base">Unscheduled / Pending Jobs</CardTitle></CardHeader>
         <CardContent className="p-0">
           {jobs.filter((j: { scheduledAt?: string }) => !j.scheduledAt).length === 0 ? (
-            <p className="text-sm text-gray-500 p-4">All jobs are scheduled.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 p-4">All jobs are scheduled.</p>
           ) : (
             <div className="divide-y">
               {jobs
@@ -137,7 +137,7 @@ export default function DispatchPage() {
                   <div key={job.id} className="flex items-center justify-between px-4 py-3">
                     <div>
                       <p className="text-sm font-medium">{job.title}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {job.customer.firstName} {job.customer.lastName} · {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
                       </p>
                       {job.serviceLocation && (

@@ -1,16 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess } from "@/lib/api-helpers";
 
-// Lightweight public-ish endpoint — returns the default shop's operating rates.
-// Used by quote builder, labor times, pipeline, and anywhere else that needs
-// the shop's configured labor rate and tax rate.
+// Returns the caller's own shop operating rates. Read by the quote builder,
+// labor times, pipeline, etc., so it is open to all staff (not admin-only) but
+// strictly scoped to the caller's shop.
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
-  const shop = await prisma.shop.findFirst({
-    where: { isActive: true },
-    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+  const shop = await prisma.shop.findUnique({
+    where: { id: shopId },
     select: { id: true, name: true, laborRate: true, taxRate: true, phone: true, googleReviewUrl: true },
   });
 

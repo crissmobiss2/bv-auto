@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { requireAuth } from "@/lib/api-helpers";
+import { rateLimit, getIP } from "@/lib/rate-limit";
 
-const client = new Anthropic();
-
+// Diagnostic assist: analyzes the technician's ACTUAL freeze-frame / live data.
+// Kept (not fabricating a catalog) but gated, rate-limited, and clearly labeled
+// as an AI aid to verify — never an authoritative source.
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const { error, session } = await requireAuth();
+  if (error) return error;
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "AI is not configured" }, { status: 503 });
+  }
+  if (!rateLimit(`freeze-frame:${session!.user.id}:${getIP(req)}`, 20, 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Please slow down." }, { status: 429 });
+  }
+
+  const body = await req.json().catch(() => ({}));
   const { dtcCode, freezeFrameData, year, make, model, engine } = body;
 
   if (!freezeFrameData) {
@@ -40,6 +53,7 @@ Format as JSON:
 }`;
 
   try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1500,
@@ -48,10 +62,15 @@ Format as JSON:
 
     const text = (response.content[0] as { text: string }).text;
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 });
+    if (!jsonMatch) return NextResponse.json({ error: "Could not analyze this data" }, { status: 502 });
 
-    return NextResponse.json(JSON.parse(jsonMatch[0]));
+    const parsed = JSON.parse(jsonMatch[0]);
+    return NextResponse.json({
+      ...parsed,
+      _disclaimer: "AI diagnostic aid — verify against measured values and OEM procedures before repair.",
+    });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[freeze-frame]", err);
+    return NextResponse.json({ error: "Analysis failed. Please try again." }, { status: 502 });
   }
 }

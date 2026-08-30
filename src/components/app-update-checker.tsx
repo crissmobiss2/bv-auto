@@ -13,17 +13,19 @@ function compareVersions(a: string, b: string) {
   return 0;
 }
 
-function getInstalledVersion(): string | null {
+async function getInstalledVersion(): Promise<string | null> {
   if (typeof window === "undefined") return null;
-  // Capacitor sets this on the native bridge
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cap = (window as any).Capacitor;
-    if (cap?.isNativePlatform?.()) {
-      return cap.getPlatform() === "android" ? "0.1.0" : "0.1.0";
-    }
-  } catch { /* not in Capacitor */ }
-  return null;
+    if (!cap?.isNativePlatform?.()) return null;
+    // Read the REAL installed version from the native bundle (not a hardcoded string).
+    const { App } = await import("@capacitor/app");
+    const info = await App.getInfo();
+    return info.version || null;
+  } catch {
+    return null;
+  }
 }
 
 export function AppUpdateChecker() {
@@ -31,17 +33,23 @@ export function AppUpdateChecker() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const installedVersion = getInstalledVersion();
-    if (!installedVersion) return;
+    let cancelled = false;
+    (async () => {
+      const installedVersion = await getInstalledVersion();
+      if (cancelled || !installedVersion) return;
 
-    axios.get("/api/app-version").then(({ data }) => {
-      if (compareVersions(data.version, installedVersion) > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const platform = (window as any).Capacitor?.getPlatform?.();
-        const url = platform === "ios" ? data.appStoreUrl : data.playStoreUrl;
-        setUpdate({ version: data.version, url, force: data.forceUpdate });
-      }
-    }).catch(() => {/* ignore */});
+      try {
+        const { data } = await axios.get("/api/app-version");
+        if (cancelled) return;
+        if (compareVersions(data.version, installedVersion) > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const platform = (window as any).Capacitor?.getPlatform?.();
+          const url = platform === "ios" ? data.appStoreUrl : data.playStoreUrl;
+          setUpdate({ version: data.version, url, force: data.forceUpdate });
+        }
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   if (!update || dismissed) return null;

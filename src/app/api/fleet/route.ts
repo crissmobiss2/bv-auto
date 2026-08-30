@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
 
   const accounts = await prisma.fleetAccount.findMany({
     where: {
+      shopId,
       isActive: true,
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
 
   const account = await prisma.fleetAccount.create({
     data: {
+      shopId,
       name: body.name,
       contactName: body.contactName,
       email: body.email,

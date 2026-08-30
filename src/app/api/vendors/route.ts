@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -17,11 +17,11 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const vendors = await prisma.partsVendor.findMany({
-    where: { isActive: true },
+    where: { shopId, isActive: true },
     orderBy: { name: "asc" },
   });
 
@@ -29,7 +29,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
   const vendor = await prisma.partsVendor.create({
-    data: { ...parsed.data, email: parsed.data.email || null },
+    data: { ...parsed.data, email: parsed.data.email || null, shopId },
   });
 
   return apiSuccess(vendor, 201);

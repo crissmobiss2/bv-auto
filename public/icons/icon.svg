@@ -1,14 +1,116 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#2563EB"/>
-  <circle cx="256" cy="256" r="180" fill="#1D4ED8"/>
-  <!-- Wrench -->
-  <g fill="white">
-    <path d="M340 140c-33.1 0-60 26.9-60 60 0 8.3 1.7 16.2 4.8 23.4L164 344c-7.2-3.1-15.1-4.8-23.4-4.8-33.1 0-60 26.9-60 60s26.9 60 60 60c33.1 0 60-26.9 60-60 0-8.3-1.7-16.2-4.8-23.4L316 255c7.2 3.1 15.1 4.8 23.4 4.8 33.1 0 60-26.9 60-60 0-7.7-1.5-15-4.2-21.7l-37.9 37.9-22.6-22.6 37.9-37.9c-6.7-2.7-14-4.2-21.7-4.2h-.9z"/>
-    <circle cx="140.6" cy="399.4" r="22" fill="#2563EB"/>
+  <defs>
+    <!-- Deep navy-to-royal-blue gradient background -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e3a8a"/>
+    </linearGradient>
+    <!-- Electric blue accent gradient -->
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </linearGradient>
+    <!-- White-to-cyan text gradient -->
+    <linearGradient id="text" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#bfdbfe"/>
+    </linearGradient>
+    <!-- Glow filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded rectangle background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow ring -->
+  <rect width="512" height="512" rx="112" fill="none" stroke="rgba(96,165,250,0.12)" stroke-width="2"/>
+
+  <!-- Background hex grid pattern (subtle) -->
+  <g opacity="0.04" fill="none" stroke="white" stroke-width="1">
+    <polygon points="256,60 316,93 316,159 256,192 196,159 196,93" />
+    <polygon points="136,126 196,159 196,225 136,258 76,225 76,159" />
+    <polygon points="376,126 436,159 436,225 376,258 316,225 316,159" />
+    <polygon points="256,192 316,225 316,291 256,324 196,291 196,225" />
+    <polygon points="136,258 196,291 196,357 136,390 76,357 76,291" />
+    <polygon points="376,258 436,291 436,357 376,390 316,357 316,291" />
+    <polygon points="256,324 316,357 316,423 256,456 196,423 196,357" />
   </g>
-  <!-- Car silhouette (simplified) -->
-  <rect x="160" y="240" width="192" height="48" rx="12" fill="white" opacity="0.15"/>
-  <rect x="180" y="210" width="152" height="40" rx="14" fill="white" opacity="0.12"/>
-  <circle cx="195" cy="292" r="18" fill="white" opacity="0.2"/>
-  <circle cx="317" cy="292" r="18" fill="white" opacity="0.2"/>
+
+  <!-- Electric bolt accent mark (top-right) -->
+  <path d="M368 88 L342 168 L374 168 L326 248 L348 248 L296 352 L332 220 L300 220 L336 120 L356 120 Z"
+    fill="url(#accent)" opacity="0.22"/>
+
+  <!-- Horizontal rule above letters -->
+  <rect x="128" y="188" width="256" height="3" rx="1.5" fill="url(#accent)" opacity="0.6"/>
+
+  <!-- "BV" premium monogram -->
+  <!-- B letterform -->
+  <path d="
+    M128 216
+    L128 328
+    L200 328
+    Q240 328 240 296
+    Q240 276 220 268
+    Q238 260 238 240
+    Q238 216 200 216
+    Z
+    M154 237
+    L194 237
+    Q214 237 214 250
+    Q214 262 194 262
+    L154 262
+    Z
+    M154 280
+    L198 280
+    Q218 280 218 294
+    Q218 308 198 308
+    L154 308
+    Z
+  " fill="url(#text)"/>
+
+  <!-- V letterform -->
+  <path d="
+    M266 216
+    L310 328
+    L328 328
+    L372 216
+    L346 216
+    L319 293
+    L292 216
+    Z
+  " fill="url(#text)"/>
+
+  <!-- Horizontal rule below letters -->
+  <rect x="128" y="342" width="256" height="3" rx="1.5" fill="url(#accent)" opacity="0.6"/>
+
+  <!-- "AUTO" small cap label -->
+  <text
+    x="256" y="384"
+    text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+    font-size="34"
+    font-weight="700"
+    letter-spacing="12"
+    fill="white"
+    opacity="0.4"
+  >AUTO</text>
+
+  <!-- Corner accent dots -->
+  <circle cx="136" cy="186" r="4" fill="url(#accent)" opacity="0.7"/>
+  <circle cx="376" cy="186" r="4" fill="url(#accent)" opacity="0.7"/>
+  <circle cx="136" cy="344" r="4" fill="url(#accent)" opacity="0.7"/>
+  <circle cx="376" cy="344" r="4" fill="url(#accent)" opacity="0.7"/>
 </svg>

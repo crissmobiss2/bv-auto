@@ -1,12 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiSuccess } from "@/lib/api-helpers";
+import { apiSuccess, assertCron } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const unauthorized = assertCron(req);
+  if (unauthorized) return unauthorized;
 
   const now = new Date();
   const due = await prisma.commEnrollment.findMany({

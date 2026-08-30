@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { sendQuoteEmail } from "@/lib/email";
 import { sendQuoteSMS } from "@/lib/sms";
 import { formatCurrency } from "@/lib/utils";
@@ -8,13 +8,13 @@ import { AuditAction } from "@prisma/client";
 import { randomBytes } from "crypto";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const quote = await prisma.quote.findUnique({
-    where: { id },
+  const quote = await prisma.quote.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       job: { include: { vehicle: true } },

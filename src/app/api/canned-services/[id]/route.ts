@@ -1,12 +1,15 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+  const existing = await prisma.cannedService.findFirst({ where: { id, shopId } });
+  if (!existing) return apiError("Not found", 404);
+
   const body = await req.json();
 
   const service = await prisma.cannedService.update({
@@ -27,10 +30,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+  const existing = await prisma.cannedService.findFirst({ where: { id, shopId } });
+  if (!existing) return apiError("Not found", 404);
+
   await prisma.cannedService.update({ where: { id }, data: { isActive: false } });
   return apiSuccess({ ok: true });
 }

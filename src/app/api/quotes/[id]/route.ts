@@ -1,17 +1,32 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { generateInvoiceNumber, calculateLineItemTotal } from "@/lib/utils";
-import { AuditAction, QuoteStatus } from "@prisma/client";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { calculateLineItemTotal, computeTotals } from "@/lib/utils";
+import { AuditAction, QuoteStatus, LineItemType } from "@prisma/client";
+
+const QUOTE_ROLES = ["ADMIN", "DISPATCHER", "ACCOUNTANT", "SERVICE_ADVISOR"] as const;
+
+type IncomingLineItem = {
+  type?: string;
+  sortOrder?: number;
+  description?: string;
+  partNumber?: string | null;
+  quantity?: number;
+  unitPrice?: number;
+  markup?: number | null;
+  discount?: number | null;
+  taxable?: boolean;
+  notes?: string | null;
+};
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(QUOTE_ROLES);
   if (error) return error;
 
   const { id } = await params;
 
-  const quote = await prisma.quote.findUnique({
-    where: { id },
+  const quote = await prisma.quote.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       job: { include: { vehicle: true } },
@@ -25,14 +40,14 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop(QUOTE_ROLES);
   if (error) return error;
 
   const { id } = await params;
   const body = await req.json();
 
-  const existing = await prisma.quote.findUnique({
-    where: { id },
+  const existing = await prisma.quote.findFirst({
+    where: { id, shopId },
     include: { lineItems: true },
   });
   if (!existing) return apiError("Quote not found", 404);
@@ -41,39 +56,33 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Handle line item recalculation
   if (body.lineItems) {
-    const lineItemsWithTotals = body.lineItems.map((li: {
-      quantity: number;
-      unitPrice: number;
-      markup?: number;
-      discount?: number;
-      taxable?: boolean;
-      type?: string;
-    }) => ({
-      ...li,
-      total: calculateLineItemTotal(li.quantity, li.unitPrice, li.markup, li.discount),
+    const lineItemsWithTotals = (body.lineItems as IncomingLineItem[]).map((li) => ({
+      type: (li.type as LineItemType) ?? LineItemType.LABOR,
+      sortOrder: li.sortOrder ?? 0,
+      description: li.description ?? "",
+      partNumber: li.partNumber ?? null,
+      quantity: li.quantity ?? 1,
+      unitPrice: li.unitPrice ?? 0,
+      markup: li.markup ?? null,
+      discount: li.discount ?? null,
+      taxable: li.taxable ?? true,
+      notes: li.notes ?? null,
+      total: calculateLineItemTotal(li.quantity ?? 1, li.unitPrice ?? 0, li.markup, li.discount),
     }));
 
-    const subtotal = lineItemsWithTotals
-      .filter((li: { type?: string }) => li.type !== "TAX" && li.type !== "DISCOUNT")
-      .reduce((sum: number, li: { total: number }) => sum + li.total, 0);
-
-    const taxRate = body.taxRate ?? existing.taxRate;
-    const taxableAmount = lineItemsWithTotals
-      .filter((li: { taxable?: boolean; type?: string }) => li.taxable && li.type !== "TAX")
-      .reduce((sum: number, li: { total: number }) => sum + li.total, 0);
-
-    const taxAmount = Math.round(Number(taxableAmount) * (Number(taxRate) / 100) * 100) / 100;
-    const totalAmount = Math.round((subtotal + taxAmount) * 100) / 100;
+    const taxRate = Number(body.taxRate ?? existing.taxRate);
+    const { subtotal, discountAmount, taxAmount, totalAmount } = computeTotals(lineItemsWithTotals, taxRate);
 
     updateData.subtotal = subtotal;
+    updateData.discountAmount = discountAmount;
     updateData.taxAmount = taxAmount;
     updateData.totalAmount = totalAmount;
     updateData.taxRate = taxRate;
 
-    // Replace line items
+    // Replace line items with an explicit field map (never spread client input).
     await prisma.lineItem.deleteMany({ where: { quoteId: id } });
     await prisma.lineItem.createMany({
-      data: lineItemsWithTotals.map((li: Record<string, unknown>) => ({ ...li, quoteId: id })),
+      data: lineItemsWithTotals.map((li) => ({ ...li, quoteId: id })),
     });
   }
 

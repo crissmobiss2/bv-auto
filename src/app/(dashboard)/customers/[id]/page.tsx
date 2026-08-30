@@ -64,11 +64,11 @@ function SmsThread({ customerId, customerName }: { customerId: string; customerN
       <CardContent className="p-4 space-y-3">
         <div className="max-h-64 overflow-y-auto space-y-2">
           {(!messages || messages.length === 0) ? (
-            <p className="text-sm text-gray-500 text-center py-4">No messages yet. Send one below.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No messages yet. Send one below.</p>
           ) : (
             messages.map((msg: { id: string; direction: string; body: string; createdAt: string }) => (
               <div key={msg.id} className={`flex ${msg.direction === "OUTBOUND" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.direction === "OUTBOUND" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-900"}`}>
+                <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.direction === "OUTBOUND" ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-gray-100"}`}>
                   <p>{msg.body}</p>
                   <p className={`text-xs mt-0.5 ${msg.direction === "OUTBOUND" ? "text-blue-200" : "text-gray-400"}`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -179,7 +179,7 @@ function FollowUpTab({ customerId, followUps }: {
       )}
 
       {active.length === 0 && !showAdd && (
-        <p className="text-sm text-gray-500">No follow-ups scheduled.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No follow-ups scheduled.</p>
       )}
 
       {active.map((fu) => (
@@ -187,7 +187,7 @@ function FollowUpTab({ customerId, followUps }: {
           <div>
             <p className="font-medium">{fu.title}</p>
             <p className="text-xs text-blue-600">Due {formatDate(fu.dueAt)}</p>
-            {fu.notes && <p className="text-xs text-gray-600 mt-1">{fu.notes}</p>}
+            {fu.notes && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{fu.notes}</p>}
           </div>
           <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={() => completeMutation.mutate(fu.id)}>
             <CheckCircle className="h-4 w-4" />
@@ -217,7 +217,7 @@ export default function CustomerDetailPage() {
     queryFn: () => axios.get(`/api/customers/${id}`).then((r) => r.data),
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
   if (!customer) return <div className="p-8 text-center text-red-500">Customer not found.</div>;
 
   return (
@@ -228,10 +228,10 @@ export default function CustomerDetailPage() {
           <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {customer.firstName} {customer.lastName}
           </h1>
-          {customer.company && <p className="text-gray-500">{customer.company}</p>}
+          {customer.company && <p className="text-gray-500 dark:text-gray-400">{customer.company}</p>}
         </div>
         <Button variant="outline" size="sm" onClick={async () => {
           const res = await axios.post(`/api/portal/${id}`);
@@ -252,19 +252,19 @@ export default function CustomerDetailPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className={customer.clv.atRisk ? "border-red-200 bg-red-50" : ""}>
             <CardContent className="p-3">
-              <p className="text-xs text-gray-500">Lifetime Revenue</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Lifetime Revenue</p>
               <p className="text-xl font-bold text-green-600">{formatCurrency(customer.clv.totalRevenue)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3">
-              <p className="text-xs text-gray-500">Total Visits</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Total Visits</p>
               <p className="text-xl font-bold">{customer.clv.visitCount}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3">
-              <p className="text-xs text-gray-500">Avg Ticket</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Ticket</p>
               <p className="text-xl font-bold">{formatCurrency(customer.clv.avgTicket)}</p>
             </CardContent>
           </Card>
@@ -272,7 +272,7 @@ export default function CustomerDetailPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">CLV Score</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">CLV Score</p>
                   <p className={`text-xl font-bold ${customer.clv.clvScore >= 60 ? "text-green-600" : customer.clv.clvScore >= 30 ? "text-yellow-600" : "text-red-600"}`}>
                     {customer.clv.clvScore}/100
                   </p>
@@ -322,7 +322,7 @@ export default function CustomerDetailPage() {
               {customer.address && (
                 <div className="flex items-start gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                  <span className="text-gray-700">
+                  <span className="text-gray-700 dark:text-gray-300">
                     {customer.address}<br />
                     {[customer.city, customer.state, customer.zip].filter(Boolean).join(", ")}
                   </span>
@@ -341,13 +341,13 @@ export default function CustomerDetailPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {customer.vehicles?.length === 0 ? (
-                <p className="text-sm text-gray-500">No vehicles on file.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No vehicles on file.</p>
               ) : (
                 customer.vehicles?.map((v: { id: string; year: number; make: string; model: string; plate?: string; vin?: string }) => (
-                  <Link key={v.id} href={`/vehicles/${v.id}`} className="block p-2 rounded-md hover:bg-gray-50 border">
+                  <Link key={v.id} href={`/vehicles/${v.id}`} className="block p-2 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 border">
                     <p className="text-sm font-medium">{v.year} {v.make} {v.model}</p>
                     {(v.plate || v.vin) && (
-                      <p className="text-xs text-gray-500">{v.plate || v.vin}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{v.plate || v.vin}</p>
                     )}
                   </Link>
                 ))
@@ -371,14 +371,14 @@ export default function CustomerDetailPage() {
               <Card>
                 <CardContent className="p-0">
                   {customer.jobs?.length === 0 ? (
-                    <p className="text-sm text-gray-500 p-4">No jobs yet.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 p-4">No jobs yet.</p>
                   ) : (
                     <div className="divide-y">
                       {customer.jobs?.map((job: { id: string; jobNumber: string; title: string; status: string; scheduledAt?: string; vehicle: { year: number; make: string; model: string } }) => (
-                        <Link key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                        <Link key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5">
                           <div>
                             <p className="text-sm font-medium">{job.jobNumber} — {job.title}</p>
-                            <p className="text-xs text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model} · {formatDate(job.scheduledAt)}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model} · {formatDate(job.scheduledAt)}</p>
                           </div>
                           <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${JOB_STATUS_COLORS[job.status]}`}>
                             {job.status.replace("_", " ")}
@@ -395,14 +395,14 @@ export default function CustomerDetailPage() {
               <Card>
                 <CardContent className="p-0">
                   {customer.invoices?.length === 0 ? (
-                    <p className="text-sm text-gray-500 p-4">No invoices yet.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 p-4">No invoices yet.</p>
                   ) : (
                     <div className="divide-y">
                       {customer.invoices?.map((inv: { id: string; invoiceNumber: string; totalAmount: number; amountDue: number; status: string; createdAt: string }) => (
-                        <Link key={inv.id} href={`/invoices/${inv.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                        <Link key={inv.id} href={`/invoices/${inv.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5">
                           <div>
                             <p className="text-sm font-medium">{inv.invoiceNumber}</p>
-                            <p className="text-xs text-gray-500">{formatDate(inv.createdAt)}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(inv.createdAt)}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-medium">{formatCurrency(inv.totalAmount)}</p>
@@ -422,11 +422,11 @@ export default function CustomerDetailPage() {
               <Card>
                 <CardContent className="p-4">
                   {customer.customerNotes?.length === 0 ? (
-                    <p className="text-sm text-gray-500">No notes yet.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No notes yet.</p>
                   ) : (
                     <div className="space-y-3">
                       {customer.customerNotes?.map((note: { id: string; content: string; isInternal: boolean; createdAt: string; author: { name: string } }) => (
-                        <div key={note.id} className={`p-3 rounded-md text-sm ${note.isInternal ? "bg-yellow-50 border border-yellow-200" : "bg-gray-50"}`}>
+                        <div key={note.id} className={`p-3 rounded-md text-sm ${note.isInternal ? "bg-yellow-50 border border-yellow-200" : "bg-gray-50 dark:bg-white/5"}`}>
                           <p>{note.content}</p>
                           <p className="text-xs text-gray-400 mt-1">{note.author.name} · {formatDate(note.createdAt)}</p>
                         </div>

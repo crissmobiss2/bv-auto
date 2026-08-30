@@ -14,8 +14,8 @@ const ACTION_COLORS: Record<string, string> = {
   CREATE: "bg-green-100 text-green-700",
   UPDATE: "bg-blue-100 text-blue-700",
   DELETE: "bg-red-100 text-red-700",
-  LOGIN: "bg-gray-100 text-gray-700",
-  LOGOUT: "bg-gray-100 text-gray-700",
+  LOGIN: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300",
+  LOGOUT: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300",
   PAYMENT: "bg-purple-100 text-purple-700",
   STATUS_CHANGE: "bg-yellow-100 text-yellow-700",
   EMAIL_SENT: "bg-indigo-100 text-indigo-700",
@@ -89,10 +89,10 @@ export default function AuditLogPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Shield className="h-6 w-6 text-gray-600" /> Audit Log
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Shield className="h-6 w-6 text-gray-600 dark:text-gray-400" /> Audit Log
           </h1>
-          <p className="text-sm text-gray-500">{data?.total || 0} entries</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{data?.total || 0} entries</p>
         </div>
         <Button
           variant="outline"
@@ -110,7 +110,7 @@ export default function AuditLogPage() {
           <div className="flex flex-wrap gap-3 items-end">
             {/* Entity filter */}
             <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">Entity</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Entity</label>
               <Select
                 value={entityFilter}
                 onValueChange={(v) => { setEntityFilter(v); setPage(1); }}
@@ -130,7 +130,7 @@ export default function AuditLogPage() {
 
             {/* User filter */}
             <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">User</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">User</label>
               <Select
                 value={userFilter}
                 onValueChange={(v) => { setUserFilter(v); setPage(1); }}
@@ -151,7 +151,7 @@ export default function AuditLogPage() {
 
             {/* Date range */}
             <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">From</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">From</label>
               <input
                 type="date"
                 value={startDate}
@@ -161,7 +161,7 @@ export default function AuditLogPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">To</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">To</label>
               <input
                 type="date"
                 value={endDate}
@@ -171,7 +171,7 @@ export default function AuditLogPage() {
             </div>
 
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-gray-500">
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-gray-500 dark:text-gray-400">
                 Clear filters
               </Button>
             )}
@@ -182,9 +182,9 @@ export default function AuditLogPage() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
           ) : logs.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No audit entries found.</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">No audit entries found.</div>
           ) : (
             <>
               <div className="divide-y">
@@ -193,14 +193,14 @@ export default function AuditLogPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className={`text-xs rounded px-1.5 py-0.5 font-medium ${ACTION_COLORS[log.action] || "bg-gray-100 text-gray-700"}`}
+                          className={`text-xs rounded px-1.5 py-0.5 font-medium ${ACTION_COLORS[log.action] || "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300"}`}
                         >
                           {log.action.replace(/_/g, " ")}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">{log.entity}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{log.entity}</span>
                         <span className="font-mono text-xs text-gray-400">{log.entityId.slice(0, 12)}…</span>
                       </div>
-                      {log.notes && <p className="text-xs text-gray-500 mt-0.5">{log.notes}</p>}
+                      {log.notes && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{log.notes}</p>}
                       <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
                         <span>{log.user?.name || "System"}</span>
                         <span>·</span>
@@ -213,7 +213,7 @@ export default function AuditLogPage() {
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex gap-2">

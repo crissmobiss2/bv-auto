@@ -1,15 +1,14 @@
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const now = new Date();
 
-  const defaultShop = await prisma.shop.findFirst({
-    where: { isActive: true },
-    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+  const defaultShop = await prisma.shop.findUnique({
+    where: { id: shopId },
     select: { laborRate: true },
   });
   const in30 = new Date(now.getTime() + 30 * 86400000);
@@ -18,24 +17,24 @@ export async function GET() {
 
   const [openQuotes, scheduledJobs, activeJobs, fleetAccounts, recentRevenue] = await Promise.all([
     prisma.quote.findMany({
-      where: { status: { in: ["SENT", "DRAFT"] } },
+      where: { shopId, status: { in: ["SENT", "DRAFT"] } },
       select: { id: true, totalAmount: true, status: true, createdAt: true, job: { select: { title: true, scheduledAt: true } }, customer: { select: { firstName: true, lastName: true } } },
     }),
     prisma.job.findMany({
-      where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: in90 } },
+      where: { shopId, status: "SCHEDULED", scheduledAt: { gte: now, lte: in90 } },
       select: { id: true, title: true, scheduledAt: true, estimatedHours: true, customer: { select: { firstName: true, lastName: true } }, vehicle: { select: { year: true, make: true, model: true } } },
       orderBy: { scheduledAt: "asc" },
     }),
     prisma.job.findMany({
-      where: { status: "IN_PROGRESS" },
+      where: { shopId, status: "IN_PROGRESS" },
       select: { id: true, title: true, estimatedHours: true },
     }),
     prisma.fleetAccount.findMany({
-      where: { isActive: true },
+      where: { shopId, isActive: true },
       select: { id: true, name: true, creditLimit: true },
     }),
     prisma.invoice.findMany({
-      where: { status: "PAID", paidAt: { gte: new Date(now.getFullYear(), now.getMonth() - 2, 1) } },
+      where: { shopId, status: "PAID", paidAt: { gte: new Date(now.getFullYear(), now.getMonth() - 2, 1) } },
       select: { totalAmount: true, paidAt: true },
     }),
   ]);

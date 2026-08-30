@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, InvoiceStatus, PaymentMethod } from "@prisma/client";
 import { z } from "zod";
 import { sendPushToRole } from "@/lib/push";
@@ -14,14 +14,24 @@ const paymentSchema = z.object({
   receivedAt: z.string().optional(),
 });
 
+// Whitelist of fields a standard PATCH may change. Money columns
+// (amountDue/amountPaid/totalAmount/subtotal…) are intentionally excluded —
+// balances only move through the guarded payment path or the Stripe webhook.
+const updateSchema = z.object({
+  notes: z.string().optional(),
+  internalNotes: z.string().optional(),
+  dueDate: z.string().datetime().nullish(),
+  status: z.nativeEnum(InvoiceStatus).optional(),
+});
+
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const invoice = await prisma.invoice.findUnique({
-    where: { id },
+  const invoice = await prisma.invoice.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       job: { include: { vehicle: true, technician: { select: { id: true, name: true } } } },
@@ -36,14 +46,14 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
   const body = await req.json();
 
-  const existing = await prisma.invoice.findUnique({
-    where: { id },
+  const existing = await prisma.invoice.findFirst({
+    where: { id, shopId },
     include: { payments: true },
   });
   if (!existing) return apiError("Invoice not found", 404);
@@ -53,31 +63,41 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const parsed = paymentSchema.safeParse(body);
     if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
-    const payment = await prisma.payment.create({
-      data: {
-        invoiceId: id,
-        amount: parsed.data.amount,
-        method: parsed.data.method,
-        reference: parsed.data.reference,
-        notes: parsed.data.notes,
-        receivedAt: parsed.data.receivedAt ? new Date(parsed.data.receivedAt) : new Date(),
-      },
-    });
+    if (existing.status === InvoiceStatus.VOID || existing.status === InvoiceStatus.REFUNDED) {
+      return apiError(`Cannot record a payment against a ${existing.status.toLowerCase()} invoice`, 409);
+    }
 
-    const totalPaid = existing.payments.reduce((sum, p) => sum + Number(p.amount), 0) + parsed.data.amount;
-    const amountDue = Math.max(0, Number(existing.totalAmount) - totalPaid);
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    const totalPaid = round2(
+      existing.payments.reduce((sum, p) => sum + Number(p.amount), 0) + parsed.data.amount
+    );
+    const amountDue = round2(Math.max(0, Number(existing.totalAmount) - totalPaid));
     const newStatus: InvoiceStatus =
       amountDue <= 0 ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL;
 
-    const updated = await prisma.invoice.update({
-      where: { id },
-      data: {
-        amountPaid: totalPaid,
-        amountDue,
-        status: newStatus,
-        paidAt: newStatus === InvoiceStatus.PAID ? new Date() : undefined,
-      },
-    });
+    // Atomic: record the payment and update the balance together so a mid-way
+    // failure can't orphan a payment or leave the ledger stale.
+    const [payment, updated] = await prisma.$transaction([
+      prisma.payment.create({
+        data: {
+          invoiceId: id,
+          amount: parsed.data.amount,
+          method: parsed.data.method,
+          reference: parsed.data.reference,
+          notes: parsed.data.notes,
+          receivedAt: parsed.data.receivedAt ? new Date(parsed.data.receivedAt) : new Date(),
+        },
+      }),
+      prisma.invoice.update({
+        where: { id },
+        data: {
+          amountPaid: totalPaid,
+          amountDue,
+          status: newStatus,
+          paidAt: newStatus === InvoiceStatus.PAID ? new Date() : undefined,
+        },
+      }),
+    ]);
 
     if (newStatus === InvoiceStatus.PAID) {
       await prisma.job.update({ where: { id: existing.jobId }, data: { status: "PAID" } });
@@ -100,8 +120,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return apiSuccess({ invoice: updated, payment });
   }
 
-  // Standard update
-  const updated = await prisma.invoice.update({ where: { id }, data: body });
+  // Standard update — whitelisted fields only (never money columns).
+  const parsedUpdate = updateSchema.safeParse(body);
+  if (!parsedUpdate.success) return apiError(parsedUpdate.error.issues[0].message);
+  const data = parsedUpdate.data;
+
+  const updated = await prisma.invoice.update({
+    where: { id },
+    data: {
+      notes: data.notes,
+      internalNotes: data.internalNotes,
+      dueDate: data.dueDate === undefined ? undefined : data.dueDate ? new Date(data.dueDate) : null,
+      status: data.status,
+      voidedAt: data.status === InvoiceStatus.VOID ? new Date() : undefined,
+    },
+  });
   await logAudit(session!.user.id, AuditAction.UPDATE, "Invoice", id, existing, updated);
 
   return apiSuccess(updated);

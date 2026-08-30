@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireStaff, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error } = await requireStaff();
   if (error) return error;
 
   const sequences = await prisma.commSequence.findMany({
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireStaff();
   if (error) return error;
 
   const { name, triggerEvent, steps } = await req.json();

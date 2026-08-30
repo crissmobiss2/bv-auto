@@ -1,15 +1,15 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { put } from "@vercel/blob";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const job = await prisma.job.findUnique({ where: { id } });
+  const job = await prisma.job.findFirst({ where: { id, shopId } });
   if (!job) return apiError("Job not found", 404);
 
   const formData = await req.formData();
@@ -43,11 +43,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id: jobId } = await params;
   const { photoId } = await req.json();
+
+  const job = await prisma.job.findFirst({ where: { id: jobId, shopId } });
+  if (!job) return apiError("Job not found", 404);
 
   const photo = await prisma.jobPhoto.findFirst({ where: { id: photoId, jobId } });
   if (!photo) return apiError("Photo not found", 404);

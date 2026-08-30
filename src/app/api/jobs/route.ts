@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { generateJobNumber } from "@/lib/utils";
 import { z } from "zod";
 import { AuditAction, JobStatus } from "@prisma/client";
@@ -20,7 +20,7 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to");
   const vehicleId = searchParams.get("vehicleId");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { shopId };
   if (status) where.status = status as JobStatus;
   if (technicianId) where.technicianId = technicianId;
   if (customerId) where.customerId = customerId;
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
     data: {
       ...parsed.data,
       jobNumber,
+      shopId,
       createdById: session!.user.id,
       scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined,
     },

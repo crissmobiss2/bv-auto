@@ -1,16 +1,21 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit, pick } from "@/lib/api-helpers";
 import { AuditAction } from "@prisma/client";
 
+const VEHICLE_FIELDS = [
+  "vin", "plate", "plateState", "year", "make", "model", "trim", "color",
+  "mileage", "engine", "transmission", "driveType", "fuelType", "notes", "isActive",
+] as const;
+
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
 
-  const vehicle = await prisma.vehicle.findUnique({
-    where: { id },
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id, shopId },
     include: {
       customer: true,
       jobs: {
@@ -26,16 +31,17 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
   const body = await req.json();
 
-  const existing = await prisma.vehicle.findUnique({ where: { id } });
+  const existing = await prisma.vehicle.findFirst({ where: { id, shopId } });
   if (!existing) return apiError("Vehicle not found", 404);
 
-  const updated = await prisma.vehicle.update({ where: { id }, data: body });
+  // Allowlist only — never let a client re-parent (customerId) or move shops.
+  const updated = await prisma.vehicle.update({ where: { id }, data: pick(body, VEHICLE_FIELDS) });
   await logAudit(session!.user.id, AuditAction.UPDATE, "Vehicle", id, existing, updated);
 
   return apiSuccess(updated);

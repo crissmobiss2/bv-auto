@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Download, Send, DollarSign, Phone, Smartphone, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 import { useState } from "react";
 import { CollectPaymentButton } from "@/components/collect-payment-button";
 
@@ -56,8 +57,8 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
         <Card>
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm text-gray-900">Payment Plan</p>
-              <p className="text-xs text-gray-500">Split balance into monthly installments</p>
+              <p className="font-medium text-sm text-gray-900 dark:text-gray-100">Payment Plan</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Split balance into monthly installments</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => setShow(true)}>Set Up Plan</Button>
           </CardContent>
@@ -71,7 +72,7 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
       <CardHeader><CardTitle className="text-base">Payment Plan</CardTitle></CardHeader>
       <CardContent className="space-y-3">
         {show && (
-          <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+          <div className="space-y-3 p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Number of payments</Label>
@@ -87,7 +88,7 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
                 <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               ~{formatCurrency(amountDue / numInstallments)} per month · Total: {formatCurrency(amountDue)}
             </p>
             <div className="flex gap-2">
@@ -137,12 +138,20 @@ export default function InvoiceDetailPage() {
 
   const sendMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/send`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["invoice", id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+      toast.success("Invoice sent", "Customer has been notified via SMS.");
+    },
+    onError: () => toast.error("Send failed", "Could not send invoice."),
   });
 
   const textToPayMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/text-to-pay`),
-    onSuccess: () => setTextPaySent(true),
+    onSuccess: () => {
+      setTextPaySent(true);
+      toast.success("Pay link sent", "Text-to-pay link sent to customer.");
+    },
+    onError: () => toast.error("Failed to send", "Could not send payment link."),
   });
 
   const paymentMutation = useMutation({
@@ -158,10 +167,12 @@ export default function InvoiceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["invoice", id] });
       setShowPayment(false);
       setPaymentForm({ amount: "", method: "CASH", reference: "", notes: "" });
+      toast.success("Payment recorded", `$${paymentForm.amount} payment saved.`);
     },
+    onError: () => toast.error("Payment failed", "Could not record payment."),
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
   if (!invoice) return <div className="p-8 text-center text-red-500">Invoice not found.</div>;
 
   const isPaid = invoice.status === "PAID";
@@ -172,7 +183,7 @@ export default function InvoiceDetailPage() {
       <div className="flex items-center gap-3">
         <Link href="/invoices"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900">{invoice.invoiceNumber}</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{invoice.invoiceNumber}</h1>
           <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${INVOICE_STATUS_COLORS[invoice.status]}`}>
             {invoice.status}
           </span>
@@ -209,15 +220,15 @@ export default function InvoiceDetailPage() {
         {/* Customer Info */}
         <Card>
           <CardContent className="p-4 space-y-2 text-sm">
-            <p className="font-semibold text-gray-900 text-base">
+            <p className="font-semibold text-gray-900 dark:text-gray-100 text-base">
               {invoice.customer.firstName} {invoice.customer.lastName}
             </p>
-            {invoice.customer.company && <p className="text-gray-500">{invoice.customer.company}</p>}
+            {invoice.customer.company && <p className="text-gray-500 dark:text-gray-400">{invoice.customer.company}</p>}
             <a href={`tel:${invoice.customer.phone}`} className="flex items-center gap-1 text-blue-600">
               <Phone className="h-3 w-3" /> {formatPhone(invoice.customer.phone)}
             </a>
             {invoice.customer.address && (
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 {invoice.customer.address}, {invoice.customer.city}, {invoice.customer.state}
               </p>
             )}
@@ -228,23 +239,23 @@ export default function InvoiceDetailPage() {
         <Card>
           <CardContent className="p-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Invoice Date</span>
+              <span className="text-gray-500 dark:text-gray-400">Invoice Date</span>
               <span>{formatDate(invoice.createdAt)}</span>
             </div>
             {invoice.dueDate && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Due Date</span>
+                <span className="text-gray-500 dark:text-gray-400">Due Date</span>
                 <span className={new Date(invoice.dueDate) < new Date() && !isPaid ? "text-red-600 font-medium" : ""}>
                   {formatDate(invoice.dueDate)}
                 </span>
               </div>
             )}
             <div className="flex justify-between">
-              <span className="text-gray-500">Vehicle</span>
+              <span className="text-gray-500 dark:text-gray-400">Vehicle</span>
               <span>{invoice.job.vehicle.year} {invoice.job.vehicle.make} {invoice.job.vehicle.model}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Job</span>
+              <span className="text-gray-500 dark:text-gray-400">Job</span>
               <Link href={`/jobs/${invoice.job.id}`} className="text-blue-600 hover:underline">
                 {invoice.job.id.slice(0, 8)}...
               </Link>
@@ -268,7 +279,7 @@ export default function InvoiceDetailPage() {
                   {!li.taxable && <span className="text-xs text-gray-400 ml-1">(non-taxable)</span>}
                 </div>
                 <div className="text-right">
-                  <p className="text-gray-500 text-xs">{li.quantity} × {formatCurrency(li.unitPrice)}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">{li.quantity} × {formatCurrency(li.unitPrice)}</p>
                   <p className="font-medium">{formatCurrency(li.total)}</p>
                 </div>
               </div>
@@ -276,11 +287,11 @@ export default function InvoiceDetailPage() {
           </div>
 
           <div className="mt-4 space-y-1 text-sm border-t pt-4">
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Subtotal</span><span>{formatCurrency(invoice.subtotal)}</span>
             </div>
             {Number(invoice.taxAmount) > 0 && (
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Tax ({Number(invoice.taxRate)}%)</span><span>{formatCurrency(invoice.taxAmount)}</span>
               </div>
             )}

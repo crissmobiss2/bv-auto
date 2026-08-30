@@ -1,16 +1,16 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError } from "@/lib/api-helpers";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
   const { id } = await params;
 
   const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
-  const job = await prisma.job.findUnique({
-    where: { id },
+  const job = await prisma.job.findFirst({
+    where: { id, shopId },
     include: { customer: { select: { id: true, phone: true, email: true, firstName: true, lastName: true } } },
   });
   if (!job) return apiError("Job not found", 404);

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { z } from "zod";
 import { AuditAction } from "@prisma/client";
 
@@ -25,14 +25,14 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
   const customerId = searchParams.get("customerId");
   const search = searchParams.get("search") || "";
 
-  const where: Record<string, unknown> = { isActive: true };
+  const where: Record<string, unknown> = { isActive: true, shopId };
   if (customerId) where.customerId = customerId;
   if (search) {
     where.OR = [
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
@@ -83,7 +83,15 @@ export async function POST(req: NextRequest) {
     return apiError(msg, 400);
   }
 
-  const vehicle = await prisma.vehicle.create({ data: parsed.data });
+  // The customer must belong to this shop — prevents attaching a vehicle to
+  // another shop's customer.
+  const customer = await prisma.customer.findFirst({
+    where: { id: parsed.data.customerId, shopId },
+    select: { id: true },
+  });
+  if (!customer) return apiError("Customer not found", 404);
+
+  const vehicle = await prisma.vehicle.create({ data: { ...parsed.data, shopId } });
   await logAudit(session!.user.id, AuditAction.CREATE, "Vehicle", vehicle.id, null, vehicle);
 
   return apiSuccess(vehicle, 201);

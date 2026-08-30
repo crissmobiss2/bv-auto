@@ -21,8 +21,8 @@ export default function CustomerVehicles() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">My Vehicles</h1>
-        <p className="text-sm text-gray-500">{vehicles.length} vehicle{vehicles.length !== 1 ? "s" : ""} on file</p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">My Vehicles</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{vehicles.length} vehicle{vehicles.length !== 1 ? "s" : ""} on file</p>
       </div>
 
       {vehicles.length === 0 ? (
@@ -42,8 +42,8 @@ export default function CustomerVehicles() {
                       <Car className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{v.year} {v.make} {v.model}</p>
-                      {v.trim && <p className="text-xs text-gray-500">{v.trim}</p>}
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">{v.year} {v.make} {v.model}</p>
+                      {v.trim && <p className="text-xs text-gray-500 dark:text-gray-400">{v.trim}</p>}
                     </div>
                   </div>
                   {v.color && (
@@ -51,7 +51,7 @@ export default function CustomerVehicles() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs text-gray-500">
+                <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
                   {v.mileage && (
                     <div className="flex items-center gap-1">
                       <Hash className="h-3 w-3" />
@@ -59,7 +59,7 @@ export default function CustomerVehicles() {
                     </div>
                   )}
                   {v.plate && (
-                    <div className="bg-gray-100 rounded px-2 py-0.5 text-center font-mono font-medium text-gray-700">
+                    <div className="bg-gray-100 dark:bg-white/10 rounded px-2 py-0.5 text-center font-mono font-medium text-gray-700 dark:text-gray-300">
                       {v.plate}
                     </div>
                   )}
@@ -75,7 +75,7 @@ export default function CustomerVehicles() {
                     </p>
                     {v.maintenanceIntervals!.map((m, i) => (
                       <div key={i} className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5">
-                        <span className="text-xs text-gray-700">{m.serviceName}</span>
+                        <span className="text-xs text-gray-700 dark:text-gray-300">{m.serviceName}</span>
                         <span className="text-xs text-orange-600 flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {format(parseISO(m.nextDueDate), "MMM d")}

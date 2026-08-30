@@ -24,7 +24,7 @@ export default function ReportsPage() {
     queryFn: () => axios.get("/api/quotes/conversions").then((r) => r.data),
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading reports...</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading reports...</div>;
 
   const d = data || {};
   const summary = d.summary || {};
@@ -48,7 +48,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Reports & Analytics</h1>
         <a href="/api/invoices/export" download>
           <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export CSV (QuickBooks)</Button>
         </a>
@@ -62,8 +62,8 @@ export default function ReportsPage() {
               <div className="flex items-center gap-3 mb-3">
                 <div className={`p-2 rounded-lg ${card.color}`}><card.icon className="h-5 w-5" /></div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-              <p className="text-sm text-gray-500 mt-0.5">{card.title}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{card.value}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{card.title}</p>
               <p className="text-xs text-gray-400 mt-0.5">{card.sub}</p>
             </CardContent>
           </Card>
@@ -141,10 +141,10 @@ export default function ReportsPage() {
                   <div key={i} className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-700 truncate max-w-[70%]">{s.description}</span>
+                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[70%]">{s.description}</span>
                         <span className="font-medium">{s._count.id}×</span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
                         <div
                           className="h-2 bg-blue-500 rounded-full"
                           style={{ width: `${Math.round((s._count.id / (d.topServices[0]._count.id)) * 100)}%` }}
@@ -166,7 +166,7 @@ export default function ReportsPage() {
               <div className="space-y-2">
                 {d.partsStats.map((p: { status: string; _count: { id: number } }) => (
                   <div key={p.status} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{p.status.replace(/_/g, " ")}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{p.status.replace(/_/g, " ")}</span>
                     <span className="font-medium">{p._count.id}</span>
                   </div>
                 ))}
@@ -179,7 +179,7 @@ export default function ReportsPage() {
       {/* GP by Line Item Type */}
       {d.gpByType?.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
             <PieIcon className="h-5 w-5 text-green-600" /> Gross Profit by Category (30 days)
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -202,7 +202,7 @@ export default function ReportsPage() {
             </Card>
             <Card>
               <CardContent className="p-4 space-y-3">
-                <p className="text-sm font-semibold text-gray-700">Revenue Breakdown</p>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Revenue Breakdown</p>
                 {(() => {
                   const total = d.gpByType.reduce((s: number, t: { revenue: number }) => s + t.revenue, 0);
                   return d.gpByType.map((t: { type: string; revenue: number; count: number }, i: number) => (
@@ -211,7 +211,7 @@ export default function ReportsPage() {
                         <span className="font-medium">{t.type}</span>
                         <span>{formatCurrency(t.revenue)} <span className="text-gray-400">({total > 0 ? Math.round((t.revenue / total) * 100) : 0}%)</span></span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
                         <div className="h-2 rounded-full" style={{ width: `${total > 0 ? (t.revenue / total) * 100 : 0}%`, backgroundColor: COLORS[i % COLORS.length] }} />
                       </div>
                       <p className="text-xs text-gray-400">{t.count} line items</p>
@@ -227,7 +227,7 @@ export default function ReportsPage() {
       {/* Quote Conversion Funnel */}
       {convData && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
             <GitPullRequest className="h-5 w-5 text-blue-600" /> Estimate-to-Invoice Conversion
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -236,7 +236,7 @@ export default function ReportsPage() {
                 <div className="p-2 rounded-lg text-blue-600 bg-blue-50"><GitPullRequest className="h-5 w-5" /></div>
                 <div>
                   <p className="text-2xl font-bold">{convData.rate30}%</p>
-                  <p className="text-xs text-gray-500">Approval Rate (30d)</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Approval Rate (30d)</p>
                 </div>
               </CardContent>
             </Card>
@@ -245,7 +245,7 @@ export default function ReportsPage() {
                 <div className="p-2 rounded-lg text-green-600 bg-green-50"><Clock className="h-5 w-5" /></div>
                 <div>
                   <p className="text-2xl font-bold">{convData.avgHoursToApprove ?? "—"}h</p>
-                  <p className="text-xs text-gray-500">Avg Hours to Approve</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Avg Hours to Approve</p>
                 </div>
               </CardContent>
             </Card>
@@ -254,7 +254,7 @@ export default function ReportsPage() {
                 <div className="p-2 rounded-lg text-purple-600 bg-purple-50"><Target className="h-5 w-5" /></div>
                 <div>
                   <p className="text-2xl font-bold">{convData.rate90}%</p>
-                  <p className="text-xs text-gray-500">Approval Rate (90d)</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Approval Rate (90d)</p>
                 </div>
               </CardContent>
             </Card>
@@ -270,10 +270,10 @@ export default function ReportsPage() {
                       return (
                         <div key={f.status}>
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-700">{f.status.replace(/_/g, " ")}</span>
+                            <span className="text-gray-700 dark:text-gray-300">{f.status.replace(/_/g, " ")}</span>
                             <span className="font-medium">{f.count}</span>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
                             <div className="h-2 rounded-full" style={{ width: `${(f.count / max) * 100}%`, backgroundColor: COLORS[i % COLORS.length] }} />
                           </div>
                         </div>
@@ -290,7 +290,7 @@ export default function ReportsPage() {
                   <div className="space-y-2">
                     {convData.declineReasons.map((r: { reason: string; count: number }) => (
                       <div key={r.reason} className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 truncate max-w-[75%]">{r.reason}</span>
+                        <span className="text-gray-600 dark:text-gray-400 truncate max-w-[75%]">{r.reason}</span>
                         <span className="font-medium text-red-600">{r.count}×</span>
                       </div>
                     ))}
@@ -305,7 +305,7 @@ export default function ReportsPage() {
       {/* Technician Scorecards */}
       {d.techScores?.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
             <Award className="h-5 w-5 text-yellow-500" /> Technician Performance
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -314,37 +314,37 @@ export default function ReportsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="font-bold text-gray-900">{t.name}</p>
-                      <p className="text-xs text-gray-500">Last 30 days</p>
+                      <p className="font-bold text-gray-900 dark:text-gray-100">{t.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Last 30 days</p>
                     </div>
                     <div className={`text-2xl font-bold ${t.efficiency >= 80 ? "text-green-600" : t.efficiency >= 60 ? "text-yellow-600" : "text-red-600"}`}>
                       {t.efficiency}%
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="bg-gray-50 rounded p-2">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded p-2">
                       <p className="text-xs text-gray-400">Jobs Done</p>
                       <p className="font-bold">{t.completedJobs}</p>
                     </div>
-                    <div className="bg-gray-50 rounded p-2">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded p-2">
                       <p className="text-xs text-gray-400">Revenue</p>
                       <p className="font-bold">{formatCurrency(t.revenue)}</p>
                     </div>
-                    <div className="bg-gray-50 rounded p-2">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded p-2">
                       <p className="text-xs text-gray-400">Hours Worked</p>
                       <p className="font-bold">{t.actualHours}h</p>
                     </div>
-                    <div className="bg-gray-50 rounded p-2">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded p-2">
                       <p className="text-xs text-gray-400">Avg Job Value</p>
                       <p className="font-bold">{formatCurrency(t.avgJobRevenue)}</p>
                     </div>
                   </div>
                   <div className="mt-3">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">Efficiency</span>
+                      <span className="text-gray-500 dark:text-gray-400">Efficiency</span>
                       <span className="font-medium">{t.billedHours}h / {t.actualHours}h</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
                       <div
                         className={`h-2 rounded-full ${t.efficiency >= 80 ? "bg-green-500" : t.efficiency >= 60 ? "bg-yellow-500" : "bg-red-500"}`}
                         style={{ width: `${Math.min(t.efficiency, 100)}%` }}

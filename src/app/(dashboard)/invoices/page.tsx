@@ -87,8 +87,8 @@ function InvoicesContent() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Invoices</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {data?.total || 0} total ·{" "}
             {totalDue > 0 && <span className="text-orange-600 font-medium">{formatCurrency(totalDue)} outstanding</span>}
           </p>
@@ -112,15 +112,15 @@ function InvoicesContent() {
             { label: "Outstanding", statuses: ["SENT", "VIEWED", "OVERDUE", "PARTIAL"], color: "text-orange-600" },
             { label: "Paid", statuses: ["PAID"], color: "text-green-600" },
             { label: "Overdue", statuses: ["OVERDUE"], color: "text-red-600" },
-            { label: "Draft", statuses: ["DRAFT"], color: "text-gray-600" },
+            { label: "Draft", statuses: ["DRAFT"], color: "text-gray-600 dark:text-gray-400" },
           ].map(({ label, statuses, color }) => {
             const count = invoices.filter(i => statuses.includes(i.status)).length;
             return (
               <button key={label}
                 onClick={() => setStatusFilter(statuses[0] === "SENT" ? "ALL" : statuses[0])}
-                className="p-3 rounded-lg border bg-white text-center hover:bg-gray-50 transition-colors">
+                className="p-3 rounded-lg border bg-white dark:bg-gray-900 text-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                 <p className={`text-xl font-bold ${color}`}>{count}</p>
-                <p className="text-xs text-gray-500">{label}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
               </button>
             );
           })}
@@ -145,11 +145,11 @@ function InvoicesContent() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
           ) : invoices.length === 0 ? (
             <div className="p-12 text-center space-y-3">
               <FileText className="h-10 w-10 text-gray-300 mx-auto" />
-              <p className="text-gray-500">No invoices found.</p>
+              <p className="text-gray-500 dark:text-gray-400">No invoices found.</p>
               <Link href="/jobs/new">
                 <Button variant="outline"><Plus className="h-4 w-4 mr-1" /> Create a Job to Generate an Invoice</Button>
               </Link>
@@ -173,16 +173,16 @@ function InvoicesContent() {
                   <TableRow key={inv.id}>
                     <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-sm">{inv.customer.firstName} {inv.customer.lastName}</TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-gray-500">
+                    <TableCell className="hidden md:table-cell text-sm text-gray-500 dark:text-gray-400">
                       {inv.job.vehicle.year} {inv.job.vehicle.make} {inv.job.vehicle.model}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-medium">{formatCurrency(inv.totalAmount)}</TableCell>
                     <TableCell className={`hidden sm:table-cell font-medium ${Number(inv.amountDue) > 0 ? "text-orange-600" : "text-green-600"}`}>
                       {formatCurrency(inv.amountDue)}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-gray-500">{formatDate(inv.createdAt)}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-gray-500 dark:text-gray-400">{formatDate(inv.createdAt)}</TableCell>
                     <TableCell>
-                      <Badge className={`text-xs ${INVOICE_STATUS_COLORS[inv.status] || "bg-gray-100 text-gray-700"}`}>
+                      <Badge className={`text-xs ${INVOICE_STATUS_COLORS[inv.status] || "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300"}`}>
                         {inv.status}
                       </Badge>
                     </TableCell>
@@ -229,7 +229,7 @@ function InvoicesContent() {
           </DialogHeader>
           {payDialog && (
             <div className="space-y-4 py-2">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {payDialog.customer.firstName} {payDialog.customer.lastName} ·{" "}
                 Balance due: <strong className="text-orange-600">{formatCurrency(payDialog.amountDue)}</strong>
               </p>
@@ -292,7 +292,7 @@ function InvoicesContent() {
 
 export default function InvoicesPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>}>
       <InvoicesContent />
     </Suspense>
   );

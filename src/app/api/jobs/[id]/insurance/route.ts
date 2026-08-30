@@ -1,20 +1,24 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
   const { id } = await params;
+  const job = await prisma.job.findFirst({ where: { id, shopId } });
+  if (!job) return apiError("Job not found", 404);
   const claim = await prisma.insuranceClaim.findUnique({ where: { jobId: id } });
   const sublets = await prisma.sublet.findMany({ where: { jobId: id }, orderBy: { createdAt: "asc" } });
   return apiSuccess({ claim, sublets });
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
   const { id } = await params;
+  const job = await prisma.job.findFirst({ where: { id, shopId } });
+  if (!job) return apiError("Job not found", 404);
   const body = await req.json();
 
   if (body.type === "insurance") {
@@ -68,14 +72,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
   const { id } = await params;
+  const job = await prisma.job.findFirst({ where: { id, shopId } });
+  if (!job) return apiError("Job not found", 404);
   const body = await req.json();
 
   if (body.subletId) {
     const sublet = await prisma.sublet.update({
-      where: { id: body.subletId },
+      where: { id: body.subletId, jobId: id },
       data: { status: body.status, completedAt: body.status === "COMPLETE" ? new Date() : undefined, ourCost: body.ourCost ? Number(body.ourCost) : undefined, ourCharge: body.ourCharge ? Number(body.ourCharge) : undefined },
     });
     return apiSuccess(sublet);

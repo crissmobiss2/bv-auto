@@ -9,8 +9,14 @@ import { AppUpdateChecker } from "@/components/app-update-checker";
 import { PushNotificationSetup } from "@/components/push-notification-setup";
 import { GlobalSearch } from "@/components/global-search";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { Toaster } from "@/components/ui/toast";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
 
 export const metadata: Metadata = {
   title: "B&V Mobile Auto — Business Operating System",
@@ -23,26 +29,29 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/icons/icon.svg",
-    apple: "/icons/icon.svg",
+    // iOS ignores SVG for the home-screen icon — use the real PNG.
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2563eb",
+  themeColor: "#0f172a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Allow pinch-zoom for accessibility (was locked to maximumScale:1 / userScalable:false).
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${inter.className} h-full antialiased bg-gray-50`}>
+    <html lang="en" className={`h-full ${inter.variable}`} suppressHydrationWarning>
+      <body className={`${inter.className} h-full antialiased bg-gray-50 dark:bg-gray-950`}>
         <Providers>
           {children}
           <GlobalSearch />
           <KeyboardShortcuts />
+          <Toaster />
         </Providers>
         <PwaInstallPrompt />
         <AppUpdateChecker />

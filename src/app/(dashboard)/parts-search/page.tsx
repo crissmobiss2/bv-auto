@@ -103,7 +103,7 @@ export default function PartsSearchPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Package className="h-6 w-6 text-green-600" /> Live Parts Search</h1>
-        <p className="text-sm text-gray-500">Search NAPA, Worldpac, and O'Reilly simultaneously — AI-powered catalog</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Search NAPA, Worldpac, and O'Reilly simultaneously — AI-powered catalog</p>
       </div>
 
       <Card>
@@ -159,7 +159,7 @@ export default function PartsSearchPage() {
           )}
 
           {!searchMutation.isPending && results.length === 0 && searchMutation.isSuccess && (
-            <Card><CardContent className="p-8 text-center text-gray-500">No parts found. Try a different search term.</CardContent></Card>
+            <Card><CardContent className="p-8 text-center text-gray-500 dark:text-gray-400">No parts found. Try a different search term.</CardContent></Card>
           )}
 
           {searchMutation.isIdle && (
@@ -172,7 +172,7 @@ export default function PartsSearchPage() {
 
           {results.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-500 font-medium">{results.length} results across {new Set(results.map(r => r.supplier)).size} suppliers</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{results.length} results across {new Set(results.map(r => r.supplier)).size} suppliers</p>
               {results.map((part, i) => {
                 const inCart = cartItems.some(c => c.partNumber === part.partNumber && c.supplier === part.supplier);
                 return (
@@ -181,12 +181,12 @@ export default function PartsSearchPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <Badge className={`text-xs ${SUPPLIER_COLORS[part.supplier] || "bg-gray-100 text-gray-700"}`}>{part.supplier}</Badge>
+                            <Badge className={`text-xs ${SUPPLIER_COLORS[part.supplier] || "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300"}`}>{part.supplier}</Badge>
                             <span className="font-mono text-sm font-bold">{part.partNumber}</span>
-                            <span className="text-sm text-gray-600">{part.brand}</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{part.brand}</span>
                           </div>
-                          <p className="font-medium text-gray-900">{part.description}</p>
-                          <div className="flex gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{part.description}</p>
+                          <div className="flex gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                             <span className={`flex items-center gap-1 ${part.inStock ? "text-green-600" : "text-red-500"}`}>
                               {part.inStock ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                               {part.inStock ? `In Stock (${part.stockQty})` : "Out of Stock"}
@@ -197,8 +197,8 @@ export default function PartsSearchPage() {
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-xl font-bold text-gray-900">{formatCurrency(part.price)}</p>
-                          {part.coreCharge > 0 && <p className="text-xs text-gray-500">+{formatCurrency(part.coreCharge)} core</p>}
+                          <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(part.price)}</p>
+                          {part.coreCharge > 0 && <p className="text-xs text-gray-500 dark:text-gray-400">+{formatCurrency(part.coreCharge)} core</p>}
                           <Button
                             size="sm"
                             className={`mt-2 ${inCart ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}`}
@@ -234,7 +234,7 @@ export default function PartsSearchPage() {
                   {cartItems.map((part, i) => (
                     <div key={i} className="flex justify-between text-sm border-b pb-2 last:border-0">
                       <div className="flex-1 min-w-0">
-                        <p className="font-mono text-xs text-gray-500">{part.partNumber}</p>
+                        <p className="font-mono text-xs text-gray-500 dark:text-gray-400">{part.partNumber}</p>
                         <p className="truncate font-medium">{part.description}</p>
                         <Badge className={`text-xs mt-0.5 ${SUPPLIER_COLORS[part.supplier] || ""}`}>{part.supplier}</Badge>
                       </div>

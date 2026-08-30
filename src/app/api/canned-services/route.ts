@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const schema = z.object({
@@ -20,14 +20,14 @@ const schema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
   const category = searchParams.get("category");
   const q = searchParams.get("q");
 
-  const where: Record<string, unknown> = { isActive: true };
+  const where: Record<string, unknown> = { shopId, isActive: true };
   if (category) where.category = category;
   if (q) where.name = { contains: q, mode: "insensitive" };
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   });
 
   const categories = await prisma.cannedService.findMany({
-    where: { isActive: true },
+    where: { shopId, isActive: true },
     select: { category: true },
     distinct: ["category"],
   });
@@ -49,13 +49,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues.map((i) => i.message).join(", "), 400);
 
-  const service = await prisma.cannedService.create({ data: parsed.data });
+  const service = await prisma.cannedService.create({ data: { ...parsed.data, shopId } });
   return apiSuccess(service, 201);
 }

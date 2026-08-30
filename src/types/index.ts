@@ -89,17 +89,20 @@ export type SessionUser = {
   email: string;
   name: string;
   role: string;
+  shopId?: string | null;
   image?: string | null;
 };
 
 declare module "next-auth" {
   interface User {
     role?: string;
+    shopId?: string | null;
   }
   interface Session {
     user: SessionUser;
   }
   interface JWT {
     role?: string;
+    shopId?: string | null;
   }
 }

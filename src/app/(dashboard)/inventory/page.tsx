@@ -59,7 +59,7 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Inventory</h1>
         <Button onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-2" /> Add Item</Button>
       </div>
 
@@ -85,12 +85,12 @@ export default function InventoryPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-gray-500 py-8">Loading...</div>
+        <div className="text-center text-gray-500 dark:text-gray-400 py-8">Loading...</div>
       ) : (items || []).length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No inventory items yet.</p>
+            <p className="text-gray-500 dark:text-gray-400">No inventory items yet.</p>
           </CardContent>
         </Card>
       ) : (
@@ -103,11 +103,11 @@ export default function InventoryPage() {
                   <div className="flex items-center gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
                         {item.partNumber && <span className="text-xs text-gray-400 font-mono">{item.partNumber}</span>}
                         {isLow && <Badge className="bg-red-100 text-red-700 text-xs">Low Stock</Badge>}
                       </div>
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-500 mt-1">
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {item.category && <span>{item.category}</span>}
                         {item.location && <span>📍 {item.location}</span>}
                         <span>Cost: {formatCurrency(item.unitCost)}</span>
@@ -126,7 +126,7 @@ export default function InventoryPage() {
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <span className={`text-lg font-bold w-8 text-center ${isLow ? "text-red-600" : "text-gray-900"}`}>
+                      <span className={`text-lg font-bold w-8 text-center ${isLow ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
                         {item.quantityOnHand}
                       </span>
                       <Button

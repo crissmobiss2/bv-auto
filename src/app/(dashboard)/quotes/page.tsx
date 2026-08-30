@@ -17,7 +17,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 const QUOTE_STATUSES = ["ALL", "DRAFT", "SENT", "VIEWED", "APPROVED", "DECLINED", "EXPIRED"];
 
 const QUOTE_STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
+  DRAFT: "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300",
   SENT: "bg-blue-100 text-blue-700",
   VIEWED: "bg-purple-100 text-purple-700",
   APPROVED: "bg-green-100 text-green-700",
@@ -98,8 +98,8 @@ function QuotesContent() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quotes</h1>
-          <p className="text-sm text-gray-500">{data?.total || 0} total</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Quotes</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{data?.total || 0} total</p>
         </div>
         <Link href="/jobs/new">
           <Button className="bg-blue-600 hover:bg-blue-700">
@@ -115,9 +115,9 @@ function QuotesContent() {
             const count = quotes.filter(q => q.status === s).length;
             return (
               <button key={s} onClick={() => setStatusFilter(s)}
-                className={`p-2 rounded-lg border text-center transition-colors ${statusFilter === s ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}`}>
+                className={`p-2 rounded-lg border text-center transition-colors ${statusFilter === s ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50 dark:hover:bg-white/5"}`}>
                 <p className="text-lg font-bold">{count}</p>
-                <p className="text-xs text-gray-500">{s}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{s}</p>
               </button>
             );
           })}
@@ -142,11 +142,11 @@ function QuotesContent() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
           ) : quotes.length === 0 ? (
             <div className="p-12 text-center space-y-3">
               <FileText className="h-10 w-10 text-gray-300 mx-auto" />
-              <p className="text-gray-500">No quotes found.</p>
+              <p className="text-gray-500 dark:text-gray-400">No quotes found.</p>
               <Link href="/jobs/new">
                 <Button variant="outline"><Plus className="h-4 w-4 mr-1" /> Create a Job to Generate a Quote</Button>
               </Link>
@@ -170,20 +170,20 @@ function QuotesContent() {
                   <TableRow key={q.id}>
                     <TableCell className="font-mono text-xs">{q.quoteNumber}</TableCell>
                     <TableCell className="text-sm">{q.customer.firstName} {q.customer.lastName}</TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-gray-500">
+                    <TableCell className="hidden md:table-cell text-sm text-gray-500 dark:text-gray-400">
                       {q.job.vehicle.year} {q.job.vehicle.make} {q.job.vehicle.model}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-medium">{formatCurrency(q.totalAmount)}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-gray-500">{formatDate(q.createdAt)}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-gray-500 dark:text-gray-400">{formatDate(q.createdAt)}</TableCell>
                     <TableCell className="hidden lg:table-cell text-sm">
                       {q.validUntil ? (
-                        <span className={new Date(q.validUntil) < new Date() ? "text-red-600" : "text-gray-500"}>
+                        <span className={new Date(q.validUntil) < new Date() ? "text-red-600" : "text-gray-500 dark:text-gray-400"}>
                           {formatDate(q.validUntil)}
                         </span>
                       ) : "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge className={`text-xs ${QUOTE_STATUS_COLORS[q.status] || "bg-gray-100 text-gray-700"}`}>
+                      <Badge className={`text-xs ${QUOTE_STATUS_COLORS[q.status] || "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300"}`}>
                         {q.status}
                       </Badge>
                     </TableCell>
@@ -234,7 +234,7 @@ function QuotesContent() {
       <Dialog open={!!approveDialog} onOpenChange={o => !o && setApproveDialog(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader><DialogTitle>Approve Quote</DialogTitle></DialogHeader>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Mark <strong>{approveDialog?.quoteNumber}</strong> as approved by the customer?
             This will set the job status to APPROVED.
           </p>
@@ -253,7 +253,7 @@ function QuotesContent() {
       <Dialog open={!!declineDialog} onOpenChange={o => !o && setDeclineDialog(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader><DialogTitle>Decline Quote</DialogTitle></DialogHeader>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Mark <strong>{declineDialog?.quoteNumber}</strong> as declined?
           </p>
           <DialogFooter>
@@ -272,7 +272,7 @@ function QuotesContent() {
 
 export default function QuotesPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>}>
       <QuotesContent />
     </Suspense>
   );

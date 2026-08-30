@@ -158,13 +158,13 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-4 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <Bell className="h-6 w-6" /> Notifications
           {totalUrgent > 0 && (
             <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalUrgent}</span>
           )}
         </h1>
-        <p className="text-sm text-gray-500">Everything requiring your attention — updated every minute</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Everything requiring your attention — updated every minute</p>
       </div>
 
       {/* Summary grid */}
@@ -182,7 +182,7 @@ export default function NotificationsPage() {
                   <div className={`p-2 rounded-lg ${color}`}><Icon className="h-5 w-5" /></div>
                   <div>
                     <p className="text-xl font-bold">{value ?? 0}</p>
-                    <p className="text-xs text-gray-500">{label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -206,7 +206,7 @@ export default function NotificationsPage() {
                   <div className={`p-2 rounded-lg ${color}`}><Icon className="h-5 w-5" /></div>
                   <div>
                     <p className="text-xl font-bold">{value}</p>
-                    <p className="text-xs text-gray-500">{label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -219,12 +219,12 @@ export default function NotificationsPage() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading notifications...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading notifications...</div>
           ) : notifications.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center gap-3">
               <CheckCircle className="h-10 w-10 text-green-500" />
-              <p className="font-semibold text-gray-700">All caught up!</p>
-              <p className="text-sm text-gray-500">No items require your attention right now.</p>
+              <p className="font-semibold text-gray-700 dark:text-gray-300">All caught up!</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No items require your attention right now.</p>
             </div>
           ) : (
             <div className="divide-y">
@@ -236,8 +236,8 @@ export default function NotificationsPage() {
                 >
                   <n.icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${iconStyles[n.type]}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{n.title}</p>
-                    <p className="text-xs text-gray-500 truncate">{n.message}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{n.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{n.message}</p>
                     {n.time && (
                       <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(n.time)}</p>
                     )}

@@ -79,7 +79,7 @@ export default function MarketingPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Megaphone className="h-6 w-6 text-purple-600" /> Marketing Automation</h1>
-          <p className="text-sm text-gray-500">Automated SMS campaigns — runs itself so you never miss a follow-up</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Automated SMS campaigns — runs itself so you never miss a follow-up</p>
         </div>
         <Button onClick={() => setShowAdd(true)} className="bg-purple-600 hover:bg-purple-700"><Plus className="h-4 w-4 mr-2" /> New Campaign</Button>
       </div>
@@ -100,15 +100,15 @@ export default function MarketingPage() {
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Total Campaigns</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Total Campaigns</p>
           <p className="text-2xl font-bold">{campaigns.length}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Active Campaigns</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Active Campaigns</p>
           <p className="text-2xl font-bold text-green-600">{campaigns.filter(c => c.isActive).length}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500">Total Messages Sent</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Total Messages Sent</p>
           <p className="text-2xl font-bold text-purple-600">{campaigns.reduce((s, c) => s + c.sentCount, 0)}</p>
         </CardContent></Card>
       </div>
@@ -126,7 +126,7 @@ export default function MarketingPage() {
       </Card>
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500">Loading campaigns...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading campaigns...</div>
       ) : campaigns.length === 0 ? (
         <Card><CardContent className="p-12 text-center text-gray-400">
           <Megaphone className="h-12 w-12 mx-auto mb-3 opacity-20" />
@@ -141,15 +141,15 @@ export default function MarketingPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-gray-900">{campaign.name}</p>
-                      <Badge className={campaign.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}>
+                      <p className="font-bold text-gray-900 dark:text-gray-100">{campaign.name}</p>
+                      <Badge className={campaign.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400"}>
                         {campaign.isActive ? "Active" : "Paused"}
                       </Badge>
                       <Badge variant="outline" className="text-xs">{campaign.type}</Badge>
                       <Badge variant="outline" className="text-xs">{TRIGGER_LABELS[campaign.triggerType] || campaign.triggerType}</Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1 bg-gray-50 rounded p-2 border mt-2 italic">"{campaign.messageTemplate.substring(0, 120)}{campaign.messageTemplate.length > 120 ? "..." : ""}"</p>
-                    <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 bg-gray-50 dark:bg-white/5 rounded p-2 border mt-2 italic">"{campaign.messageTemplate.substring(0, 120)}{campaign.messageTemplate.length > 120 ? "..." : ""}"</p>
+                    <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
                       <span className="flex items-center gap-1"><Users className="h-3 w-3" />{campaign.sentCount} sent</span>
                       {campaign.lastRunAt && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />Last run: {formatDate(campaign.lastRunAt)}</span>}
                       <span>Created {formatDate(campaign.createdAt)}</span>
@@ -193,7 +193,7 @@ export default function MarketingPage() {
               <div className="flex gap-2">
                 {CAMPAIGN_TYPES.map(t => (
                   <button key={t} onClick={() => setForm({ ...form, type: t })}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium border ${form.type === t ? "bg-purple-600 text-white border-purple-600" : "border-gray-200 text-gray-600"}`}>
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium border ${form.type === t ? "bg-purple-600 text-white border-purple-600" : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400"}`}>
                     {t}
                   </button>
                 ))}
@@ -202,11 +202,11 @@ export default function MarketingPage() {
             <div className="space-y-2">
               <Label>Trigger</Label>
               {TRIGGER_TYPES.map(t => (
-                <label key={t.value} className={`flex items-start gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${form.triggerType === t.value ? "border-purple-400 bg-purple-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                <label key={t.value} className={`flex items-start gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${form.triggerType === t.value ? "border-purple-400 bg-purple-50" : "border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"}`}>
                   <input type="radio" name="trigger" value={t.value} checked={form.triggerType === t.value} onChange={() => setForm({ ...form, triggerType: t.value })} className="mt-1" />
                   <div>
                     <p className="font-medium text-sm">{t.label}</p>
-                    <p className="text-xs text-gray-500">{t.description}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t.description}</p>
                   </div>
                 </label>
               ))}
@@ -219,11 +219,11 @@ export default function MarketingPage() {
             )}
             <div className="space-y-2">
               <Label>Message Template *</Label>
-              <p className="text-xs text-gray-500">Use {"{firstName}"}, {"{lastName}"}, {"{name}"} for personalization</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Use {"{firstName}"}, {"{lastName}"}, {"{name}"} for personalization</p>
               <div className="flex gap-1 flex-wrap mb-1">
                 {PRESET_TEMPLATES.map(t => (
                   <button key={t.label} onClick={() => setForm({ ...form, messageTemplate: t.template })}
-                    className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border">
+                    className="text-xs px-2 py-1 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 rounded border">
                     Use {t.label} template
                   </button>
                 ))}

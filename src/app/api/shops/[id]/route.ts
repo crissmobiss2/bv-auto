@@ -1,20 +1,26 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError, pick } from "@/lib/api-helpers";
+
+const SHOP_FIELDS = [
+  "name", "address", "city", "state", "zip", "phone", "email",
+  "logoUrl", "googleReviewUrl", "isActive", "isDefault",
+] as const;
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  // Shop config is admin-only, and an admin may only edit their own shop.
+  const { error, shopId } = await requireShop(["ADMIN"]);
   if (error) return error;
   const { id } = await params;
+  if (id !== shopId) return apiError("You can only edit your own shop", 403);
+
   const body = await req.json();
-  if (body.isDefault) {
-    await prisma.shop.updateMany({ data: { isDefault: false } });
-  }
   const shop = await prisma.shop.update({
     where: { id },
     data: {
-      ...body,
-      taxRate: body.taxRate != null ? Number(body.taxRate) : undefined,
+      ...pick(body, SHOP_FIELDS),
+      // UI sends a percent (8.25); store as a fraction (0.0825) — read paths ×100.
+      taxRate: body.taxRate != null ? Number(body.taxRate) / 100 : undefined,
       laborRate: body.laborRate != null ? Number(body.laborRate) : undefined,
     },
   });
@@ -22,17 +28,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN"]);
   if (error) return error;
   const { id } = await params;
+  if (id !== shopId) return apiError("You can only modify your own shop", 403);
   await prisma.shop.update({ where: { id }, data: { isActive: false } });
   return apiSuccess({ ok: true });
 }
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
   const { id } = await params;
+  if (id !== shopId) return apiError("Shop not found", 404);
   const shop = await prisma.shop.findUnique({ where: { id } });
   if (!shop) return apiError("Shop not found", 404);
   return apiSuccess(shop);

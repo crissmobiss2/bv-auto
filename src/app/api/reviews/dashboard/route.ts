@@ -1,15 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(["ADMIN", "DISPATCHER"]);
   if (error) return error;
 
   const [total, sent, clicked, recent] = await Promise.all([
-    prisma.reviewRequest.count(),
-    prisma.reviewRequest.count({ where: { sentAt: { not: null } } }),
-    prisma.reviewRequest.count({ where: { clickedAt: { not: null } } }),
+    prisma.reviewRequest.count({ where: { customer: { shopId } } }),
+    prisma.reviewRequest.count({ where: { sentAt: { not: null }, customer: { shopId } } }),
+    prisma.reviewRequest.count({ where: { clickedAt: { not: null }, customer: { shopId } } }),
     prisma.reviewRequest.findMany({
+      where: { customer: { shopId } },
       take: 20,
       orderBy: { createdAt: "desc" },
       include: {

@@ -347,6 +347,29 @@ async function main() {
     },
   });
 
+  // Multi-tenancy: ensure a default shop and assign every seeded row to it.
+  const shop = await prisma.shop.upsert({
+    where: { id: "seed-default-shop" },
+    update: {},
+    create: {
+      id: "seed-default-shop",
+      name: "B&V Mobile Auto",
+      phone: "5550001000",
+      email: "service@bvauto.com",
+      city: "Houston",
+      state: "TX",
+      taxRate: 0.0825,
+      laborRate: 85,
+      isDefault: true,
+      isActive: true,
+    },
+  });
+  const shopId = shop.id;
+  for (const m of ["user", "customer", "vehicle", "job", "quote", "invoice", "partsVendor", "inventoryItem", "fleetAccount", "marketingCampaign", "cannedService", "serviceRequest"] as const) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (prisma as any)[m].updateMany({ where: { shopId: null }, data: { shopId } });
+  }
+
   console.log("✅ Seed completed successfully!");
   console.log("Login: admin@bvauto.com / admin123");
 }

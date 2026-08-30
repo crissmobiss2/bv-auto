@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAuth, apiError } from "@/lib/api-helpers";
+import { requireRole, apiError } from "@/lib/api-helpers";
 
 export async function GET() {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN"]);
   if (error) return error;
 
   const clientId = process.env.QUICKBOOKS_CLIENT_ID;

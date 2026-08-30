@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { generateQuoteNumber, calculateLineItemTotal } from "@/lib/utils";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { generateQuoteNumber, calculateLineItemTotal, computeTotals } from "@/lib/utils";
 import { z } from "zod";
 import { AuditAction, LineItemType } from "@prisma/client";
+
+const QUOTE_ROLES = ["ADMIN", "DISPATCHER", "ACCOUNTANT", "SERVICE_ADVISOR"] as const;
 
 const lineItemSchema = z.object({
   type: z.nativeEnum(LineItemType).default("LABOR"),
@@ -31,7 +33,7 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop(QUOTE_ROLES);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -42,7 +44,7 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "25");
   const skip = (page - 1) * limit;
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { shopId };
   if (jobId) where.jobId = jobId;
   if (customerId) where.customerId = customerId;
   if (status) where.status = status;
@@ -66,37 +68,31 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop(QUOTE_ROLES);
   if (error) return error;
 
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
-  // Check job exists
-  const job = await prisma.job.findUnique({ where: { id: parsed.data.jobId } });
+  // Check job exists and belongs to this shop
+  const job = await prisma.job.findFirst({ where: { id: parsed.data.jobId, shopId } });
   if (!job) return apiError("Job not found", 404);
 
   // Check no existing quote for this job
   const existing = await prisma.quote.findUnique({ where: { jobId: parsed.data.jobId } });
   if (existing) return apiError("Quote already exists for this job");
 
-  // Calculate totals
+  // Calculate line totals, then quote totals (discount-aware) from the shared helper.
   const lineItemsWithTotals = parsed.data.lineItems.map((li) => ({
     ...li,
     total: calculateLineItemTotal(li.quantity, li.unitPrice, li.markup, li.discount),
   }));
 
-  const subtotal = lineItemsWithTotals
-    .filter((li) => li.type !== "TAX" && li.type !== "DISCOUNT")
-    .reduce((sum, li) => sum + li.total, 0);
-
-  const taxableAmount = lineItemsWithTotals
-    .filter((li) => li.taxable && li.type !== "TAX")
-    .reduce((sum, li) => sum + li.total, 0);
-
-  const taxAmount = Math.round(taxableAmount * (parsed.data.taxRate / 100) * 100) / 100;
-  const totalAmount = Math.round((subtotal + taxAmount) * 100) / 100;
+  const { subtotal, discountAmount, taxAmount, totalAmount } = computeTotals(
+    lineItemsWithTotals,
+    parsed.data.taxRate
+  );
 
   const quote = await prisma.quote.create({
     data: {
@@ -104,6 +100,7 @@ export async function POST(req: NextRequest) {
       jobId: parsed.data.jobId,
       customerId: parsed.data.customerId,
       createdById: session!.user.id,
+      shopId,
       title: parsed.data.title,
       notes: parsed.data.notes,
       internalNotes: parsed.data.internalNotes,
@@ -111,6 +108,7 @@ export async function POST(req: NextRequest) {
       taxRate: parsed.data.taxRate,
       taxAmount,
       subtotal,
+      discountAmount,
       totalAmount,
       depositRequired: parsed.data.depositRequired,
       lineItems: {

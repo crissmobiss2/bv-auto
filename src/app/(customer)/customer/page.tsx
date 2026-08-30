@@ -41,7 +41,8 @@ export default function CustomerDashboard() {
     );
   }
 
-  const { customer, vehicles = [], recentJobs = [], openInvoices = [], stats = {} } = data || {};
+  const { customer, shop, vehicles = [], recentJobs = [], openInvoices = [], stats = {} } = data || {};
+  const shopPhone: string | undefined = shop?.phone || undefined;
 
   return (
     <div className="space-y-4">
@@ -57,11 +58,13 @@ export default function CustomerDashboard() {
               <CalendarCheck className="h-4 w-4 mr-1.5" /> Book Service
             </Button>
           </Link>
-          <a href="tel:+1">
-            <Button size="sm" variant="ghost" className="text-white hover:bg-blue-500 border border-white/30">
-              <Phone className="h-4 w-4 mr-1.5" /> Call Us
-            </Button>
-          </a>
+          {shopPhone && (
+            <a href={`tel:${shopPhone.replace(/[^\d+]/g, "")}`}>
+              <Button size="sm" variant="ghost" className="text-white hover:bg-blue-500 border border-white/30">
+                <Phone className="h-4 w-4 mr-1.5" /> Call Us
+              </Button>
+            </a>
+          )}
         </div>
       </div>
 

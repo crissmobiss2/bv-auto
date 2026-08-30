@@ -22,8 +22,10 @@ export default function CustomerInvoices() {
     queryFn: () => axios.get("/api/customer/dashboard").then(r => r.data),
   });
 
-  const invoices = data?.openInvoices || [];
+  const invoices = data?.allInvoices || data?.openInvoices || [];
   const openBalance = data?.stats?.openBalance ?? 0;
+  const shopPhone: string | undefined = data?.shop?.phone || undefined;
+  const telHref = shopPhone ? `tel:${shopPhone.replace(/[^\d+]/g, "")}` : undefined;
 
   if (isLoading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-gray-200 animate-pulse rounded-xl" />)}</div>;
 
@@ -80,9 +82,9 @@ export default function CustomerInvoices() {
                     </Badge>
                   </div>
                 </div>
-                {["SENT", "OVERDUE", "PARTIAL"].includes(inv.status) && (
+                {["SENT", "OVERDUE", "PARTIAL"].includes(inv.status) && telHref && (
                   <div className="mt-3 pt-3 border-t">
-                    <a href={`tel:+1`}>
+                    <a href={telHref}>
                       <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700">
                         <FileText className="h-3 w-3 mr-1.5" /> Contact Us to Pay
                       </Button>

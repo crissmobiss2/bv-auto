@@ -8,6 +8,12 @@ const DEMO_EMAIL = "demo@bvauto.com";
 const DEMO_PASSWORD = "demo-preview-2024";
 
 export async function POST(req: NextRequest) {
+  // SECURITY: never hand out working staff credentials in production.
+  // This endpoint seeds a DISPATCHER demo account and must stay non-prod only.
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEMO_LOGIN !== "true") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   // 10 demo logins per 5 min per IP
   if (!rateLimit(`demo:${getIP(req)}`, 10, 5 * 60_000)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });

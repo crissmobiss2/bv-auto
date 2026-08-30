@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 import { WarrantyStatus, WarrantyType } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const in7 = new Date(now.getTime() + 7 * 86400000);
   const in30 = new Date(now.getTime() + 30 * 86400000);
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { customer: { shopId } };
   if (customerId) where.customerId = customerId;
   if (filter === "active") where.status = WarrantyStatus.ACTIVE;
   if (filter === "expiring") where.expiryDate = { lte: in30, gte: now };
@@ -33,15 +33,15 @@ export async function GET(req: NextRequest) {
     take: 100,
   });
 
-  const expiringSoon = await prisma.warranty.count({ where: { status: WarrantyStatus.ACTIVE, expiryDate: { lte: in7, gte: now } } });
-  const expiring30 = await prisma.warranty.count({ where: { status: WarrantyStatus.ACTIVE, expiryDate: { lte: in30, gte: now } } });
-  const totalActive = await prisma.warranty.count({ where: { status: WarrantyStatus.ACTIVE } });
+  const expiringSoon = await prisma.warranty.count({ where: { customer: { shopId }, status: WarrantyStatus.ACTIVE, expiryDate: { lte: in7, gte: now } } });
+  const expiring30 = await prisma.warranty.count({ where: { customer: { shopId }, status: WarrantyStatus.ACTIVE, expiryDate: { lte: in30, gte: now } } });
+  const totalActive = await prisma.warranty.count({ where: { customer: { shopId }, status: WarrantyStatus.ACTIVE } });
 
   return apiSuccess({ warranties, stats: { totalActive, expiringSoon, expiring30 } });
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
 
   if (!jobId || !description) return apiError("jobId and description required");
 
-  const job = await prisma.job.findUnique({
-    where: { id: jobId },
+  const job = await prisma.job.findFirst({
+    where: { id: jobId, shopId },
     select: { customerId: true, vehicleId: true, mileageIn: true },
   });
   if (!job) return apiError("Job not found");

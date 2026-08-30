@@ -38,11 +38,16 @@ export async function sendPushToUser(userId: string, notification: {
     })
   );
 
-  // Remove expired/invalid tokens
-  const failed = results.map((r, i) => ({ r, token: tokens[i] }))
-    .filter(({ r }) => r.status === "rejected");
-  for (const { token } of failed) {
-    await prisma.pushToken.delete({ where: { id: token.id } }).catch(() => {});
+  // Only remove a token when the push service says the subscription is GONE
+  // (404/410). Never delete on a transient error or missing VAPID config —
+  // that previously wiped every subscription in the database.
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.status !== "rejected") continue;
+    const status = (r.reason as { statusCode?: number })?.statusCode;
+    if (status === 404 || status === 410) {
+      await prisma.pushToken.delete({ where: { id: tokens[i].id } }).catch(() => {});
+    }
   }
 
   return results;

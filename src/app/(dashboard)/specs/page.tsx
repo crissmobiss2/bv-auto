@@ -39,7 +39,7 @@ export default function SpecsPage() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
             {icon} {title}
           </CardTitle>
         </CardHeader>
@@ -52,8 +52,8 @@ export default function SpecsPage() {
     if (!value && value !== 0) return null;
     return (
       <div className="flex justify-between gap-2">
-        <span className="text-gray-500 shrink-0">{label}</span>
-        <span className={`font-medium text-right ${highlight ? "text-blue-700" : "text-gray-900"}`}>{value}</span>
+        <span className="text-gray-500 dark:text-gray-400 shrink-0">{label}</span>
+        <span className={`font-medium text-right ${highlight ? "text-blue-700" : "text-gray-900 dark:text-gray-100"}`}>{value}</span>
       </div>
     );
   }
@@ -62,8 +62,8 @@ export default function SpecsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Vehicle Specifications</h1>
-          <p className="text-sm text-gray-500">OEM fluid specs, torque values, tire pressures, battery data, and more</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Vehicle Specifications</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">OEM fluid specs, torque values, tire pressures, battery data, and more</p>
         </div>
         {spec && !spec.error && (
           <Button variant="outline" size="sm" onClick={() => window.print()}>
@@ -97,7 +97,7 @@ export default function SpecsPage() {
 
       {/* Loading */}
       {isLoading && (
-        <div className="text-center py-8 text-gray-500">Loading vehicle specifications...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading vehicle specifications...</div>
       )}
 
       {/* Not found */}
@@ -136,7 +136,7 @@ export default function SpecsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Engine */}
             {(spec.engineDisplacement || spec.compressionRatio || spec.firingOrder) && (
-              <SpecCard title="Engine" icon={<Settings className="h-4 w-4 text-gray-600" />}>
+              <SpecCard title="Engine" icon={<Settings className="h-4 w-4 text-gray-600 dark:text-gray-400" />}>
                 <Row label="Displacement" value={spec.engineDisplacement} />
                 <Row label="Cylinders" value={spec.engineCylinders} />
                 <Row label="Compression" value={spec.compressionRatio} />
@@ -193,7 +193,7 @@ export default function SpecsPage() {
 
             {/* Tires */}
             {spec.tireSizeFront && (
-              <SpecCard title="Tires" icon={<Car className="h-4 w-4 text-gray-700" />}>
+              <SpecCard title="Tires" icon={<Car className="h-4 w-4 text-gray-700 dark:text-gray-300" />}>
                 <Row label="Front Size" value={spec.tireSizeFront} highlight />
                 <Row label="Rear Size" value={spec.tireSizeRear !== spec.tireSizeFront ? spec.tireSizeRear : "Same as front"} />
                 <Row label="Front Pressure" value={spec.tirePressureFront ? `${spec.tirePressureFront} PSI` : null} />
@@ -242,7 +242,7 @@ export default function SpecsPage() {
                 </div>
                 {spec.adasCalRequired?.length > 0 && (
                   <div className="mt-2 pt-2 border-t">
-                    <p className="text-xs text-gray-500 font-medium mb-1">Calibration required after:</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Calibration required after:</p>
                     {spec.adasCalRequired.map((e: string) => (
                       <div key={e} className="text-xs text-orange-700 bg-orange-50 rounded px-2 py-0.5 mb-1">⚠️ {e}</div>
                     ))}

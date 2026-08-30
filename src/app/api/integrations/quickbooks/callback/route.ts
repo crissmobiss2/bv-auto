@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/api-helpers";
+import { requireRole } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN"]);
   if (error) return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?tab=integrations&error=auth`);
 
   const { searchParams } = req.nextUrl;

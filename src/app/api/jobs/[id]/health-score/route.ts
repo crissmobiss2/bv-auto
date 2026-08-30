@@ -1,25 +1,27 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireShop, apiSuccess, apiError } from "@/lib/api-helpers";
 
-// Compute vehicle health score (0-100) from inspection checklist data
+// Compute vehicle health score (0-100) from inspection checklist data.
+// NOTE: inspection items are stored with a `condition` field (GOOD/FAIR/…),
+// not `grade` — reading the wrong key made every score come back 0.
 export function computeHealthScore(checklist: {
-  items?: Array<{ grade?: string; category?: string }>;
+  items?: Array<{ condition?: string; category?: string }>;
 }): { score: number; summary: string; breakdown: Record<string, number> } {
   const items = checklist?.items || [];
   if (items.length === 0) return { score: 0, summary: "No inspection data", breakdown: {} };
 
-  const gradeWeight: Record<string, number> = {
+  const conditionWeight: Record<string, number> = {
     GOOD: 100, FAIR: 60, NEEDS_ATTENTION: 25, CRITICAL: 0, NA: -1,
   };
 
-  const gradeable = items.filter(i => i.grade && i.grade !== "NA");
+  const gradeable = items.filter(i => i.condition && i.condition !== "NA");
   if (gradeable.length === 0) return { score: 0, summary: "No graded items", breakdown: {} };
 
   const byCategory: Record<string, { total: number; count: number }> = {};
   for (const item of gradeable) {
     const cat = item.category || "General";
-    const w = gradeWeight[item.grade!] ?? 50;
+    const w = conditionWeight[item.condition!] ?? 50;
     if (!byCategory[cat]) byCategory[cat] = { total: 0, count: 0 };
     byCategory[cat].total += w;
     byCategory[cat].count += 1;
@@ -37,8 +39,8 @@ export function computeHealthScore(checklist: {
 
   const score = Math.round(totalScore / catCount);
 
-  const criticalCount = items.filter(i => i.grade === "CRITICAL").length;
-  const needsCount = items.filter(i => i.grade === "NEEDS_ATTENTION").length;
+  const criticalCount = items.filter(i => i.condition === "CRITICAL").length;
+  const needsCount = items.filter(i => i.condition === "NEEDS_ATTENTION").length;
 
   let summary = "";
   if (score >= 85) summary = "Vehicle is in great shape";
@@ -50,12 +52,12 @@ export function computeHealthScore(checklist: {
 }
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
   const { id } = await params;
 
-  const job = await prisma.job.findUnique({
-    where: { id },
+  const job = await prisma.job.findFirst({
+    where: { id, shopId },
     select: { id: true, checklist: true, vehicleHealthScore: true, vehicle: { select: { year: true, make: true, model: true } } },
   });
   if (!job) return apiError("Job not found", 404);
@@ -67,12 +69,12 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
   const { id } = await params;
 
-  const job = await prisma.job.findUnique({
-    where: { id },
+  const job = await prisma.job.findFirst({
+    where: { id, shopId },
     select: { id: true, checklist: true, customerId: true, vehicle: { select: { year: true, make: true, model: true } }, customer: { select: { phone: true, firstName: true } } },
   });
   if (!job) return apiError("Job not found", 404);

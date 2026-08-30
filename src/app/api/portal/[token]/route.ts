@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { apiError, apiSuccess, requireStaff } from "@/lib/api-helpers";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -49,9 +49,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   return apiSuccess(safe);
 }
 
-// Generate or refresh portal token for a customer (called internally)
-export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
-  // token here = customerId (used by staff to generate the link)
+// Generate or refresh a customer's portal token. Staff-only: this mints access
+// credentials, so it must never be reachable anonymously.
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+  const { error } = await requireStaff();
+  if (error) return error;
+
+  // token segment here = customerId (used by staff to generate the link)
   const { token: customerId } = await params;
 
   const portalToken = crypto.randomBytes(20).toString("hex");

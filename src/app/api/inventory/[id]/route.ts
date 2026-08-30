@@ -1,22 +1,25 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
-  const item = await prisma.inventoryItem.findUnique({ where: { id } });
+  const item = await prisma.inventoryItem.findFirst({ where: { id, shopId } });
   if (!item) return apiError("Not found", 404);
   return apiSuccess(item);
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+  const existing = await prisma.inventoryItem.findFirst({ where: { id, shopId } });
+  if (!existing) return apiError("Not found", 404);
+
   const body = await req.json();
   const { name, partNumber, description, category, quantityOnHand, reorderPoint, unitCost, location, notes, isActive, adjustment } = body;
 
@@ -41,10 +44,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { id } = await params;
+  const existing = await prisma.inventoryItem.findFirst({ where: { id, shopId } });
+  if (!existing) return apiError("Not found", 404);
+
   await prisma.inventoryItem.update({ where: { id }, data: { isActive: false } });
   return apiSuccess({ deleted: true });
 }

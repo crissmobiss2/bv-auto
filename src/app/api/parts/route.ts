@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireShop, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { z } from "zod";
 import { AuditAction, PartStatus } from "@prisma/client";
 
@@ -20,14 +20,14 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, shopId } = await requireShop();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
   const jobId = searchParams.get("jobId");
   const status = searchParams.get("status");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { job: { shopId } };
   if (jobId) where.jobId = jobId;
   if (status) where.status = status;
 
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
+  const { error, session, shopId } = await requireShop();
   if (error) return error;
 
   const body = await req.json();
@@ -57,6 +57,9 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
   const data = parsed.data;
+  const job = await prisma.job.findFirst({ where: { id: data.jobId, shopId } });
+  if (!job) return apiError("Job not found", 404);
+
   const unitCost = data.unitCost ?? 0;
   const markup = data.markup ?? 0;
   const unitPrice = data.unitPrice ?? (unitCost * (1 + markup / 100));
