@@ -4,8 +4,48 @@ import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
 
 const client = new Anthropic();
 
-// Simulated supplier catalog — swap fetch() calls here once you have API credentials
-// from NAPA (api.napaonline.com), Worldpac, or Nexpart
+// Live PartsTech catalog — activates automatically when PARTSTECH_API_KEY is set.
+// PartsTech aggregates NAPA, Worldpac, Advance, O'Reilly and 4000+ suppliers under
+// one API (docs: api.partstech.com). Tune the endpoint/body to your account tier.
+async function searchPartsTech(query: string, year: string, make: string, model: string) {
+  const apiKey = process.env.PARTSTECH_API_KEY;
+  if (!apiKey) return [];
+
+  const res = await fetch("https://api.partstech.com/catalog/v2/parts/search", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      searchTerm: query,
+      vehicle: year || make || model ? { year, make, model } : undefined,
+      locationId: process.env.PARTSTECH_LOCATION_ID || undefined,
+      limit: 20,
+    }),
+  });
+  if (!res.ok) throw new Error(`PartsTech ${res.status}`);
+
+  const data = await res.json();
+  const parts = data?.parts || data?.results || data || [];
+  return (Array.isArray(parts) ? parts : []).slice(0, 20).map((p: Record<string, unknown>) => ({
+    partNumber: p.partNumber || p.part_number || "",
+    description: p.description || p.name || "",
+    brand: (p.brand as Record<string, string>)?.brandName || p.brand || "",
+    price: Number((p.pricing as Record<string, unknown>)?.list ?? p.price ?? 0),
+    coreCharge: Number(p.coreCharge ?? 0),
+    inStock: !!(p.inStock ?? p.quantity),
+    stockQty: Number(p.quantity ?? p.stockQty ?? 0),
+    location: p.supplierName || p.supplier || "",
+    condition: p.condition || "New",
+    warranty: p.warranty || "",
+    supplier: p.supplierName || "PartsTech",
+    live: true,
+  }));
+}
+
+// AI-estimated catalog fallback — used when no supplier API credentials are set.
 async function searchSupplier(supplier: string, query: string, year: string, make: string, model: string) {
   // TODO: Replace with real supplier API calls when credentials are configured
   // NAPA: POST https://api.napaonline.com/v1/parts/search
@@ -66,23 +106,31 @@ export async function GET(req: NextRequest) {
 
   if (!query) return apiError("q is required");
 
-  // Search all suppliers in parallel
-  const [napa, worldpac, oreilly] = await Promise.allSettled([
-    searchSupplier("NAPA Auto Parts", query, year, make, model),
-    searchSupplier("Worldpac", query, year, make, model),
-    searchSupplier("O'Reilly Auto Parts", query, year, make, model),
-  ]);
+  // Prefer the live PartsTech catalog when credentials are configured;
+  // otherwise fall back to AI-estimated pricing per supplier.
+  const live = await searchPartsTech(query, year, make, model).catch(() => []);
+  let results: unknown[] = live;
 
-  const results = [
-    ...(napa.status === "fulfilled" ? napa.value : []),
-    ...(worldpac.status === "fulfilled" ? worldpac.value : []),
-    ...(oreilly.status === "fulfilled" ? oreilly.value : []),
-  ];
+  if (!live.length) {
+    const [napa, worldpac, oreilly] = await Promise.allSettled([
+      searchSupplier("NAPA Auto Parts", query, year, make, model),
+      searchSupplier("Worldpac", query, year, make, model),
+      searchSupplier("O'Reilly Auto Parts", query, year, make, model),
+    ]);
+    results = [
+      ...(napa.status === "fulfilled" ? napa.value : []),
+      ...(worldpac.status === "fulfilled" ? worldpac.value : []),
+      ...(oreilly.status === "fulfilled" ? oreilly.value : []),
+    ];
+  }
 
   return apiSuccess({
     results,
     query,
     vehicle: { year, make, model },
-    note: "Connect real supplier API credentials in settings to get live pricing",
+    live: live.length > 0,
+    note: live.length
+      ? "Live supplier catalog via PartsTech"
+      : "AI-estimated results — add PARTSTECH_API_KEY for live supplier pricing and stock",
   });
 }

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { TrendingUp, DollarSign, Wrench, Users, FileText, Download, TrendingDown, Award, Target, PieChart as PieIcon, GitPullRequest, Clock, XCircle } from "lucide-react";
+import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -14,9 +16,15 @@ import {
 const COLORS = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2", "#be185d", "#065f46"];
 
 export default function ReportsPage() {
+  const [shopId, setShopId] = useState<string>("ALL");
   const { data, isLoading } = useQuery({
-    queryKey: ["reports"],
-    queryFn: () => axios.get("/api/reports").then((r) => r.data),
+    queryKey: ["reports", shopId],
+    queryFn: () => axios.get(`/api/reports${shopId !== "ALL" ? `?shopId=${shopId}` : ""}`).then((r) => r.data),
+  });
+
+  const { data: shops } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["shops"],
+    queryFn: () => axios.get("/api/shops").then((r) => r.data),
   });
 
   const { data: convData } = useQuery({
@@ -49,9 +57,20 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+        <div className="flex items-center gap-2">
+        {(shops || []).length > 1 && (
+          <Select value={shopId} onValueChange={setShopId}>
+            <SelectTrigger className="w-44 h-8 text-xs"><SelectValue placeholder="All locations" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All locations</SelectItem>
+              {(shops || []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
         <a href="/api/invoices/export" download>
           <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export CSV (QuickBooks)</Button>
         </a>
+        </div>
       </div>
 
       {/* KPI cards */}
