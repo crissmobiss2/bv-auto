@@ -110,7 +110,7 @@ function VehiclesContent() {
                 {vehicles.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell>
-                      <p className="font-medium text-sm">{v.year} {v.make} {v.model}</p>
+                      <p className="font-medium text-sm">{`${v.year} ${v.make}`} {v.model}</p>
                       {v.trim && <p className="text-xs text-gray-500">{v.trim}</p>}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-sm text-gray-600">{v.color || "—"}</TableCell>
@@ -123,7 +123,7 @@ function VehiclesContent() {
                     </TableCell>
                     <TableCell>
                       <Link href={`/customers/${v.customer.id}`} className="text-sm text-blue-600 hover:underline">
-                        {v.customer.firstName} {v.customer.lastName}
+                        {`${v.customer.firstName} ${v.customer.lastName}`}
                       </Link>
                     </TableCell>
                     <TableCell>
@@ -164,7 +164,7 @@ function VehiclesContent() {
                     setShowAddVehicle(true);
                   }}
                 >
-                  <span className="font-medium">{c.firstName} {c.lastName}</span>
+                  <span className="font-medium">{`${c.firstName} ${c.lastName}`}</span>
                   <span className="text-gray-400 ml-2 text-xs">{c.phone}</span>
                 </button>
               ))}

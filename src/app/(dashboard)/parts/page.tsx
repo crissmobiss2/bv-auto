@@ -112,7 +112,7 @@ export default function PartsPage() {
                           <Link href={`/jobs/${part.job.id}`} className="text-blue-600 hover:underline text-sm">
                             {part.job.jobNumber}
                           </Link>
-                          <p className="text-xs text-gray-500">{part.job.customer.firstName} {part.job.customer.lastName}</p>
+                          <p className="text-xs text-gray-500">{`${part.job.customer.firstName} ${part.job.customer.lastName}`}</p>
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm text-gray-500">
                           {part.vendor?.name || "—"}

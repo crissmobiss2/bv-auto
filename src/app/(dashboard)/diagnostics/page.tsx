@@ -585,7 +585,7 @@ export default function DiagnosticsPage() {
               tab === t.id ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-800"
             }`}
           >
-            {t.icon} {t.label}
+            {`${t.icon} ${t.label}`}
           </button>
         ))}
       </div>
@@ -632,7 +632,7 @@ export default function DiagnosticsPage() {
                   <select className="w-full border rounded-md px-3 py-2 text-sm bg-white" value={diagJobId} onChange={e => setDiagJobId(e.target.value)}>
                     <option value="">— Don&apos;t save to job —</option>
                     {openJobs.map(j => (
-                      <option key={j.id} value={j.id}>#{j.jobNumber} — {j.title} ({j.customer.firstName} {j.customer.lastName})</option>
+                      <option key={j.id} value={j.id}>#{j.jobNumber} — {j.title} ({`${j.customer.firstName} ${j.customer.lastName}`})</option>
                     ))}
                   </select>
                 </div>
@@ -1188,7 +1188,7 @@ export default function DiagnosticsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-gray-900">{p.confirmedFix}</p>
-                      <p className="text-xs text-gray-500 mt-1">{p.year} {p.make} {p.model}{p.engine ? ` • ${p.engine}` : ""}</p>
+                      <p className="text-xs text-gray-500 mt-1">{`${p.year} ${p.make}`} {p.model}{p.engine ? ` • ${p.engine}` : ""}</p>
                       {p.dtcCodes?.length > 0 && (
                         <div className="flex gap-1 flex-wrap mt-1.5">
                           {p.dtcCodes.map(c => <span key={c} className="font-mono text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">{c}</span>)}
@@ -1238,7 +1238,7 @@ export default function DiagnosticsPage() {
           {tsbQuery.data && !tsbQuery.isFetching && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-800">{tsbQuery.data.count} TSBs found for {tsbSearch.year} {tsbSearch.make} {tsbSearch.model}</h3>
+                <h3 className="font-semibold text-gray-800">{tsbQuery.data.count} TSBs found for {`${tsbSearch.year} ${tsbSearch.make}`} {tsbSearch.model}</h3>
                 {tsbQuery.data.count === 0 && <p className="text-sm text-gray-500">No TSBs on record for this vehicle.</p>}
               </div>
               <div className="space-y-2">
@@ -1681,7 +1681,7 @@ export default function DiagnosticsPage() {
 
           {safetyQuery.data?.ratings && (
             <Card>
-              <CardHeader><CardTitle className="text-sm">NHTSA Safety Ratings — {safetyForm.year} {safetyForm.make} {safetyForm.model}</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">NHTSA Safety Ratings — {`${safetyForm.year} ${safetyForm.make}`} {safetyForm.model}</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
@@ -1713,7 +1713,7 @@ export default function DiagnosticsPage() {
           {complaintsQuery.data && !complaintsQuery.isFetching && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-800">{complaintsQuery.data.count} Owner Complaints — {safetyForm.year} {safetyForm.make} {safetyForm.model}</h3>
+                <h3 className="font-semibold text-gray-800">{complaintsQuery.data.count} Owner Complaints — {`${safetyForm.year} ${safetyForm.make}`} {safetyForm.model}</h3>
               </div>
               {complaintsQuery.data.componentStats?.length > 0 && (
                 <Card>

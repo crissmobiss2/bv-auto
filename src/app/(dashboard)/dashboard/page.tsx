@@ -187,9 +187,9 @@ export default async function DashboardPage() {
                           {job.title}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          {job.customer.firstName} {job.customer.lastName}
+                          {`${job.customer.firstName} ${job.customer.lastName}`}
                           <span className="text-gray-300 mx-1">·</span>
-                          {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+                          {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
                         </p>
                         {job.scheduledAt && (
                           <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
@@ -242,7 +242,7 @@ export default async function DashboardPage() {
                             {job.title}
                           </p>
                           <p className="text-xs text-gray-500 truncate mt-0.5">
-                            {job.customer.firstName} {job.customer.lastName}
+                            {`${job.customer.firstName} ${job.customer.lastName}`}
                           </p>
                         </div>
                         {job.scheduledAt && (

@@ -92,7 +92,7 @@ export default function ShopsPage() {
                 {shop.address && (
                   <div className="flex items-start gap-2 text-gray-600">
                     <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    <span>{shop.address}, {shop.city}, {shop.state} {shop.zip}</span>
+                    <span>{shop.address}, {shop.city}, {`${shop.state} ${shop.zip}`}</span>
                   </div>
                 )}
                 {shop.phone && <div className="flex items-center gap-2 text-gray-600"><Phone className="h-3 w-3" />{shop.phone}</div>}

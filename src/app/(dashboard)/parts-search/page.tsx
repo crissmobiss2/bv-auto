@@ -258,7 +258,7 @@ export default function PartsSearchPage() {
                       <SelectContent>
                         {jobs.map(job => (
                           <SelectItem key={job.id} value={job.id}>
-                            #{job.jobNumber} — {job.title} ({job.customer.firstName} {job.customer.lastName})
+                            #{job.jobNumber} — {job.title} ({`${job.customer.firstName} ${job.customer.lastName}`})
                           </SelectItem>
                         ))}
                       </SelectContent>

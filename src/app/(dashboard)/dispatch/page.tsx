@@ -138,7 +138,7 @@ export default function DispatchPage() {
                     <div>
                       <p className="text-sm font-medium">{job.title}</p>
                       <p className="text-xs text-gray-500">
-                        {job.customer.firstName} {job.customer.lastName} · {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+                        {`${job.customer.firstName} ${job.customer.lastName}`} · {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
                       </p>
                       {job.serviceLocation && (
                         <p className="text-xs text-gray-400 flex items-center gap-1">

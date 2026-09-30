@@ -106,7 +106,7 @@ export default function CustomersPage() {
                   <TableRow key={c.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{c.firstName} {c.lastName}</p>
+                        <p className="font-medium">{`${c.firstName} ${c.lastName}`}</p>
                         {c.company && <p className="text-xs text-gray-500">{c.company}</p>}
                       </div>
                     </TableCell>

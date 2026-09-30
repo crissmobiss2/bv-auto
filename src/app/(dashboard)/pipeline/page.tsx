@@ -137,7 +137,7 @@ export default function PipelinePage() {
                   <div>
                     <p className="text-sm font-medium">{q.title}</p>
                     <p className="text-xs text-gray-500">
-                      {q.customer.firstName} {q.customer.lastName} · {q.vehicle.year} {q.vehicle.make} {q.vehicle.model}
+                      {`${q.customer.firstName} ${q.customer.lastName}`} · {`${q.vehicle.year} ${q.vehicle.make}`} {q.vehicle.model}
                     </p>
                     <p className="text-xs text-gray-400">{q.quoteNumber} · {new Date(q.createdAt).toLocaleDateString()}</p>
                   </div>
@@ -172,7 +172,7 @@ export default function PipelinePage() {
                   <div key={j.id} className="flex items-center justify-between px-4 py-2">
                     <div>
                       <p className="text-sm font-medium truncate max-w-[200px]">{j.title}</p>
-                      <p className="text-xs text-gray-500">{j.customer.firstName} {j.customer.lastName}</p>
+                      <p className="text-xs text-gray-500">{`${j.customer.firstName} ${j.customer.lastName}`}</p>
                       <p className="text-xs text-gray-400">{new Date(j.scheduledAt).toLocaleDateString()}</p>
                     </div>
                     <p className="font-medium text-sm">{formatCurrency(j.estimatedTotal || 0)}</p>

@@ -141,11 +141,11 @@ export default function WarrantyPage() {
                         <span className="font-medium text-sm">{w.job.title}</span>
                         <span className="text-xs text-gray-400">{w.job.jobNumber}</span>
                         <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>
-                          {status.icon} {status.label}
+                          {`${status.icon} ${status.label}`}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mb-2">
-                        {w.customer.firstName} {w.customer.lastName} · {w.vehicle.year} {w.vehicle.make} {w.vehicle.model}
+                        {`${w.customer.firstName} ${w.customer.lastName}`} · {`${w.vehicle.year} ${w.vehicle.make}`} {w.vehicle.model}
                         {w.vehicle.plate && ` · ${w.vehicle.plate}`}
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
@@ -222,8 +222,8 @@ export default function WarrantyPage() {
             <div className="space-y-4">
               <div className="p-3 bg-gray-50 rounded text-sm">
                 <p className="font-medium">{claimDialog.job.title}</p>
-                <p className="text-gray-500">{claimDialog.customer.firstName} {claimDialog.customer.lastName}</p>
-                <p className="text-gray-500">{claimDialog.vehicle.year} {claimDialog.vehicle.make} {claimDialog.vehicle.model}</p>
+                <p className="text-gray-500">{`${claimDialog.customer.firstName} ${claimDialog.customer.lastName}`}</p>
+                <p className="text-gray-500">{`${claimDialog.vehicle.year} ${claimDialog.vehicle.make}`} {claimDialog.vehicle.model}</p>
               </div>
               <div className="space-y-2">
                 <Label>Claim Notes *</Label>

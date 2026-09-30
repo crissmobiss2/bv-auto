@@ -60,13 +60,13 @@ function JobCard({ job, technicians }: { job: Job; technicians: { id: string; na
       <div className="space-y-1">
         <div className="flex items-center gap-1.5 text-xs text-gray-700">
           <Car className="h-3 w-3 text-gray-400 flex-shrink-0" />
-          <span className="truncate">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</span>
+          <span className="truncate">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</span>
           {job.vehicle.plate && <span className="text-gray-400">({job.vehicle.plate})</span>}
         </div>
         <div className="flex items-center gap-1.5 text-xs text-gray-600">
           <Phone className="h-3 w-3 text-gray-400 flex-shrink-0" />
           <Link href={`/customers/${job.customer.id}`} className="hover:underline truncate">
-            {job.customer.firstName} {job.customer.lastName}
+            {`${job.customer.firstName} ${job.customer.lastName}`}
           </Link>
           <a href={`tel:${job.customer.phone}`} className="text-blue-600 hover:underline ml-auto flex-shrink-0">
             {job.customer.phone}

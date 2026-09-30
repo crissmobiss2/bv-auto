@@ -145,7 +145,7 @@ export default function CustomerPortalPage() {
                   <p className="font-semibold text-sm">{job.title}</p>
                   <Badge className="bg-blue-100 text-blue-700 text-xs">{job.status.replace(/_/g, " ")}</Badge>
                 </div>
-                <p className="text-xs text-gray-500 mb-2">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
+                <p className="text-xs text-gray-500 mb-2">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
                 <JobStatusTimeline status={job.status} />
                 {job.vehicleHealthScore != null && (
                   <div className="mt-3 flex items-center gap-2">
@@ -178,7 +178,7 @@ export default function CustomerPortalPage() {
               <div key={q.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-yellow-200">
                 <div>
                   <p className="font-medium text-sm">{q.quoteNumber}</p>
-                  <p className="text-xs text-gray-500">{q.job?.vehicle?.year} {q.job?.vehicle?.make} {q.job?.vehicle?.model}</p>
+                  <p className="text-xs text-gray-500">{`${q.job?.vehicle?.year} ${q.job?.vehicle?.make}`} {q.job?.vehicle?.model}</p>
                   <p className="font-bold text-yellow-700">{formatCurrency(q.totalAmount)}</p>
                 </div>
                 {q.approvalToken && (
@@ -209,7 +209,7 @@ export default function CustomerPortalPage() {
                 <div className="flex items-center gap-3 mb-3">
                   <Car className="h-8 w-8 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold">{v.year} {v.make} {v.model}</p>
+                    <p className="font-semibold">{`${v.year} ${v.make}`} {v.model}</p>
                     <div className="flex gap-3 text-xs text-gray-500 mt-0.5">
                       {v.plate && <span>Plate: {v.plate}</span>}
                       {v.vin && <span>VIN: ...{v.vin.slice(-6)}</span>}
@@ -243,7 +243,7 @@ export default function CustomerPortalPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <p className="font-semibold text-sm">{job.title}</p>
-                    <p className="text-xs text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
+                    <p className="text-xs text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
                     <p className="text-xs text-gray-400">{formatDate(job.completedAt || job.scheduledAt || job.createdAt)}</p>
                   </div>
                   <div className="text-right">

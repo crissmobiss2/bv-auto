@@ -221,11 +221,11 @@ export default function VehicleDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">
-            {vehicle.year} {vehicle.make} {vehicle.model}
+            {`${vehicle.year} ${vehicle.make}`} {vehicle.model}
             {vehicle.trim && <span className="text-gray-500 ml-2 text-lg">{vehicle.trim}</span>}
           </h1>
           <Link href={`/customers/${vehicle.customer?.id}`} className="text-sm text-blue-600 hover:underline">
-            {vehicle.customer?.firstName} {vehicle.customer?.lastName}
+            {`${vehicle.customer?.firstName} ${vehicle.customer?.lastName}`}
           </Link>
         </div>
         <Button variant="outline" size="sm" onClick={openEdit}>

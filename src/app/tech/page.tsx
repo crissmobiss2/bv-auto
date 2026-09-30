@@ -82,7 +82,7 @@ export default function TechDashboardPage() {
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{job.title}</p>
-                      <p className="text-sm text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
+                      <p className="text-sm text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${JOB_STATUS_COLORS[job.status]}`}>
                       {job.status.replace(/_/g, " ")}
@@ -92,7 +92,7 @@ export default function TechDashboardPage() {
                   <div className="space-y-1 text-sm mb-3">
                     <a href={`tel:${job.customer.phone}`} className="flex items-center gap-2 text-blue-600">
                       <Phone className="h-3.5 w-3.5" />
-                      {job.customer.firstName} {job.customer.lastName} · {job.customer.phone}
+                      {`${job.customer.firstName} ${job.customer.lastName}`} · {job.customer.phone}
                     </a>
                     {job.serviceLocation && (
                       <a
@@ -156,7 +156,7 @@ export default function TechDashboardPage() {
                   <CardContent className="p-3 flex items-center justify-between gap-2">
                     <div>
                       <p className="text-sm font-medium">{job.title}</p>
-                      <p className="text-xs text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model} · {job.scheduledAt ? formatDateTime(job.scheduledAt) : "—"}</p>
+                      <p className="text-xs text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model} · {job.scheduledAt ? formatDateTime(job.scheduledAt) : "—"}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                   </CardContent>

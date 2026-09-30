@@ -87,7 +87,7 @@ export default function TechJobDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-gray-900 truncate">{job.title}</h1>
-          <p className="text-sm text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
+          <p className="text-sm text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ export default function TechJobDetailPage() {
         <CardContent className="p-4 space-y-3 text-sm">
           <a href={`tel:${job.customer.phone}`} className="flex items-center gap-2 text-blue-600 font-medium">
             <Phone className="h-4 w-4" />
-            {job.customer.firstName} {job.customer.lastName} · {job.customer.phone}
+            {`${job.customer.firstName} ${job.customer.lastName}`} · {job.customer.phone}
           </a>
           {job.serviceLocation && (
             <a
@@ -211,7 +211,7 @@ export default function TechJobDetailPage() {
                       return (
                         <span key={cond} className="flex items-center gap-1 text-xs text-gray-600">
                           <span className={`inline-block w-2 h-2 rounded-full ${colors[cond]}`} />
-                          {count} {labels[cond]}
+                          {`${count} ${labels[cond]}`}
                         </span>
                       );
                     })}

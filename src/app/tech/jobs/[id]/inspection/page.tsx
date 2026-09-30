@@ -180,7 +180,7 @@ export default function TechInspectionPage() {
             <p className="font-bold text-gray-900 truncate">Inspection Complete</p>
             {job && (
               <p className="text-xs text-gray-500 truncate">
-                {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+                {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
               </p>
             )}
           </div>
@@ -287,8 +287,8 @@ export default function TechInspectionPage() {
           <p className="font-bold text-gray-900 truncate">Vehicle Inspection</p>
           {job && (
             <p className="text-xs text-gray-500 truncate">
-              {job.vehicle.year} {job.vehicle.make} {job.vehicle.model} ·{" "}
-              {job.customer.firstName} {job.customer.lastName}
+              {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model} ·{" "}
+              {`${job.customer.firstName} ${job.customer.lastName}`}
             </p>
           )}
         </div>

@@ -229,7 +229,7 @@ export default function CustomerDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">
-            {customer.firstName} {customer.lastName}
+            {`${customer.firstName} ${customer.lastName}`}
           </h1>
           {customer.company && <p className="text-gray-500">{customer.company}</p>}
         </div>
@@ -345,7 +345,7 @@ export default function CustomerDetailPage() {
               ) : (
                 customer.vehicles?.map((v: { id: string; year: number; make: string; model: string; plate?: string; vin?: string }) => (
                   <Link key={v.id} href={`/vehicles/${v.id}`} className="block p-2 rounded-md hover:bg-gray-50 border">
-                    <p className="text-sm font-medium">{v.year} {v.make} {v.model}</p>
+                    <p className="text-sm font-medium">{`${v.year} ${v.make}`} {v.model}</p>
                     {(v.plate || v.vin) && (
                       <p className="text-xs text-gray-500">{v.plate || v.vin}</p>
                     )}
@@ -378,7 +378,7 @@ export default function CustomerDetailPage() {
                         <Link key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
                           <div>
                             <p className="text-sm font-medium">{job.jobNumber} — {job.title}</p>
-                            <p className="text-xs text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model} · {formatDate(job.scheduledAt)}</p>
+                            <p className="text-xs text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model} · {formatDate(job.scheduledAt)}</p>
                           </div>
                           <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${JOB_STATUS_COLORS[job.status]}`}>
                             {job.status.replace("_", " ")}

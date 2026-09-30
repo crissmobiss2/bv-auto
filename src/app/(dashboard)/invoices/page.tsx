@@ -172,9 +172,9 @@ function InvoicesContent() {
                 {invoices.map(inv => (
                   <TableRow key={inv.id}>
                     <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
-                    <TableCell className="text-sm">{inv.customer.firstName} {inv.customer.lastName}</TableCell>
+                    <TableCell className="text-sm">{`${inv.customer.firstName} ${inv.customer.lastName}`}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-gray-500">
-                      {inv.job.vehicle.year} {inv.job.vehicle.make} {inv.job.vehicle.model}
+                      {`${inv.job.vehicle.year} ${inv.job.vehicle.make}`} {inv.job.vehicle.model}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-medium">{formatCurrency(inv.totalAmount)}</TableCell>
                     <TableCell className={`hidden sm:table-cell font-medium ${Number(inv.amountDue) > 0 ? "text-orange-600" : "text-green-600"}`}>
@@ -230,7 +230,7 @@ function InvoicesContent() {
           {payDialog && (
             <div className="space-y-4 py-2">
               <p className="text-sm text-gray-600">
-                {payDialog.customer.firstName} {payDialog.customer.lastName} ·{" "}
+                {`${payDialog.customer.firstName} ${payDialog.customer.lastName}`} ·{" "}
                 Balance due: <strong className="text-orange-600">{formatCurrency(payDialog.amountDue)}</strong>
               </p>
               <div className="grid grid-cols-2 gap-3">

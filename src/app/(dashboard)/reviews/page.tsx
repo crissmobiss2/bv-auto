@@ -82,8 +82,8 @@ export default function ReviewsPage() {
               }) => (
                 <div key={r.id} className="flex items-center justify-between py-2 border-b last:border-0 gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{r.customer.firstName} {r.customer.lastName}</p>
-                    <p className="text-xs text-gray-500">{r.job.vehicle.year} {r.job.vehicle.make} {r.job.vehicle.model} · {r.job.title}</p>
+                    <p className="font-medium text-sm">{`${r.customer.firstName} ${r.customer.lastName}`}</p>
+                    <p className="text-xs text-gray-500">{`${r.job.vehicle.year} ${r.job.vehicle.make}`} {r.job.vehicle.model} · {r.job.title}</p>
                     <Link href={`/jobs/${r.jobId}`} className="text-xs text-blue-600 hover:underline">{r.job.jobNumber}</Link>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
