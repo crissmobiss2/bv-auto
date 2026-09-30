@@ -241,6 +241,11 @@ function DiagnosticsPageInner() {
   const urlTab = searchParams.get("tab");
   const [localTab, setLocalTab] = useState<Tab>("ai");
   const [tabOverridden, setTabOverridden] = useState(false);
+  const [seenUrlTab, setSeenUrlTab] = useState(urlTab);
+  if (urlTab !== seenUrlTab) {
+    setSeenUrlTab(urlTab);
+    setTabOverridden(false);
+  }
   const tab: Tab = !tabOverridden && urlTab && TABS.some(x => x.id === urlTab) ? urlTab as Tab : localTab;
   const setTab = (t: Tab) => {
     setLocalTab(t);
