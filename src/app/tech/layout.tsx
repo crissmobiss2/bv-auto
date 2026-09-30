@@ -64,7 +64,7 @@ export default function TechLayout({ children }: { children: React.ReactNode }) 
           {justFlushed && <span className="text-xs text-green-400">Synced</span>}
           <ThemeToggle className="text-gray-400" />
           <Link href="/dashboard" className="text-xs text-gray-400 hover:text-white">Full View</Link>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className="p-2 -m-1">
+          <button onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })} className="p-2 -m-1">
             <LogOut className="h-4 w-4 text-gray-400" />
           </button>
         </div>
@@ -94,7 +94,7 @@ export default function TechLayout({ children }: { children: React.ReactNode }) 
             );
           })}
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
             className="flex-1 flex flex-col items-center justify-center min-h-[64px] gap-1 text-xs font-medium text-gray-400"
           >
             <LogOut className="h-6 w-6" />

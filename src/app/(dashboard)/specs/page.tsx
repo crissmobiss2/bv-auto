@@ -19,7 +19,7 @@ function SpecCard({ title, icon, children }: { title: string; icon: React.ReactN
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-          {`${icon} ${title}`}
+          {icon}<span>{title}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="text-sm space-y-1.5">{children}</CardContent>

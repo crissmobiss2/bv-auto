@@ -141,7 +141,7 @@ export default function WarrantyPage() {
                         <span className="font-medium text-sm">{w.job.title}</span>
                         <span className="text-xs text-gray-400">{w.job.jobNumber}</span>
                         <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>
-                          {`${status.icon} ${status.label}`}
+                          {status.icon}<span>{status.label}</span>
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mb-2">

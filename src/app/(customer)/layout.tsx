@@ -60,7 +60,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           <div className="pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-400 px-3 mb-1 truncate">{session?.user?.name}</p>
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 w-full"
             >
               <LogOut className="h-4 w-4" /> Sign Out
@@ -88,7 +88,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                 </Link>
               ))}
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
                 className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm text-red-600 w-full"
               >
                 <LogOut className="h-4 w-4" /> Sign Out
