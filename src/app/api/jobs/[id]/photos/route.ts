@@ -17,6 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const caption = formData.get("caption") as string | null;
 
   if (!file) return apiError("No file provided");
+  if (file.size > 10 * 1024 * 1024) return apiError("File too large (max 10MB)", 413);
 
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const filename = `jobs/${id}/${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;

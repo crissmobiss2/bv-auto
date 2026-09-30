@@ -22,7 +22,9 @@ export default function PartsPage() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [showVendor, setShowVendor] = useState(false);
-  const [vendorForm, setVendorForm] = useState({ name: "", contactName: "", phone: "", email: "", address: "", city: "", state: "", zip: "", accountNum: "", website: "" });
+  const emptyVendor = { name: "", contactName: "", phone: "", email: "", address: "", city: "", state: "", zip: "", accountNum: "", website: "" };
+  const [vendorForm, setVendorForm] = useState(emptyVendor);
+  const [editingVendor, setEditingVendor] = useState<string | null>(null);
 
   const { data: parts, isLoading } = useQuery({
     queryKey: ["all-parts", statusFilter],
@@ -41,13 +43,28 @@ export default function PartsPage() {
     queryFn: () => axios.get("/api/parts/margin").then((r) => r.data),
   });
 
-  const addVendorMutation = useMutation({
-    mutationFn: () => axios.post("/api/vendors", vendorForm),
+  const saveVendorMutation = useMutation({
+    mutationFn: () => editingVendor
+      ? axios.patch(`/api/vendors/${editingVendor}`, vendorForm)
+      : axios.post("/api/vendors", vendorForm),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
       setShowVendor(false);
+      setEditingVendor(null);
+      setVendorForm(emptyVendor);
     },
   });
+
+  const deleteVendorMutation = useMutation({
+    mutationFn: (id: string) => axios.delete(`/api/vendors/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vendors"] }),
+  });
+
+  const openEditVendor = (v: { id: string; name: string; contactName?: string; phone?: string; email?: string; accountNum?: string; website?: string }) => {
+    setEditingVendor(v.id);
+    setVendorForm({ ...emptyVendor, name: v.name, contactName: v.contactName || "", phone: v.phone || "", email: v.email || "", accountNum: v.accountNum || "", website: v.website || "" });
+    setShowVendor(true);
+  };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => axios.patch(`/api/parts/${id}`, { status }),
@@ -140,7 +157,7 @@ export default function PartsPage() {
         </TabsContent>
 
         <TabsContent value="vendors" className="mt-4 space-y-4">
-          <Button onClick={() => setShowVendor(true)}>
+          <Button onClick={() => { setEditingVendor(null); setVendorForm(emptyVendor); setShowVendor(true); }}>
             <Plus className="h-4 w-4 mr-2" /> Add Vendor
           </Button>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -152,7 +169,11 @@ export default function PartsPage() {
                   {v.phone && <a href={`tel:${v.phone}`} className="text-blue-600">{v.phone}</a>}
                   {v.email && <p className="text-gray-500">{v.email}</p>}
                   {v.accountNum && <p className="text-gray-400 text-xs">Acct: {v.accountNum}</p>}
-                  {v.website && <a href={v.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs block">Ordering portal ↗</a>}
+                  {v.website && /^https?:\/\//i.test(v.website) && <a href={v.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs block">Ordering portal ↗</a>}
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" onClick={() => openEditVendor(v)} className="text-xs text-blue-600 hover:underline">Edit</button>
+                    <button type="button" onClick={() => { if (confirm(`Remove vendor ${v.name}?`)) deleteVendorMutation.mutate(v.id); }} className="text-xs text-red-600 hover:underline">Delete</button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -241,7 +262,7 @@ export default function PartsPage() {
 
       <Dialog open={showVendor} onOpenChange={setShowVendor}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Vendor</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingVendor ? "Edit Vendor" : "Add Vendor"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             {[
               { label: "Name *", key: "name", col: 2 },
@@ -262,8 +283,8 @@ export default function PartsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowVendor(false)}>Cancel</Button>
-            <Button onClick={() => addVendorMutation.mutate()} disabled={!vendorForm.name || addVendorMutation.isPending}>
-              {addVendorMutation.isPending ? "Saving..." : "Add Vendor"}
+            <Button onClick={() => saveVendorMutation.mutate()} disabled={!vendorForm.name || saveVendorMutation.isPending}>
+              {saveVendorMutation.isPending ? "Saving..." : editingVendor ? "Save Vendor" : "Add Vendor"}
             </Button>
           </DialogFooter>
         </DialogContent>

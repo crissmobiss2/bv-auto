@@ -273,7 +273,7 @@ export default function CustomerPortalPage() {
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {job.photos.map(p => (
                         <div key={p.id} className="flex-shrink-0">
-                          <Image src={p.url} alt={p.caption || "Job photo"} width={80} height={80} className="rounded-md object-cover w-20 h-20 border" />
+                          <Image src={`${p.url}?t=${token}`} alt={p.caption || "Job photo"} width={80} height={80} className="rounded-md object-cover w-20 h-20 border" />
                         </div>
                       ))}
                     </div>

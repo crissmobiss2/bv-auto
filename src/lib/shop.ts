@@ -10,5 +10,7 @@ export async function getDefaultShop() {
 
 export async function getShopPhone(): Promise<string | null> {
   const shop = await getDefaultShop().catch(() => null);
-  return shop?.phone || null;
+  // Strip anything that isn't a phone character so the value is safe to
+  // interpolate into generated HTML/SMS.
+  return shop?.phone?.replace(/[^0-9+().\-\sx]/g, "") || null;
 }

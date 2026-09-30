@@ -40,3 +40,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   return apiSuccess(updated);
 }
+
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { error, session } = await requireAuth();
+  if (error) return error;
+
+  const { id } = await params;
+  const existing = await prisma.vehicle.findUnique({ where: { id } });
+  if (!existing) return apiError("Vehicle not found", 404);
+
+  const updated = await prisma.vehicle.update({ where: { id }, data: { isActive: false } });
+  await logAudit(session!.user.id, AuditAction.DELETE, "Vehicle", id, existing, updated);
+
+  return apiSuccess({ deleted: true });
+}

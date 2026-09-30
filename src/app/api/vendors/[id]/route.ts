@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { z } from "zod";
 
-const createSchema = z.object({
-  name: z.string().min(1),
+const updateSchema = z.object({
+  name: z.string().min(1).optional(),
   contactName: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
@@ -17,29 +17,28 @@ const createSchema = z.object({
   notes: z.string().optional(),
 });
 
-export async function GET() {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
   if (error) return error;
 
-  const vendors = await prisma.partsVendor.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-  });
-
-  return apiSuccess(vendors);
-}
-
-export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
-
+  const { id } = await params;
   const body = await req.json();
-  const parsed = createSchema.safeParse(body);
+  const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
-  const vendor = await prisma.partsVendor.create({
+  const vendor = await prisma.partsVendor.update({
+    where: { id },
     data: { ...parsed.data, email: parsed.data.email || null },
   });
 
-  return apiSuccess(vendor, 201);
+  return apiSuccess(vendor);
+}
+
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
+  const { id } = await params;
+  await prisma.partsVendor.update({ where: { id }, data: { isActive: false } });
+  return apiSuccess({ deleted: true });
 }

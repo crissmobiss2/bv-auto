@@ -70,6 +70,8 @@ function generateInvoiceHTML(invoice: {
   }[];
   payments: { method: string; amount: unknown; receivedAt: Date }[];
 }, shopPhone: string | null = null) {
+  const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  const phone = shopPhone ? esc(shopPhone) : null;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,7 +108,7 @@ function generateInvoiceHTML(invoice: {
   <div class="company">
     <h1>B&V Mobile Auto</h1>
     <p>Mobile Automotive Repair</p>
-    ${shopPhone ? `<p>Phone: ${shopPhone}</p>` : ""}
+    ${phone ? `<p>Phone: ${phone}</p>` : ""}
     <p>bvauto@email.com</p>
   </div>
   <div class="invoice-meta">
@@ -168,7 +170,7 @@ function generateInvoiceHTML(invoice: {
 ${invoice.notes ? `<div style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;font-size:13px;color:#374151"><strong>Notes:</strong> ${invoice.notes}</div>` : ""}
 
 <div class="footer">
-  <p>Thank you for choosing B&V Mobile Auto!${shopPhone ? ` · For questions call ${shopPhone}` : ""}</p>
+  <p>Thank you for choosing B&V Mobile Auto!${phone ? ` · For questions call ${phone}` : ""}</p>
 </div>
 
 <script>window.onload = function() { window.print(); }</script>
