@@ -124,26 +124,28 @@ export default function PipelinePage() {
             <div className="divide-y">
               {quotes.map((q: {
                 id: string;
-                quoteNumber: string;
-                title: string;
+                quoteNumber?: string;
+                title?: string;
                 totalAmount: number;
                 probability: number;
                 weightedValue: number;
                 customer: { firstName: string; lastName: string };
-                vehicle: { year: number; make: string; model: string };
+                vehicle?: { year: number; make: string; model: string };
+                job?: { title: string };
                 createdAt: string;
               }) => (
                 <div key={q.id} className="flex items-center justify-between px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium">{q.title}</p>
+                    <p className="text-sm font-medium">{q.title || q.job?.title || q.quoteNumber || "Quote"}</p>
                     <p className="text-xs text-gray-500">
-                      {`${q.customer.firstName} ${q.customer.lastName}`} · {`${q.vehicle.year} ${q.vehicle.make}`} {q.vehicle.model}
+                      {`${q.customer.firstName} ${q.customer.lastName}`}
+                      {q.vehicle && ` · ${q.vehicle.year} ${q.vehicle.make} ${q.vehicle.model}`}
                     </p>
-                    <p className="text-xs text-gray-400">{q.quoteNumber} · {new Date(q.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-400">{q.quoteNumber && `${q.quoteNumber} · `}{new Date(q.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-sm">{formatCurrency(q.totalAmount)}</p>
-                    <p className="text-xs text-gray-500">{q.probability}% close probability</p>
+                    <p className="text-xs text-gray-500">{Math.round(q.probability <= 1 ? q.probability * 100 : q.probability)}% close probability</p>
                     <p className="text-xs text-green-600 font-medium">Weighted: {formatCurrency(q.weightedValue)}</p>
                   </div>
                 </div>

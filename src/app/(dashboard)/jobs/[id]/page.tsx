@@ -270,7 +270,7 @@ function QuickDiagnoseTab({ job }: { job: { id: string; title: string; vehicle: 
 
       {!result && !loading && (
         <p className="text-xs text-gray-400 text-center py-4">
-          AI diagnosis powered by Claude — contextual to {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
+          AI diagnosis powered by Claude — contextual to {`${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`}
         </p>
       )}
     </div>
@@ -318,7 +318,7 @@ export default function JobDetailPage() {
             <span className="font-mono text-xs text-gray-500">{job.jobNumber}</span>
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
-            {`${job.customer.firstName} ${job.customer.lastName}`} · {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
+            {`${job.customer.firstName} ${job.customer.lastName}`} · {`${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`}
           </p>
         </div>
 
@@ -359,7 +359,7 @@ export default function JobDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Vehicle</p>
-                <p className="font-medium">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
+                <p className="font-medium">{`${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`}</p>
                 {job.vehicle.plate && <p className="text-xs text-gray-500">Plate: {job.vehicle.plate}</p>}
                 {job.vehicle.vin && <p className="text-xs text-gray-500">VIN: {job.vehicle.vin}</p>}
                 {job.mileageIn && <p className="text-xs text-gray-500">Mileage In: {job.mileageIn.toLocaleString()}</p>}

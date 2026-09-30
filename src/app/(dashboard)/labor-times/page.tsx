@@ -141,7 +141,7 @@ export default function LaborTimesPage() {
                   {result.cached && <Badge variant="outline" className="text-xs ml-auto">Cached</Badge>}
                 </CardTitle>
                 {(result.year || result.make || result.model) && (
-                  <p className="text-sm text-gray-500">{`${result.year} ${result.make}`} {result.model}</p>
+                  <p className="text-sm text-gray-500">{`${result.year} ${result.make} ${result.model}`}</p>
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
@@ -203,7 +203,7 @@ export default function LaborTimesPage() {
                       onClick={() => { setForm({ year: h.year, make: h.make, model: h.model, repair: h.repair }); setResult(h); }}>
                       <p className="text-sm font-medium truncate">{h.repair}</p>
                       <div className="flex items-center justify-between mt-0.5">
-                        <p className="text-xs text-gray-500">{`${h.year} ${h.make}`} {h.model}</p>
+                        <p className="text-xs text-gray-500">{`${h.year} ${h.make} ${h.model}`}</p>
                         <span className="text-xs font-bold text-blue-600">{h.laborHours}h</span>
                       </div>
                     </button>

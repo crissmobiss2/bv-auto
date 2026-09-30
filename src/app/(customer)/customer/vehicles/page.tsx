@@ -42,7 +42,7 @@ export default function CustomerVehicles() {
                       <Car className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{`${v.year} ${v.make}`} {v.model}</p>
+                      <p className="font-semibold text-gray-900">{`${v.year} ${v.make} ${v.model}`}</p>
                       {v.trim && <p className="text-xs text-gray-500">{v.trim}</p>}
                     </div>
                   </div>

@@ -62,7 +62,7 @@ export default function CustomerHistory() {
                         {job.vehicle && (
                           <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                             <Car className="h-3 w-3" />
-                            {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
+                            {`${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`}
                           </p>
                         )}
                         {job.technician && (

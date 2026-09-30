@@ -110,7 +110,7 @@ function VehiclesContent() {
                 {vehicles.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell>
-                      <p className="font-medium text-sm">{`${v.year} ${v.make}`} {v.model}</p>
+                      <p className="font-medium text-sm">{`${v.year} ${v.make} ${v.model}`}</p>
                       {v.trim && <p className="text-xs text-gray-500">{v.trim}</p>}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-sm text-gray-600">{v.color || "—"}</TableCell>

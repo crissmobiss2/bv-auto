@@ -153,9 +153,9 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
               <h3 className="text-sm font-semibold text-gray-700 mb-3 border-b pb-1">{category}</h3>
               <div className="space-y-2">
                 {items.filter((i) => i.category === category).map((item) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
-                    <div className="col-span-4 text-sm text-gray-700">{item.item}</div>
-                    <div className="col-span-4">
+                  <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                    <div className="sm:col-span-4 text-sm font-medium sm:font-normal text-gray-700">{item.item}</div>
+                    <div className="sm:col-span-4">
                       {completed ? (
                         <span className={cn("text-xs rounded-md px-2 py-1 font-medium border",
                           CONDITIONS.find(c => c.value === item.condition)?.color
@@ -163,13 +163,13 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
                           {CONDITIONS.find(c => c.value === item.condition)?.label || item.condition}
                         </span>
                       ) : (
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           {CONDITIONS.map((c) => (
                             <button
                               key={c.value}
                               onClick={() => updateItem(item.id, "condition", c.value)}
                               className={cn(
-                                "text-xs px-2 py-1 rounded border transition-colors",
+                                "text-xs px-2.5 py-1 min-h-[40px] rounded border transition-colors",
                                 item.condition === c.value ? c.color : "text-gray-400 border-gray-200 hover:bg-gray-50"
                               )}
                             >
@@ -179,9 +179,9 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
                         </div>
                       )}
                     </div>
-                    <div className="col-span-4">
+                    <div className="sm:col-span-4">
                       <Input
-                        className="h-7 text-xs"
+                        className="h-10 sm:h-7 text-xs"
                         placeholder="Notes..."
                         value={item.notes || ""}
                         onChange={(e) => updateItem(item.id, "notes", e.target.value)}

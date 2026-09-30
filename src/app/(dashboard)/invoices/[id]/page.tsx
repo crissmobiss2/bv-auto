@@ -241,7 +241,7 @@ export default function InvoiceDetailPage() {
             )}
             <div className="flex justify-between">
               <span className="text-gray-500">Vehicle</span>
-              <span>{`${invoice.job.vehicle.year} ${invoice.job.vehicle.make}`} {invoice.job.vehicle.model}</span>
+              <span>{`${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model}`}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Job</span>
