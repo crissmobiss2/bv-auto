@@ -256,7 +256,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
                   onChange={(e) => updateItem(i, "description", e.target.value)}
                 />
               </div>
-              <div className="col-span-1">
+              <div className="col-span-2 sm:col-span-1">
                 <Input
                   className="h-8 text-sm"
                   type="number"
@@ -278,7 +278,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
                   onChange={(e) => updateItem(i, "unitPrice", parseFloat(e.target.value) || 0)}
                 />
               </div>
-              <div className="col-span-1">
+              <div className="col-span-2 sm:col-span-1">
                 <Input
                   className="h-8 text-sm"
                   type="number"
@@ -288,10 +288,10 @@ export function QuoteBuilder({ job }: { job: Job }) {
                   onChange={(e) => updateItem(i, "markup", parseFloat(e.target.value) || 0)}
                 />
               </div>
-              <div className="col-span-1 text-right text-sm font-medium py-1 whitespace-nowrap">
+              <div className="col-span-4 sm:col-span-1 text-right text-sm font-medium py-1 whitespace-nowrap">
                 {formatCurrency(item.total)}
               </div>
-              <div className="col-span-1">
+              <div className="col-span-2 sm:col-span-1 flex justify-end">
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeItem(i)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
