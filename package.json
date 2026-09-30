@@ -1,7 +1,7 @@
 {
   "name": "bv-auto",
   "version": "0.1.0",
-  "description": "B&V Mobile Auto \u2014 Business Operating System",
+  "description": "B&V Mobile Auto — Business Operating System",
   "author": "B&V Mobile Auto <crissmobiss@gmail.com>",
   "private": true,
   "main": "electron/main.js",
@@ -33,6 +33,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
     "@auth/prisma-adapter": "^2.11.3",
+    "@capacitor-community/bluetooth-le": "^8.3.0",
     "@capacitor/android": "^8.3.4",
     "@capacitor/app": "^8.1.0",
     "@capacitor/cli": "^8.3.4",

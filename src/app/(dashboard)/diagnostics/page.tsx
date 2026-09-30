@@ -14,8 +14,9 @@ import {
   Plus, X, FileText, Shield, Star, BookOpen, Calendar, ChevronDown, ChevronUp,
   Loader2, AlertOctagon, Activity, Database, Thermometer, Wind, Cpu,
   Copy, Check, MessageCircle, Briefcase, TrendingUp, Gauge, Navigation,
-  Crosshair,
+  Crosshair, Bluetooth,
 } from "lucide-react";
+import { ObdScanner } from "@/components/features/obd-scanner";
 
 // ── Common makes datalist ────────────────────────────────────────────────────
 const COMMON_MAKES = [
@@ -193,10 +194,11 @@ interface EmissionsResult {
 }
 
 // ── Tab config ───────────────────────────────────────────────────────────────
-type Tab = "ai" | "dtc" | "specs" | "freeze" | "patterns" | "tsb" | "guide" | "maintenance" | "adas" | "emissions" | "safety";
+type Tab = "ai" | "scanner" | "dtc" | "specs" | "freeze" | "patterns" | "tsb" | "guide" | "maintenance" | "adas" | "emissions" | "safety";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "ai",         label: "AI Diagnosis",    icon: <Brain className="h-4 w-4" /> },
+  { id: "scanner",    label: "OBD-II Scan",     icon: <Bluetooth className="h-4 w-4" /> },
   { id: "dtc",        label: "DTC Lookup",       icon: <Search className="h-4 w-4" /> },
   { id: "specs",      label: "Vehicle Specs",    icon: <Database className="h-4 w-4" /> },
   { id: "freeze",     label: "Freeze Frame",     icon: <Thermometer className="h-4 w-4" /> },
@@ -766,6 +768,18 @@ export default function DiagnosticsPage() {
       )}
 
       {/* ── DTC Lookup ────────────────────────────────────────────────────── */}
+      {tab === "scanner" && (
+        <div className="max-w-xl">
+          <ObdScanner
+            onResult={r => {
+              const codes = [...new Set([...r.stored, ...r.pending, ...r.permanent])];
+              if (codes.length) setDtcList(prev => [...new Set([...prev, ...codes])]);
+              if (r.stored[0]) setDtcCode(r.stored[0]);
+            }}
+          />
+        </div>
+      )}
+
       {tab === "dtc" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
