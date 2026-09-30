@@ -56,10 +56,10 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
   const [completed, setCompleted] = useState(false);
   const [sendEmail, setSendEmail] = useState(false);
 
-  // Hydrate form state once inspection data arrives (render-time adjustment)
-  const [hydrated, setHydrated] = useState(false);
-  if (inspectionData && !hydrated) {
-    setHydrated(true);
+  // Hydrate form state when the inspection data changes (render-time adjustment)
+  const [hydratedFor, setHydratedFor] = useState<unknown>(null);
+  if (inspectionData && inspectionData !== hydratedFor) {
+    setHydratedFor(inspectionData);
     if (savedChecklist) {
       setItems(savedChecklist.items || []);
       setMileage(savedChecklist.mileage?.toString() || "");

@@ -95,10 +95,10 @@ export default function TechInspectionPage() {
   const job: Job | undefined = data?.job;
   const savedChecklist: InspectionData | null = data?.checklist || null;
 
-  // Hydrate form state once data arrives (render-time adjustment)
-  const [hydrated, setHydrated] = useState(false);
-  if (data && !hydrated) {
-    setHydrated(true);
+  // Hydrate form state when the loaded data changes (render-time adjustment)
+  const [hydratedFor, setHydratedFor] = useState<unknown>(null);
+  if (data && data !== hydratedFor) {
+    setHydratedFor(data);
     if (savedChecklist) {
       setItems(savedChecklist.items || []);
       setMileage(savedChecklist.mileage?.toString() || "");

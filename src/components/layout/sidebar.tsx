@@ -119,7 +119,8 @@ export function Sidebar() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = new Set<string>(JSON.parse(saved));
-        queueMicrotask(() => setOpenSections(parsed));
+        // Merge rather than replace so the auto-opened active section survives
+        queueMicrotask(() => setOpenSections(prev => new Set([...prev, ...parsed])));
       }
     } catch { /* ignore */ }
   }, []);
