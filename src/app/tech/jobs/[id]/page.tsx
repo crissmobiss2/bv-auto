@@ -88,7 +88,7 @@ export default function TechJobDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-gray-900 truncate">{job.title}</h1>
-          <p className="text-sm text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
+          <p className="text-sm text-gray-500">{`${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`}</p>
         </div>
       </div>
 

@@ -174,7 +174,7 @@ function InvoicesContent() {
                     <TableCell className="font-mono text-xs">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-sm">{`${inv.customer.firstName} ${inv.customer.lastName}`}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-gray-500">
-                      {`${inv.job.vehicle.year} ${inv.job.vehicle.make}`} {inv.job.vehicle.model}
+                      {`${inv.job.vehicle.year} ${inv.job.vehicle.make} ${inv.job.vehicle.model}`}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-medium">{formatCurrency(inv.totalAmount)}</TableCell>
                     <TableCell className={`hidden sm:table-cell font-medium ${Number(inv.amountDue) > 0 ? "text-orange-600" : "text-green-600"}`}>

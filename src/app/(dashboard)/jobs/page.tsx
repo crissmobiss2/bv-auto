@@ -184,7 +184,7 @@ function JobsContent() {
                         {`${job.customer.firstName} ${job.customer.lastName}`}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-gray-500">
-                        {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
+                        {`${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-sm text-gray-500">
                         {job.scheduledAt ? formatDateTime(job.scheduledAt) : <span className="text-gray-300">—</span>}

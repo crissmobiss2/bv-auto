@@ -119,7 +119,7 @@ function NewJobForm() {
                   <SelectTrigger><SelectValue placeholder={form.customerId ? "Select vehicle..." : "Select customer first"} /></SelectTrigger>
                   <SelectContent>
                     {vehicles?.map((v: { id: string; year: number; make: string; model: string }) => (
-                      <SelectItem key={v.id} value={v.id}>{`${v.year} ${v.make}`} {v.model}</SelectItem>
+                      <SelectItem key={v.id} value={v.id}>{`${v.year} ${v.make} ${v.model}`}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

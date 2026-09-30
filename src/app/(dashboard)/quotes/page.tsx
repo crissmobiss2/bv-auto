@@ -171,7 +171,7 @@ function QuotesContent() {
                     <TableCell className="font-mono text-xs">{q.quoteNumber}</TableCell>
                     <TableCell className="text-sm">{`${q.customer.firstName} ${q.customer.lastName}`}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-gray-500">
-                      {`${q.job.vehicle.year} ${q.job.vehicle.make}`} {q.job.vehicle.model}
+                      {`${q.job.vehicle.year} ${q.job.vehicle.make} ${q.job.vehicle.model}`}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-medium">{formatCurrency(q.totalAmount)}</TableCell>
                     <TableCell className="hidden lg:table-cell text-sm text-gray-500">{formatDate(q.createdAt)}</TableCell>

@@ -78,7 +78,7 @@ export default function PayrollPage() {
       {/* Date Range */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-end gap-4">
+          <div className="flex items-end gap-4 flex-wrap">
             <div className="space-y-1">
               <Label className="text-xs">Period Start</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-40" />

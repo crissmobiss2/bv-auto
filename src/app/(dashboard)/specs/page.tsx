@@ -104,7 +104,7 @@ export default function SpecsPage() {
         <div className="flex items-start gap-2 p-3 rounded border border-yellow-300 bg-yellow-50 text-sm text-yellow-900">
           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5 text-yellow-600" />
           <span>
-            Specifications not found for {`${searchParams.year} ${searchParams.make}`} {searchParams.model}.
+            Specifications not found for {`${searchParams.year} ${searchParams.make} ${searchParams.model}`}.
             Try checking the <a href="/diagnostics" className="text-blue-600 underline">Diagnostics page</a> for AI-generated specs.
           </span>
         </div>
@@ -114,7 +114,7 @@ export default function SpecsPage() {
       {spec && !spec.error && (
         <>
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4 text-white">
-            <h2 className="text-xl font-bold">{`${spec.year} ${spec.make}`} {spec.model}</h2>
+            <h2 className="text-xl font-bold">{`${spec.year} ${spec.make} ${spec.model}`}</h2>
             {spec.trim && <p className="text-blue-100 text-sm">{spec.trim}</p>}
             {spec.engine && <p className="text-blue-100 text-sm mt-1">Engine: {spec.engine}</p>}
             {spec.timingType && (

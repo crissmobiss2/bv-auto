@@ -90,7 +90,7 @@ export default function ServiceRequestsPage() {
                     {(r.vehicleMake || r.vehicleYear) && (
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <Car className="h-3 w-3" />
-                        {`${r.vehicleYear} ${r.vehicleMake}`} {r.vehicleModel}
+                        {`${r.vehicleYear} ${r.vehicleMake} ${r.vehicleModel}`}
                       </div>
                     )}
 

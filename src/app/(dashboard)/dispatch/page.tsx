@@ -80,8 +80,8 @@ export default function DispatchPage() {
         </div>
       </div>
 
-      {/* Week Grid */}
-      <div className="grid grid-cols-7 gap-2">
+      {/* Week Grid (desktop) */}
+      <div className="hidden md:grid grid-cols-7 gap-2">
         {days.map((day) => {
           const dayJobs = getJobsForDay(day);
           const isToday = day.toDateString() === today.toDateString();
@@ -114,6 +114,42 @@ export default function DispatchPage() {
         })}
       </div>
 
+      {/* Agenda (mobile) */}
+      <div className="md:hidden space-y-3">
+        {days.map((day) => {
+          const dayJobs = getJobsForDay(day);
+          const isToday = day.toDateString() === today.toDateString();
+          return (
+            <div key={day.toISOString()} className={`rounded-lg border p-3 ${isToday ? "border-blue-400 bg-blue-50" : "bg-white"}`}>
+              <div className={`text-sm font-semibold mb-1 ${isToday ? "text-blue-600" : "text-gray-700"}`}>
+                {day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+              </div>
+              {dayJobs.length === 0 ? (
+                <p className="text-xs text-gray-400">No jobs</p>
+              ) : (
+                dayJobs.map((job: {
+                  id: string;
+                  title: string;
+                  status: string;
+                  scheduledAt: string;
+                  technician?: { name: string };
+                }) => (
+                  <Link key={job.id} href={`/jobs/${job.id}`}>
+                    <div className={`text-xs p-2 rounded mb-1 cursor-pointer hover:opacity-80 ${JOB_STATUS_COLORS[job.status]}`}>
+                      <p className="font-medium">{job.title}</p>
+                      <p className="text-[10px] opacity-75">
+                        {new Date(job.scheduledAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        {job.technician ? ` · ${job.technician.name.split(" ")[0]}` : ""}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       {/* Unscheduled Jobs */}
       <Card>
         <CardHeader><CardTitle className="text-base">Unscheduled / Pending Jobs</CardTitle></CardHeader>
@@ -130,7 +166,7 @@ export default function DispatchPage() {
                   title: string;
                   status: string;
                   customer: { firstName: string; lastName: string; phone: string };
-                  vehicle: { year: number; make: string; model: string };
+                  vehicle?: { year: number; make: string; model: string };
                   serviceLocation?: string;
                   technician?: { name: string };
                 }) => (
@@ -138,7 +174,7 @@ export default function DispatchPage() {
                     <div>
                       <p className="text-sm font-medium">{job.title}</p>
                       <p className="text-xs text-gray-500">
-                        {`${job.customer.firstName} ${job.customer.lastName}`} · {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
+                        {`${job.customer.firstName} ${job.customer.lastName}`}{job.vehicle && ` · ${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`}
                       </p>
                       {job.serviceLocation && (
                         <p className="text-xs text-gray-400 flex items-center gap-1">

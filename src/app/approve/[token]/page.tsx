@@ -105,7 +105,7 @@ export default function ApproveQuotePage() {
           <CardContent className="p-4 flex items-center gap-3">
             <Car className="h-8 w-8 text-blue-600 flex-shrink-0" />
             <div>
-              <p className="font-semibold">{`${vehicle.year} ${vehicle.make}`} {vehicle.model}</p>
+              <p className="font-semibold">{`${vehicle.year} ${vehicle.make} ${vehicle.model}`}</p>
               {vehicle.plate && <p className="text-sm text-gray-500">Plate: {vehicle.plate}</p>}
             </div>
           </CardContent>

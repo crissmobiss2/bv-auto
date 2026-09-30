@@ -239,7 +239,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
         {/* Line Items */}
         <div className="space-y-2">
           {items.map((item, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-end">
+            <div key={i} className="grid grid-cols-6 sm:grid-cols-12 gap-2 items-end">
               <div className="col-span-2">
                 <Select value={item.type} onValueChange={(v) => updateItem(i, "type", v)}>
                   <SelectTrigger className="text-xs h-8"><SelectValue /></SelectTrigger>
@@ -288,7 +288,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
                   onChange={(e) => updateItem(i, "markup", parseFloat(e.target.value) || 0)}
                 />
               </div>
-              <div className="col-span-1 text-right text-sm font-medium py-1">
+              <div className="col-span-1 text-right text-sm font-medium py-1 whitespace-nowrap">
                 {formatCurrency(item.total)}
               </div>
               <div className="col-span-1">

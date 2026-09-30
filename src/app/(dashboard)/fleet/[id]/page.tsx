@@ -105,7 +105,7 @@ export default function FleetDetailPage() {
                   <div key={j.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
                     <div>
                       <Link href={`/jobs/${j.id}`} className="font-medium text-blue-700 hover:underline">{j.title}</Link>
-                      <p className="text-xs text-gray-500">{j.invoice.invoiceNumber} · {`${j.vehicle.year} ${j.vehicle.make}`} {j.vehicle.model}</p>
+                      <p className="text-xs text-gray-500">{j.invoice.invoiceNumber} · {`${j.vehicle.year} ${j.vehicle.make} ${j.vehicle.model}`}</p>
                       {j.fleetPoNumber && <p className="text-xs text-gray-400">PO: {j.fleetPoNumber}</p>}
                     </div>
                     <div className="text-right">
@@ -129,7 +129,7 @@ export default function FleetDetailPage() {
               <div key={j.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
                 <div>
                   <Link href={`/jobs/${j.id}`} className="font-medium text-blue-700 hover:underline">{j.title}</Link>
-                  <p className="text-xs text-gray-500">{j.jobNumber} · {`${j.vehicle.year} ${j.vehicle.make}`} {j.vehicle.model} {j.vehicle.plate && `· ${j.vehicle.plate}`} · {formatDate(j.createdAt)}</p>
+                  <p className="text-xs text-gray-500">{j.jobNumber} · {`${j.vehicle.year} ${j.vehicle.make} ${j.vehicle.model}`} {j.vehicle.plate && `· ${j.vehicle.plate}`} · {formatDate(j.createdAt)}</p>
                   {j.fleetPoNumber && <p className="text-xs text-gray-400">PO: {j.fleetPoNumber}</p>}
                 </div>
                 <div className="text-right">
