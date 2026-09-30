@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +28,7 @@ const TRIGGER_TYPES = [
 
 const CAMPAIGN_TYPES = ["SMS", "EMAIL"];
 
-const TEMPLATE_VARS = ["{firstName}", "{lastName}", "{name}"];
+const _TEMPLATE_VARS = ["{firstName}", "{lastName}", "{name}"];
 
 const PRESET_TEMPLATES = [
   { label: "Win-Back", template: "Hi {firstName}! We miss you at B&V Auto. It's been a while since your last service — reply BOOK to schedule your next appointment, or call us anytime. We'd love to take care of you again!" },

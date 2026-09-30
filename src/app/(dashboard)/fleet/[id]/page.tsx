@@ -19,7 +19,7 @@ export default function FleetDetailPage() {
     queryFn: () => axios.get(`/api/fleet/${id}`).then(r => r.data),
   });
 
-  const toggleMutation = useMutation({
+  const _toggleMutation = useMutation({
     mutationFn: (isActive: boolean) => axios.patch(`/api/fleet/${id}`, { isActive }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fleet", id] }),
   });

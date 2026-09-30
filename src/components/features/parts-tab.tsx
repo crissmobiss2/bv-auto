@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, RefreshCcw } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { formatCurrency, PART_STATUS_COLORS } from "@/lib/utils";
 
 const PART_STATUSES = ["REQUESTED", "QUOTED", "ORDERED", "SHIPPED", "PICKED_UP", "RECEIVED", "INSTALLED", "RETURNED", "CREDITED", "CANCELLED"];

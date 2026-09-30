@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireAuth, apiError } from "@/lib/api-helpers";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();

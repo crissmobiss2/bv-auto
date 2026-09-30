@@ -12,7 +12,7 @@ import { ArrowLeft, Car, Edit, Wrench, Plus, Trash2, Bell, AlertOctagon, CheckCi
 import Link from "next/link";
 import { formatDate, JOB_STATUS_COLORS, formatCurrency, INVOICE_STATUS_COLORS } from "@/lib/utils";
 import { useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
+
 
 interface MaintenanceInterval {
   id: string; serviceName: string; intervalMiles?: number; intervalDays?: number;

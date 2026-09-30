@@ -2,14 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
-  Phone, Mail, MapPin, Car, Plus, Wrench,
-  FileText, Receipt, ArrowLeft, Edit, Link2, MessageSquare,
+  Phone, Mail, MapPin, Plus,
+  ArrowLeft, Link2,
   TrendingUp, AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -209,7 +208,7 @@ function FollowUpTab({ customerId, followUps }: {
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const [showAddVehicle, setShowAddVehicle] = useState(false);
 
   const { data: customer, isLoading } = useQuery({

@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { rateLimit } from "@/lib/rate-limit";
+
+const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
+
+function getIP(req: NextRequest) {
+  return req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+}
 
 function roleDest(role: string | null | undefined) {
   return role === "CUSTOMER" ? "/customer" : role === "TECHNICIAN" ? "/tech" : "/dashboard";
@@ -30,6 +37,13 @@ export default async function proxy(req: NextRequest) {
     pathname === "/manifest.json"
   ) {
     return NextResponse.next();
+  }
+
+  // Rate-limit mutating API calls per IP (120 per 10 min)
+  if (pathname.startsWith("/api/") && MUTATING_METHODS.has(req.method)) {
+    if (!rateLimit(`api:${req.method}:${getIP(req)}`, 120, 10 * 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
   }
 
   // Auth.js session tokens are JWE-encrypted — getToken decrypts them.

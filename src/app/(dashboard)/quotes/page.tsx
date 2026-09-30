@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Eye, Plus, Send, CheckCircle, XCircle, FileText, Copy, Loader2 } from "lucide-react";
+import { Eye, Plus, Send, CheckCircle, XCircle, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -54,7 +54,7 @@ function QuotesContent() {
 
   const sendMutation = useMutation({
     mutationFn: (id: string) => axios.post(`/api/quotes/${id}/send`),
-    onSuccess: (res, id) => {
+    onSuccess: (res, _id) => {
       setSending(null);
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       if (res.data.approvalUrl) {

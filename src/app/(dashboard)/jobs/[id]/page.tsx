@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { formatCurrency, formatDate, formatDateTime, JOB_STATUS_COLORS, PART_STATUS_COLORS } from "@/lib/utils";
+import { formatCurrency, formatDateTime, JOB_STATUS_COLORS } from "@/lib/utils";
 import { QuoteBuilder } from "@/components/features/quote-builder";
 import { InspectionChecklist } from "@/components/features/inspection-checklist";
 import { PartsTab } from "@/components/features/parts-tab";
@@ -305,7 +305,7 @@ export default function JobDetailPage() {
   if (!job) return <div className="p-8 text-center text-red-500">Job not found.</div>;
 
   const canCreateInvoice = job.quote?.status === "APPROVED" && !job.invoice;
-  const canConvertToQuote = !job.quote;
+  const _canConvertToQuote = !job.quote;
 
   return (
     <div className="space-y-6">

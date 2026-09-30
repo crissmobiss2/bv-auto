@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 import { TrendingUp, DollarSign, Wrench, Users, FileText, Download, TrendingDown, Award, Target, PieChart as PieIcon, GitPullRequest, Clock, XCircle } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 
 const COLORS = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2", "#be185d", "#065f46"];

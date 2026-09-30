@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireAuth, apiSuccess } from "@/lib/api-helpers";
 
 export async function PATCH(
   req: NextRequest,

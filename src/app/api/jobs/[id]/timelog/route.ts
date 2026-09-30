@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session: _session } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;

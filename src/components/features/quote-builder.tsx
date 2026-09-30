@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { type AxiosResponse } from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +130,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
   const total = subtotal + taxAmount;
 
   const saveMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async (): Promise<AxiosResponse> => {
       if (quote) {
         return axios.patch(`/api/quotes/${quote.id}`, { lineItems: items, taxRate, notes });
       }

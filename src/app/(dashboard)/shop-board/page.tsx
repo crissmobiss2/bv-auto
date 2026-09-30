@@ -3,7 +3,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, Clock, Car, RefreshCw, Maximize2 } from "lucide-react";
@@ -147,7 +146,7 @@ export default function ShopBoardPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data: _data, isLoading, refetch } = useQuery({
     queryKey: ["shop-board"],
     queryFn: () =>
       axios.get("/api/jobs?limit=200&status=SCHEDULED,IN_PROGRESS,PARTS_WAITING,COMPLETED").then((r) => r.data),

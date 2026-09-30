@@ -16,7 +16,7 @@ import { AddVehicleDialog } from "@/components/features/add-vehicle-dialog";
 
 function NewJobForm() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const preCustomerId = searchParams.get("customerId") || "";
 

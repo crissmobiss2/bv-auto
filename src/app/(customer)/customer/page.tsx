@@ -6,7 +6,7 @@ import axios from "axios";
 import Link from "next/link";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import {
-  Car, FileText, Clock, AlertTriangle, CheckCircle,
+  Car, Clock, AlertTriangle, CheckCircle,
   CalendarCheck, ChevronRight, Wrench, DollarSign, Phone
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

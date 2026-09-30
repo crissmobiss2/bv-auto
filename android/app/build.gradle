@@ -16,10 +16,26 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // Set these in CI/gradle.properties for a Play Store build:
+            // BVAUTO_KEYSTORE_FILE, BVAUTO_KEYSTORE_PASSWORD, BVAUTO_KEY_ALIAS, BVAUTO_KEY_PASSWORD
+            def ksFile = System.getenv("BVAUTO_KEYSTORE_FILE")
+            if (ksFile) {
+                storeFile file(ksFile)
+                storePassword System.getenv("BVAUTO_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("BVAUTO_KEY_ALIAS")
+                keyPassword System.getenv("BVAUTO_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (System.getenv("BVAUTO_KEYSTORE_FILE")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

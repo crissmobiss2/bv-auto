@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { generateInvoiceNumber, calculateLineItemTotal } from "@/lib/utils";
+import { calculateLineItemTotal } from "@/lib/utils";
 import { AuditAction, QuoteStatus } from "@prisma/client";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {

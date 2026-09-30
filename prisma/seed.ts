@@ -35,7 +35,7 @@ async function main() {
     },
   });
 
-  const dispatcher = await prisma.user.upsert({
+  const _dispatcher = await prisma.user.upsert({
     where: { email: "dispatch@bvauto.com" },
     update: {},
     create: {
@@ -65,7 +65,7 @@ async function main() {
     },
   });
 
-  const vendor2 = await prisma.partsVendor.upsert({
+  const _vendor2 = await prisma.partsVendor.upsert({
     where: { id: "vendor-oreilly" },
     update: {},
     create: {
@@ -238,7 +238,7 @@ async function main() {
     },
   });
 
-  const job3 = await prisma.job.upsert({
+  const _job3 = await prisma.job.upsert({
     where: { jobNumber: "JOB-2601-DEMO3" },
     update: {},
     create: {

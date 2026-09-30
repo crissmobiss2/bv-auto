@@ -51,7 +51,7 @@ export default function OnboardingPage() {
   const [custEmail, setCustEmail] = useState("");
 
   const currentStep = STEPS[step];
-  const progress = (step / (STEPS.length - 1)) * 100;
+  const _progress = (step / (STEPS.length - 1)) * 100;
 
   async function handleShop() {
     if (!shopName.trim()) { setError("Shop name is required"); return; }

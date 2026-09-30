@@ -5,7 +5,7 @@ import axios from "axios";
 import Link from "next/link";
 import { Car, AlertTriangle, Calendar, Hash } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { format, parseISO } from "date-fns";
 
 export default function CustomerVehicles() {
