@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { JOB_STATUS_COLORS } from "@/lib/utils";
@@ -24,6 +24,22 @@ function getDaysInView(date: Date) {
 export default function DispatchPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const days = getDaysInView(currentDate);
+  const queryClient = useQueryClient();
+
+  const reschedule = useMutation({
+    mutationFn: ({ id, scheduledAt }: { id: string; scheduledAt: string }) =>
+      axios.patch(`/api/jobs/${id}`, { scheduledAt }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dispatch-jobs"] }),
+  });
+
+  const dropJob = (jobId: string, day: Date) => {
+    const job = jobs.find((j: { id: string }) => j.id === jobId);
+    if (!job) return;
+    const prev = job.scheduledAt ? new Date(job.scheduledAt) : new Date();
+    const next = new Date(day);
+    next.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
+    reschedule.mutate({ id: jobId, scheduledAt: next.toISOString() });
+  };
 
   const { data } = useQuery({
     queryKey: ["dispatch-jobs"],
@@ -86,7 +102,12 @@ export default function DispatchPage() {
           const dayJobs = getJobsForDay(day);
           const isToday = day.toDateString() === today.toDateString();
           return (
-            <div key={day.toISOString()} className={`min-h-32 rounded-lg border p-2 ${isToday ? "border-blue-400 bg-blue-50" : "bg-white"}`}>
+            <div
+              key={day.toISOString()}
+              className={`min-h-32 rounded-lg border p-2 ${isToday ? "border-blue-400 bg-blue-50" : "bg-white"}`}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); const jobId = e.dataTransfer.getData("text/job-id"); if (jobId) dropJob(jobId, day); }}
+            >
               <div className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-500"}`}>
                 <div>{day.toLocaleDateString("en-US", { weekday: "short" })}</div>
                 <div className={`text-lg ${isToday ? "text-blue-600" : "text-gray-800"}`}>{day.getDate()}</div>
@@ -100,7 +121,11 @@ export default function DispatchPage() {
                 technician?: { name: string };
               }) => (
                 <Link key={job.id} href={`/jobs/${job.id}`}>
-                  <div className={`text-xs p-1.5 rounded mb-1 truncate cursor-pointer hover:opacity-80 ${JOB_STATUS_COLORS[job.status]}`}>
+                  <div
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("text/job-id", job.id)}
+                    className={`text-xs p-1.5 rounded mb-1 truncate cursor-grab hover:opacity-80 ${JOB_STATUS_COLORS[job.status]}`}
+                  >
                     <p className="font-medium truncate">{job.title}</p>
                     <p className="truncate text-[10px] opacity-75">
                       {new Date(job.scheduledAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
@@ -170,7 +195,13 @@ export default function DispatchPage() {
                   serviceLocation?: string;
                   technician?: { name: string };
                 }) => (
-                  <div key={job.id} className="flex items-center justify-between px-4 py-3">
+                  <div
+                    key={job.id}
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("text/job-id", job.id)}
+                    className="flex items-center justify-between px-4 py-3 cursor-grab"
+                    title="Drag onto a day to schedule"
+                  >
                     <div>
                       <p className="text-sm font-medium">{job.title}</p>
                       <p className="text-xs text-gray-500">

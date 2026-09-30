@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess } from "@/lib/api-helpers";
 
-export async function GET() {
+export async function GET(req: Request) {
   const { error } = await requireAuth();
   if (error) return error;
+
+  const shopId = new URL(req.url).searchParams.get("shopId") || null;
+  const jobScope = shopId ? { shopId } : {};
+  const invScope = shopId ? { job: { shopId } } : {};
+  const payScope = shopId ? { invoice: { job: { shopId } } } : {};
 
   const now = new Date();
   const start30 = new Date(now); start30.setDate(now.getDate() - 30);
@@ -12,7 +17,7 @@ export async function GET() {
 
   // Revenue by month (last 12 months)
   const payments = await prisma.payment.findMany({
-    where: { receivedAt: { gte: new Date(now.getFullYear() - 1, now.getMonth(), 1) } },
+    where: { receivedAt: { gte: new Date(now.getFullYear() - 1, now.getMonth(), 1) }, ...payScope },
     select: { amount: true, receivedAt: true },
     orderBy: { receivedAt: "asc" },
   });
@@ -41,23 +46,23 @@ export async function GET() {
     technicianJobs,
     allInvoicesForGP,
   ] = await Promise.all([
-    prisma.payment.aggregate({ where: { receivedAt: { gte: start30 } }, _sum: { amount: true } }),
-    prisma.payment.aggregate({ where: { receivedAt: { gte: start90 } }, _sum: { amount: true } }),
-    prisma.payment.aggregate({ where: { receivedAt: { gte: startYear } }, _sum: { amount: true } }),
-    prisma.job.count({ where: { status: { in: ["COMPLETED", "PAID"] }, completedAt: { gte: start30 } } }),
-    prisma.invoice.aggregate({ where: { status: "PAID" }, _avg: { totalAmount: true } }),
+    prisma.payment.aggregate({ where: { receivedAt: { gte: start30 }, ...payScope }, _sum: { amount: true } }),
+    prisma.payment.aggregate({ where: { receivedAt: { gte: start90 }, ...payScope }, _sum: { amount: true } }),
+    prisma.payment.aggregate({ where: { receivedAt: { gte: startYear }, ...payScope }, _sum: { amount: true } }),
+    prisma.job.count({ where: { status: { in: ["COMPLETED", "PAID"] }, completedAt: { gte: start30 }, ...jobScope } }),
+    prisma.invoice.aggregate({ where: { status: "PAID", ...invScope }, _avg: { totalAmount: true } }),
     prisma.customer.findMany({
       where: { isActive: true },
       include: {
-        invoices: { where: { status: "PAID" }, select: { totalAmount: true } },
+        invoices: { where: { status: "PAID", ...invScope }, select: { totalAmount: true } },
         _count: { select: { jobs: true } },
       },
     }),
-    prisma.job.groupBy({ by: ["status"], _count: { id: true } }),
-    prisma.invoice.groupBy({ by: ["status"], _count: { id: true }, _sum: { amountDue: true } }),
+    prisma.job.groupBy({ by: ["status"], where: jobScope, _count: { id: true } }),
+    prisma.invoice.groupBy({ by: ["status"], where: invScope, _count: { id: true }, _sum: { amountDue: true } }),
     prisma.customer.count({ where: { isActive: true } }),
     prisma.customer.count({ where: { createdAt: { gte: start30 } } }),
-    prisma.invoice.aggregate({ where: { status: { in: ["SENT", "VIEWED", "PARTIAL", "OVERDUE"] } }, _sum: { amountDue: true } }),
+    prisma.invoice.aggregate({ where: { status: { in: ["SENT", "VIEWED", "PARTIAL", "OVERDUE"] }, ...invScope }, _sum: { amountDue: true } }),
     prisma.lineItem.groupBy({ by: ["description"], _count: { id: true }, orderBy: { _count: { id: "desc" } }, take: 10 }),
     prisma.jobPart.groupBy({ by: ["status"], _count: { id: true } }),
     // Technician performance
@@ -65,7 +70,7 @@ export async function GET() {
       where: { role: "TECHNICIAN", isActive: true },
       include: {
         jobs: {
-          where: { status: { in: ["COMPLETED", "INVOICED", "PAID"] } },
+          where: { status: { in: ["COMPLETED", "INVOICED", "PAID"] }, ...jobScope },
           include: {
             invoice: { select: { totalAmount: true, status: true } },
             timeLogs: { select: { clockedIn: true, clockedOut: true } },
@@ -79,7 +84,7 @@ export async function GET() {
     }),
     // For gross profit calculation — get paid invoices with parts cost
     prisma.invoice.findMany({
-      where: { status: "PAID", updatedAt: { gte: start30 } },
+      where: { status: "PAID", updatedAt: { gte: start30 }, ...invScope },
       select: {
         totalAmount: true,
         job: { select: { parts: { select: { totalCost: true } } } },
@@ -90,7 +95,7 @@ export async function GET() {
   // GP by line item type (labor vs parts vs other)
   const lineItemsByType = await prisma.lineItem.groupBy({
     by: ["type"],
-    where: { invoice: { status: "PAID", updatedAt: { gte: start30 } } },
+    where: { invoice: { status: "PAID", updatedAt: { gte: start30 }, ...invScope } },
     _sum: { total: true },
     _count: { id: true },
   });
