@@ -82,8 +82,8 @@ export default function ReviewsPage() {
               }) => (
                 <div key={r.id} className="flex items-center justify-between py-2 border-b last:border-0 gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{r.customer.firstName} {r.customer.lastName}</p>
-                    <p className="text-xs text-gray-500">{r.job.vehicle.year} {r.job.vehicle.make} {r.job.vehicle.model} · {r.job.title}</p>
+                    <p className="font-medium text-sm">{`${r.customer.firstName} ${r.customer.lastName}`}</p>
+                    <p className="text-xs text-gray-500">{`${r.job.vehicle.year} ${r.job.vehicle.make}`} {r.job.vehicle.model} · {r.job.title}</p>
                     <Link href={`/jobs/${r.jobId}`} className="text-xs text-blue-600 hover:underline">{r.job.jobNumber}</Link>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
@@ -120,7 +120,7 @@ export default function ReviewsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-yellow-800">
             <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">1.</span> Job status changes to COMPLETED or invoice is marked PAID</div>
             <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">2.</span> 24 hours later, daily cron auto-sends a personalized text with your Google Review link</div>
-            <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">3.</span> You see who clicked — use "Send Now" to manually trigger for any job</div>
+            <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">3.</span> You see who clicked — use &quot;Send Now&quot; to manually trigger for any job</div>
           </div>
           <div className="mt-3 flex items-center gap-2 text-xs text-yellow-700">
             <ExternalLink className="h-3 w-3" />

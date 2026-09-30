@@ -2,14 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
-  Phone, Mail, MapPin, Car, Plus, Wrench,
-  FileText, Receipt, ArrowLeft, Edit, Link2, MessageSquare,
+  Phone, Mail, MapPin, Plus,
+  ArrowLeft, Link2,
   TrendingUp, AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -209,7 +208,7 @@ function FollowUpTab({ customerId, followUps }: {
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const [showAddVehicle, setShowAddVehicle] = useState(false);
 
   const { data: customer, isLoading } = useQuery({
@@ -229,7 +228,7 @@ export default function CustomerDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">
-            {customer.firstName} {customer.lastName}
+            {`${customer.firstName} ${customer.lastName}`}
           </h1>
           {customer.company && <p className="text-gray-500">{customer.company}</p>}
         </div>
@@ -345,7 +344,7 @@ export default function CustomerDetailPage() {
               ) : (
                 customer.vehicles?.map((v: { id: string; year: number; make: string; model: string; plate?: string; vin?: string }) => (
                   <Link key={v.id} href={`/vehicles/${v.id}`} className="block p-2 rounded-md hover:bg-gray-50 border">
-                    <p className="text-sm font-medium">{v.year} {v.make} {v.model}</p>
+                    <p className="text-sm font-medium">{`${v.year} ${v.make}`} {v.model}</p>
                     {(v.plate || v.vin) && (
                       <p className="text-xs text-gray-500">{v.plate || v.vin}</p>
                     )}
@@ -378,7 +377,7 @@ export default function CustomerDetailPage() {
                         <Link key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
                           <div>
                             <p className="text-sm font-medium">{job.jobNumber} — {job.title}</p>
-                            <p className="text-xs text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model} · {formatDate(job.scheduledAt)}</p>
+                            <p className="text-xs text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model} · {formatDate(job.scheduledAt)}</p>
                           </div>
                           <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${JOB_STATUS_COLORS[job.status]}`}>
                             {job.status.replace("_", " ")}

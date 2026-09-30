@@ -1,5 +1,6 @@
 "use client";
 
+import { VinScanButton } from "@/components/features/vin-scan-button";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -29,7 +30,7 @@ interface VehicleForm {
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: CURRENT_YEAR - 1980 + 2 }, (_, i) => String(CURRENT_YEAR + 1 - i));
+const _YEARS = Array.from({ length: CURRENT_YEAR - 1980 + 2 }, (_, i) => String(CURRENT_YEAR + 1 - i));
 // Covers 1981–(current year + 1), newest first
 const ALL_YEARS = Array.from({ length: CURRENT_YEAR - 1899 }, (_, i) => String(CURRENT_YEAR + 1 - i));
 
@@ -149,6 +150,7 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
               className="font-mono text-sm"
               maxLength={17}
             />
+            <VinScanButton onVin={(v) => { setVinInput(v); }} className="shrink-0" />
             <Button
               type="button"
               size="sm"

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -54,9 +54,12 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
   const [mileage, setMileage] = useState(job.mileageIn?.toString() || "");
   const [techNotes, setTechNotes] = useState("");
   const [completed, setCompleted] = useState(false);
-  const [sendEmail, setSendEmail] = useState(false);
+  const [_sendEmail, _setSendEmail] = useState(false);
 
-  useEffect(() => {
+  // Hydrate form state when the inspection data changes (render-time adjustment)
+  const [hydratedFor, setHydratedFor] = useState<unknown>(null);
+  if (inspectionData && inspectionData !== hydratedFor) {
+    setHydratedFor(inspectionData);
     if (savedChecklist) {
       setItems(savedChecklist.items || []);
       setMileage(savedChecklist.mileage?.toString() || "");
@@ -65,7 +68,7 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
     } else if (defaultItems.length > 0) {
       setItems(defaultItems.map((d) => ({ ...d, condition: "GOOD", notes: "" })));
     }
-  }, [inspectionData]);
+  }
 
   const saveMutation = useMutation({
     mutationFn: () =>

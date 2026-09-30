@@ -2,6 +2,7 @@
 
 import { Search, Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -91,6 +92,8 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
           onClick={openGlobalSearch} aria-label="Search">
           <Search className="h-4 w-4" />
         </Button>
+
+        <ThemeToggle />
 
         <Link href="/notifications">
           <Button variant="ghost" size="icon"

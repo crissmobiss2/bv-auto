@@ -21,7 +21,7 @@ interface PartResult {
 const SUPPLIER_COLORS: Record<string, string> = {
   "NAPA Auto Parts": "bg-yellow-100 text-yellow-800 border-yellow-200",
   "Worldpac": "bg-blue-100 text-blue-800 border-blue-200",
-  "O'Reilly Auto Parts": "bg-red-100 text-red-800 border-red-200",
+  "O&rsquo;Reilly Auto Parts": "bg-red-100 text-red-800 border-red-200",
 };
 
 export default function PartsSearchPage() {
@@ -103,7 +103,7 @@ export default function PartsSearchPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Package className="h-6 w-6 text-green-600" /> Live Parts Search</h1>
-        <p className="text-sm text-gray-500">Search NAPA, Worldpac, and O'Reilly simultaneously — AI-powered catalog</p>
+        <p className="text-sm text-gray-500">Search NAPA, Worldpac, and O&rsquo;Reilly simultaneously — AI-powered catalog</p>
       </div>
 
       <Card>
@@ -166,7 +166,7 @@ export default function PartsSearchPage() {
             <div className="p-12 text-center text-gray-400 border-2 border-dashed rounded-lg">
               <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
               <p className="font-medium">Search for a part to see results</p>
-              <p className="text-sm mt-1">Results from NAPA, Worldpac, and O'Reilly will appear here</p>
+              <p className="text-sm mt-1">Results from NAPA, Worldpac, and O&rsquo;Reilly will appear here</p>
             </div>
           )}
 
@@ -258,7 +258,7 @@ export default function PartsSearchPage() {
                       <SelectContent>
                         {jobs.map(job => (
                           <SelectItem key={job.id} value={job.id}>
-                            #{job.jobNumber} — {job.title} ({job.customer.firstName} {job.customer.lastName})
+                            #{job.jobNumber} — {job.title} ({`${job.customer.firstName} ${job.customer.lastName}`})
                           </SelectItem>
                         ))}
                       </SelectContent>

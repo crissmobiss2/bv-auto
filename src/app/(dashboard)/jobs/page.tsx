@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ function SkeletonRow() {
 }
 
 function JobsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -162,7 +163,13 @@ function JobsContent() {
                     vehicle: { year: number; make: string; model: string };
                     technician?: { name: string };
                   }) => (
-                    <TableRow key={job.id} className="group hover:bg-blue-50/30 transition-colors">
+                    <TableRow
+                      key={job.id}
+                      className="group hover:bg-blue-50/30 transition-colors cursor-pointer"
+                      onClick={() => router.push(`/jobs/${job.id}`)}
+                      onMouseEnter={() => router.prefetch(`/jobs/${job.id}`)}
+                      onTouchStart={() => router.prefetch(`/jobs/${job.id}`)}
+                    >
                       <TableCell className="font-mono text-xs text-gray-500">{job.jobNumber}</TableCell>
                       <TableCell>
                         <p className="font-medium text-sm text-gray-900 truncate max-w-[180px] group-hover:text-blue-700 transition-colors">
@@ -170,14 +177,14 @@ function JobsContent() {
                         </p>
                         {/* Mobile: show customer under title */}
                         <p className="sm:hidden text-xs text-gray-500 mt-0.5">
-                          {job.customer.firstName} {job.customer.lastName}
+                          {`${job.customer.firstName} ${job.customer.lastName}`}
                         </p>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-gray-700">
-                        {job.customer.firstName} {job.customer.lastName}
+                        {`${job.customer.firstName} ${job.customer.lastName}`}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-gray-500">
-                        {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+                        {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-sm text-gray-500">
                         {job.scheduledAt ? formatDateTime(job.scheduledAt) : <span className="text-gray-300">—</span>}

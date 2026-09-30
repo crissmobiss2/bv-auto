@@ -93,7 +93,7 @@ export default function DashboardInspectionPage() {
             <h1 className="text-xl font-bold text-gray-900">Vehicle Inspection</h1>
             {job && (
               <p className="text-sm text-gray-500">
-                {job.vehicle?.year} {job.vehicle?.make} {job.vehicle?.model}
+                {`${job.vehicle?.year} ${job.vehicle?.make}`} {job.vehicle?.model}
               </p>
             )}
           </div>
@@ -152,8 +152,8 @@ export default function DashboardInspectionPage() {
           </div>
           {job && (
             <p className="text-sm text-gray-500 mt-0.5">
-              {job.vehicle?.year} {job.vehicle?.make} {job.vehicle?.model} ·{" "}
-              {job.customer?.firstName} {job.customer?.lastName}
+              {`${job.vehicle?.year} ${job.vehicle?.make}`} {job.vehicle?.model} ·{" "}
+              {`${job.customer?.firstName} ${job.customer?.lastName}`}
             </p>
           )}
           {checklist.mileage && (

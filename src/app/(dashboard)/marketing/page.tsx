@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +28,7 @@ const TRIGGER_TYPES = [
 
 const CAMPAIGN_TYPES = ["SMS", "EMAIL"];
 
-const TEMPLATE_VARS = ["{firstName}", "{lastName}", "{name}"];
+const _TEMPLATE_VARS = ["{firstName}", "{lastName}", "{name}"];
 
 const PRESET_TEMPLATES = [
   { label: "Win-Back", template: "Hi {firstName}! We miss you at B&V Auto. It's been a while since your last service — reply BOOK to schedule your next appointment, or call us anytime. We'd love to take care of you again!" },
@@ -148,7 +148,7 @@ export default function MarketingPage() {
                       <Badge variant="outline" className="text-xs">{campaign.type}</Badge>
                       <Badge variant="outline" className="text-xs">{TRIGGER_LABELS[campaign.triggerType] || campaign.triggerType}</Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1 bg-gray-50 rounded p-2 border mt-2 italic">"{campaign.messageTemplate.substring(0, 120)}{campaign.messageTemplate.length > 120 ? "..." : ""}"</p>
+                    <p className="text-sm text-gray-600 mt-1 bg-gray-50 rounded p-2 border mt-2 italic">&quot;{campaign.messageTemplate.substring(0, 120)}{campaign.messageTemplate.length > 120 ? "..." : ""}&quot;</p>
                     <div className="flex gap-4 mt-2 text-xs text-gray-500">
                       <span className="flex items-center gap-1"><Users className="h-3 w-3" />{campaign.sentCount} sent</span>
                       {campaign.lastRunAt && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />Last run: {formatDate(campaign.lastRunAt)}</span>}

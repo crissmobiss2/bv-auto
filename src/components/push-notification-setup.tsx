@@ -24,7 +24,7 @@ export function PushNotificationSetup() {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
     if (Notification.permission !== "default") return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
-    setShow(true);
+    queueMicrotask(() => setShow(true));
   }, []);
 
   const handleDismiss = () => {

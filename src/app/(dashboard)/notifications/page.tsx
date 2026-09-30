@@ -153,7 +153,7 @@ export default function NotificationsPage() {
 
   const counts = data?.counts || {};
   const totalUrgent = (counts.overdue || 0) + (counts.unassigned || 0);
-  const totalWarning = (counts.partsToOrder || 0) + (counts.warrantiesExpiring || 0) + (counts.lowInventory || 0);
+  const _totalWarning = (counts.partsToOrder || 0) + (counts.warrantiesExpiring || 0) + (counts.lowInventory || 0);
 
   return (
     <div className="space-y-4 max-w-3xl">

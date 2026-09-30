@@ -38,7 +38,9 @@ export default function PrivacyPage() {
   }
 
   function handleDownload() {
-    window.location.href = "/api/customer/export";
+    const a = document.createElement("a");
+    a.href = "/api/customer/export";
+    a.click();
   }
 
   return (

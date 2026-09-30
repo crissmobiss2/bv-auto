@@ -47,7 +47,7 @@ async function sendStatusSms(jobId: string, status: JobStatus) {
   } catch { /* non-fatal */ }
 }
 
-async function sendJobStatusPush(jobId: string, oldStatus: JobStatus, newStatus: JobStatus, techId: string | null) {
+async function sendJobStatusPush(jobId: string, oldStatus: JobStatus, newStatus: JobStatus, _techId: string | null) {
   try {
     const job = await prisma.job.findUnique({
       where: { id: jobId },

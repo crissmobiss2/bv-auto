@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Eye, Plus, Send, CheckCircle, XCircle, FileText, Copy, Loader2 } from "lucide-react";
+import { Eye, Plus, Send, CheckCircle, XCircle, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -54,7 +54,7 @@ function QuotesContent() {
 
   const sendMutation = useMutation({
     mutationFn: (id: string) => axios.post(`/api/quotes/${id}/send`),
-    onSuccess: (res, id) => {
+    onSuccess: (res, _id) => {
       setSending(null);
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       if (res.data.approvalUrl) {
@@ -169,9 +169,9 @@ function QuotesContent() {
                 {quotes.map(q => (
                   <TableRow key={q.id}>
                     <TableCell className="font-mono text-xs">{q.quoteNumber}</TableCell>
-                    <TableCell className="text-sm">{q.customer.firstName} {q.customer.lastName}</TableCell>
+                    <TableCell className="text-sm">{`${q.customer.firstName} ${q.customer.lastName}`}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-gray-500">
-                      {q.job.vehicle.year} {q.job.vehicle.make} {q.job.vehicle.model}
+                      {`${q.job.vehicle.year} ${q.job.vehicle.make}`} {q.job.vehicle.model}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-medium">{formatCurrency(q.totalAmount)}</TableCell>
                     <TableCell className="hidden lg:table-cell text-sm text-gray-500">{formatDate(q.createdAt)}</TableCell>

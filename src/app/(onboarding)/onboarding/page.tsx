@@ -51,7 +51,7 @@ export default function OnboardingPage() {
   const [custEmail, setCustEmail] = useState("");
 
   const currentStep = STEPS[step];
-  const progress = (step / (STEPS.length - 1)) * 100;
+  const _progress = (step / (STEPS.length - 1)) * 100;
 
   async function handleShop() {
     if (!shopName.trim()) { setError("Shop name is required"); return; }
@@ -114,7 +114,7 @@ export default function OnboardingPage() {
           </div>
           <span className="text-white font-bold text-xl">B&V Mobile Auto</span>
         </div>
-        <p className="text-blue-200 text-sm">Let's get your shop set up — takes about 3 minutes</p>
+        <p className="text-blue-200 text-sm">Let&rsquo;s get your shop set up — takes about 3 minutes</p>
 
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-1">
@@ -134,7 +134,7 @@ export default function OnboardingPage() {
             </div>
             <CardTitle className="text-2xl">Welcome to your BOS</CardTitle>
             <CardDescription className="text-base">
-              Your complete business operating system for mobile auto repair. We'll walk you through 4 quick setup steps.
+              Your complete business operating system for mobile auto repair. We&rsquo;ll walk you through 4 quick setup steps.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -330,7 +330,7 @@ export default function OnboardingPage() {
             <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
               <CheckCircle className="h-9 w-9 text-green-600" />
             </div>
-            <CardTitle className="text-2xl text-green-700">You're all set!</CardTitle>
+            <CardTitle className="text-2xl text-green-700">You&rsquo;re all set!</CardTitle>
             <CardDescription className="text-base">
               Your shop is configured and ready to take its first job.
             </CardDescription>

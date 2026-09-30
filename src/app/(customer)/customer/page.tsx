@@ -6,7 +6,7 @@ import axios from "axios";
 import Link from "next/link";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import {
-  Car, FileText, Clock, AlertTriangle, CheckCircle,
+  Car, Clock, AlertTriangle, CheckCircle,
   CalendarCheck, ChevronRight, Wrench, DollarSign, Phone
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -129,7 +129,7 @@ export default function CustomerDashboard() {
                   <div className="flex items-center gap-3">
                     <Car className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="text-sm font-medium">{v.year} {v.make} {v.model}{v.trim ? ` ${v.trim}` : ""}</p>
+                      <p className="text-sm font-medium">{`${v.year} ${v.make}`} {v.model}{v.trim ? ` ${v.trim}` : ""}</p>
                       {v.mileage && <p className="text-xs text-gray-500">{v.mileage.toLocaleString()} mi</p>}
                     </div>
                   </div>

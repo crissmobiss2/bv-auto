@@ -5,7 +5,7 @@ import axios from "axios";
 import Link from "next/link";
 import { Car, AlertTriangle, Calendar, Hash } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { format, parseISO } from "date-fns";
 
 export default function CustomerVehicles() {
@@ -42,7 +42,7 @@ export default function CustomerVehicles() {
                       <Car className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{v.year} {v.make} {v.model}</p>
+                      <p className="font-semibold text-gray-900">{`${v.year} ${v.make}`} {v.model}</p>
                       {v.trim && <p className="text-xs text-gray-500">{v.trim}</p>}
                     </div>
                   </div>

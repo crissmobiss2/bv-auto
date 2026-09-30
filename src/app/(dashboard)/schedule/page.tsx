@@ -166,7 +166,7 @@ export default function SchedulePage() {
                       onClick={() => openSchedule(job)}
                     >
                       <p className="font-medium leading-tight truncate">{job.title}</p>
-                      <p className="opacity-75 truncate">{job.customer.firstName} {job.customer.lastName}</p>
+                      <p className="opacity-75 truncate">{`${job.customer.firstName} ${job.customer.lastName}`}</p>
                       {job.technician && <p className="opacity-60 truncate">{job.technician.name}</p>}
                     </div>
                   ))}
@@ -191,7 +191,7 @@ export default function SchedulePage() {
                   <div>
                     <p className="text-sm font-medium">{job.jobNumber} — {job.title}</p>
                     <p className="text-xs text-gray-500">
-                      {job.customer.firstName} {job.customer.lastName} · {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+                      {`${job.customer.firstName} ${job.customer.lastName}`} · {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
                       {job.technician ? ` · ${job.technician.name}` : " · Unassigned"}
                     </p>
                   </div>
@@ -221,7 +221,7 @@ export default function SchedulePage() {
             <div className="space-y-4 py-2">
               <p className="text-sm font-medium text-gray-700">{scheduling.jobNumber} — {scheduling.title}</p>
               <p className="text-xs text-gray-500">
-                {scheduling.customer.firstName} {scheduling.customer.lastName} · {scheduling.vehicle.year} {scheduling.vehicle.make} {scheduling.vehicle.model}
+                {`${scheduling.customer.firstName} ${scheduling.customer.lastName}`} · {`${scheduling.vehicle.year} ${scheduling.vehicle.make}`} {scheduling.vehicle.model}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">

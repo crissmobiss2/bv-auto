@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { error } = await requireAuth();
   if (error) return error;
 
-  const { id } = await params;
+  const { id: _id } = await params;
   const { searchParams } = req.nextUrl;
   const declinedId = searchParams.get("declinedId");
   if (!declinedId) return apiError("declinedId required", 400);

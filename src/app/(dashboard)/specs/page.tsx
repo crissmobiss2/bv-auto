@@ -14,6 +14,29 @@ import {
   AlertTriangle, Printer, Radio, Navigation
 } from "lucide-react";
 
+function SpecCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          {`${icon} ${title}`}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm space-y-1.5">{children}</CardContent>
+    </Card>
+  );
+}
+
+function Row({ label, value, highlight }: { label: string; value?: string | number | null; highlight?: boolean }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div className="flex justify-between gap-2">
+      <span className="text-gray-500 shrink-0">{label}</span>
+      <span className={`font-medium text-right ${highlight ? "text-blue-700" : "text-gray-900"}`}>{value}</span>
+    </div>
+  );
+}
+
 export default function SpecsPage() {
   // Vehicle selector state
   const [year, setYear] = useState("");
@@ -32,30 +55,6 @@ export default function SpecsPage() {
     if (!year || !make || !model) return;
     setSearchParams({ year, make, model });
     setSearched(true);
-  }
-
-  // Spec section card helper
-  function SpecCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            {icon} {title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm space-y-1.5">{children}</CardContent>
-      </Card>
-    );
-  }
-
-  function Row({ label, value, highlight }: { label: string; value?: string | number | null; highlight?: boolean }) {
-    if (!value && value !== 0) return null;
-    return (
-      <div className="flex justify-between gap-2">
-        <span className="text-gray-500 shrink-0">{label}</span>
-        <span className={`font-medium text-right ${highlight ? "text-blue-700" : "text-gray-900"}`}>{value}</span>
-      </div>
-    );
   }
 
   return (
@@ -105,7 +104,7 @@ export default function SpecsPage() {
         <div className="flex items-start gap-2 p-3 rounded border border-yellow-300 bg-yellow-50 text-sm text-yellow-900">
           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5 text-yellow-600" />
           <span>
-            Specifications not found for {searchParams.year} {searchParams.make} {searchParams.model}.
+            Specifications not found for {`${searchParams.year} ${searchParams.make}`} {searchParams.model}.
             Try checking the <a href="/diagnostics" className="text-blue-600 underline">Diagnostics page</a> for AI-generated specs.
           </span>
         </div>
@@ -115,7 +114,7 @@ export default function SpecsPage() {
       {spec && !spec.error && (
         <>
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4 text-white">
-            <h2 className="text-xl font-bold">{spec.year} {spec.make} {spec.model}</h2>
+            <h2 className="text-xl font-bold">{`${spec.year} ${spec.make}`} {spec.model}</h2>
             {spec.trim && <p className="text-blue-100 text-sm">{spec.trim}</p>}
             {spec.engine && <p className="text-blue-100 text-sm mt-1">Engine: {spec.engine}</p>}
             {spec.timingType && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,9 @@ import {
   Plus, X, FileText, Shield, Star, BookOpen, Calendar, ChevronDown, ChevronUp,
   Loader2, AlertOctagon, Activity, Database, Thermometer, Wind, Cpu,
   Copy, Check, MessageCircle, Briefcase, TrendingUp, Gauge, Navigation,
-  Crosshair,
+  Crosshair, Bluetooth,
 } from "lucide-react";
+import { ObdScanner } from "@/components/features/obd-scanner";
 
 // ── Common makes datalist ────────────────────────────────────────────────────
 const COMMON_MAKES = [
@@ -193,10 +194,11 @@ interface EmissionsResult {
 }
 
 // ── Tab config ───────────────────────────────────────────────────────────────
-type Tab = "ai" | "dtc" | "specs" | "freeze" | "patterns" | "tsb" | "guide" | "maintenance" | "adas" | "emissions" | "safety";
+type Tab = "ai" | "scanner" | "dtc" | "specs" | "freeze" | "patterns" | "tsb" | "guide" | "maintenance" | "adas" | "emissions" | "safety";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "ai",         label: "AI Diagnosis",    icon: <Brain className="h-4 w-4" /> },
+  { id: "scanner",    label: "OBD-II Scan",     icon: <Bluetooth className="h-4 w-4" /> },
   { id: "dtc",        label: "DTC Lookup",       icon: <Search className="h-4 w-4" /> },
   { id: "specs",      label: "Vehicle Specs",    icon: <Database className="h-4 w-4" /> },
   { id: "freeze",     label: "Freeze Frame",     icon: <Thermometer className="h-4 w-4" /> },
@@ -233,7 +235,13 @@ const US_STATES = [
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function DiagnosticsPage() {
-  const [tab, setTab] = useState<Tab>("ai");
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (t && TABS.some(x => x.id === t)) return t as Tab;
+    }
+    return "ai";
+  });
 
   // Shared vehicle state (synced across tabs)
   const [vehicle, setVehicle] = useState<VehicleVal>({ year: "", make: "", model: "", mileage: "" });
@@ -317,19 +325,18 @@ export default function DiagnosticsPage() {
   const [safetyForm, setSafetyForm] = useState<VehicleVal>({ year: "", make: "", model: "" });
   const [safetyTrigger, setSafetyTrigger] = useState<"safety" | "complaints" | null>(null);
 
-  // Sync shared vehicle to active tab forms
-  useEffect(() => {
-    if (vehicle.make) {
-      setDtcCode(prev => prev);
-      if (!specsVehicle.make) setSpecsVehicle(vehicle);
-      if (!freezeVehicle.make) setFreezeVehicle(vehicle);
-      if (!patternVehicle.make) setPatternVehicle(vehicle);
-      if (!tsbSearch.make) setTsbSearch(vehicle);
-      if (!adasVehicle.make) setAdasVehicle(vehicle);
-      if (!emissionsVehicle.make) setEmissionsVehicle(vehicle);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicle.make, vehicle.model, vehicle.year]);
+  // Sync shared vehicle to active tab forms (render-time adjustment)
+  const vehicleKey = `${vehicle.year}|${vehicle.make}|${vehicle.model}`;
+  const [prevVehicleKey, setPrevVehicleKey] = useState("");
+  if (vehicle.make && vehicleKey !== prevVehicleKey) {
+    setPrevVehicleKey(vehicleKey);
+    if (!specsVehicle.make) setSpecsVehicle(vehicle);
+    if (!freezeVehicle.make) setFreezeVehicle(vehicle);
+    if (!patternVehicle.make) setPatternVehicle(vehicle);
+    if (!tsbSearch.make) setTsbSearch(vehicle);
+    if (!adasVehicle.make) setAdasVehicle(vehicle);
+    if (!emissionsVehicle.make) setEmissionsVehicle(vehicle);
+  }
 
   // ── Mutations / Queries ──────────────────────────────────────────────────
 
@@ -448,10 +455,12 @@ export default function DiagnosticsPage() {
     enabled: patternTrigger && !!patternVehicle.make,
   });
 
-  // Keep patternResults updated
-  useEffect(() => {
-    if (patternQuery.data) setPatternResults(patternQuery.data);
-  }, [patternQuery.data]);
+  // Keep patternResults updated (render-time adjustment)
+  const [lastPatternData, setLastPatternData] = useState<unknown>(null);
+  if (patternQuery.data && patternQuery.data !== lastPatternData) {
+    setLastPatternData(patternQuery.data);
+    setPatternResults(patternQuery.data);
+  }
 
   // ── Customer explanation text ─────────────────────────────────────────────
   function buildCustomerText() {
@@ -584,7 +593,7 @@ export default function DiagnosticsPage() {
               tab === t.id ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-800"
             }`}
           >
-            {t.icon} {t.label}
+            {`${t.icon} ${t.label}`}
           </button>
         ))}
       </div>
@@ -631,7 +640,7 @@ export default function DiagnosticsPage() {
                   <select className="w-full border rounded-md px-3 py-2 text-sm bg-white" value={diagJobId} onChange={e => setDiagJobId(e.target.value)}>
                     <option value="">— Don&apos;t save to job —</option>
                     {openJobs.map(j => (
-                      <option key={j.id} value={j.id}>#{j.jobNumber} — {j.title} ({j.customer.firstName} {j.customer.lastName})</option>
+                      <option key={j.id} value={j.id}>#{j.jobNumber} — {j.title} ({`${j.customer.firstName} ${j.customer.lastName}`})</option>
                     ))}
                   </select>
                 </div>
@@ -765,6 +774,22 @@ export default function DiagnosticsPage() {
       )}
 
       {/* ── DTC Lookup ────────────────────────────────────────────────────── */}
+      {tab === "scanner" && (
+        <div className="max-w-xl">
+          <ObdScanner
+            onResult={r => {
+              const codes = [...new Set([...r.stored, ...r.pending, ...r.permanent])];
+              if (codes.length) setDtcList(prev => [...new Set([...prev, ...codes])]);
+              if (r.stored[0]) setDtcCode(r.stored[0]);
+              if (r.vinDecoded?.make) {
+                const v = { year: r.vinDecoded.year ?? "", make: r.vinDecoded.make ?? "", model: r.vinDecoded.model ?? "", mileage: "" };
+                setVehicle(v); setSpecsVehicle(v); setFreezeVehicle(v); setPatternVehicle(v);
+              }
+            }}
+          />
+        </div>
+      )}
+
       {tab === "dtc" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
@@ -1187,7 +1212,7 @@ export default function DiagnosticsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-gray-900">{p.confirmedFix}</p>
-                      <p className="text-xs text-gray-500 mt-1">{p.year} {p.make} {p.model}{p.engine ? ` • ${p.engine}` : ""}</p>
+                      <p className="text-xs text-gray-500 mt-1">{`${p.year} ${p.make}`} {p.model}{p.engine ? ` • ${p.engine}` : ""}</p>
                       {p.dtcCodes?.length > 0 && (
                         <div className="flex gap-1 flex-wrap mt-1.5">
                           {p.dtcCodes.map(c => <span key={c} className="font-mono text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">{c}</span>)}
@@ -1237,7 +1262,7 @@ export default function DiagnosticsPage() {
           {tsbQuery.data && !tsbQuery.isFetching && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-800">{tsbQuery.data.count} TSBs found for {tsbSearch.year} {tsbSearch.make} {tsbSearch.model}</h3>
+                <h3 className="font-semibold text-gray-800">{tsbQuery.data.count} TSBs found for {`${tsbSearch.year} ${tsbSearch.make}`} {tsbSearch.model}</h3>
                 {tsbQuery.data.count === 0 && <p className="text-sm text-gray-500">No TSBs on record for this vehicle.</p>}
               </div>
               <div className="space-y-2">
@@ -1680,7 +1705,7 @@ export default function DiagnosticsPage() {
 
           {safetyQuery.data?.ratings && (
             <Card>
-              <CardHeader><CardTitle className="text-sm">NHTSA Safety Ratings — {safetyForm.year} {safetyForm.make} {safetyForm.model}</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">NHTSA Safety Ratings — {`${safetyForm.year} ${safetyForm.make}`} {safetyForm.model}</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
@@ -1712,7 +1737,7 @@ export default function DiagnosticsPage() {
           {complaintsQuery.data && !complaintsQuery.isFetching && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-800">{complaintsQuery.data.count} Owner Complaints — {safetyForm.year} {safetyForm.make} {safetyForm.model}</h3>
+                <h3 className="font-semibold text-gray-800">{complaintsQuery.data.count} Owner Complaints — {`${safetyForm.year} ${safetyForm.make}`} {safetyForm.model}</h3>
               </div>
               {complaintsQuery.data.componentStats?.length > 0 && (
                 <Card>

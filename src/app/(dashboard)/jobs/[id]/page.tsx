@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { formatCurrency, formatDate, formatDateTime, JOB_STATUS_COLORS, PART_STATUS_COLORS } from "@/lib/utils";
+import { formatCurrency, formatDateTime, JOB_STATUS_COLORS } from "@/lib/utils";
 import { QuoteBuilder } from "@/components/features/quote-builder";
 import { InspectionChecklist } from "@/components/features/inspection-checklist";
 import { PartsTab } from "@/components/features/parts-tab";
@@ -270,7 +270,7 @@ function QuickDiagnoseTab({ job }: { job: { id: string; title: string; vehicle: 
 
       {!result && !loading && (
         <p className="text-xs text-gray-400 text-center py-4">
-          AI diagnosis powered by Claude — contextual to {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+          AI diagnosis powered by Claude — contextual to {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
         </p>
       )}
     </div>
@@ -305,7 +305,7 @@ export default function JobDetailPage() {
   if (!job) return <div className="p-8 text-center text-red-500">Job not found.</div>;
 
   const canCreateInvoice = job.quote?.status === "APPROVED" && !job.invoice;
-  const canConvertToQuote = !job.quote;
+  const _canConvertToQuote = !job.quote;
 
   return (
     <div className="space-y-6">
@@ -318,7 +318,7 @@ export default function JobDetailPage() {
             <span className="font-mono text-xs text-gray-500">{job.jobNumber}</span>
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
-            {job.customer.firstName} {job.customer.lastName} · {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+            {`${job.customer.firstName} ${job.customer.lastName}`} · {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
           </p>
         </div>
 
@@ -351,7 +351,7 @@ export default function JobDetailPage() {
               <div>
                 <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Customer</p>
                 <Link href={`/customers/${job.customer.id}`} className="text-blue-600 hover:underline font-medium">
-                  {job.customer.firstName} {job.customer.lastName}
+                  {`${job.customer.firstName} ${job.customer.lastName}`}
                 </Link>
                 <a href={`tel:${job.customer.phone}`} className="flex items-center gap-1 text-gray-600 text-xs mt-0.5">
                   <Phone className="h-3 w-3" /> {job.customer.phone}
@@ -359,7 +359,7 @@ export default function JobDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Vehicle</p>
-                <p className="font-medium">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
+                <p className="font-medium">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
                 {job.vehicle.plate && <p className="text-xs text-gray-500">Plate: {job.vehicle.plate}</p>}
                 {job.vehicle.vin && <p className="text-xs text-gray-500">VIN: {job.vehicle.vin}</p>}
                 {job.mileageIn && <p className="text-xs text-gray-500">Mileage In: {job.mileageIn.toLocaleString()}</p>}

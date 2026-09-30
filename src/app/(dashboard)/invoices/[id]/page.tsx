@@ -210,7 +210,7 @@ export default function InvoiceDetailPage() {
         <Card>
           <CardContent className="p-4 space-y-2 text-sm">
             <p className="font-semibold text-gray-900 text-base">
-              {invoice.customer.firstName} {invoice.customer.lastName}
+              {`${invoice.customer.firstName} ${invoice.customer.lastName}`}
             </p>
             {invoice.customer.company && <p className="text-gray-500">{invoice.customer.company}</p>}
             <a href={`tel:${invoice.customer.phone}`} className="flex items-center gap-1 text-blue-600">
@@ -241,7 +241,7 @@ export default function InvoiceDetailPage() {
             )}
             <div className="flex justify-between">
               <span className="text-gray-500">Vehicle</span>
-              <span>{invoice.job.vehicle.year} {invoice.job.vehicle.make} {invoice.job.vehicle.model}</span>
+              <span>{`${invoice.job.vehicle.year} ${invoice.job.vehicle.make}`} {invoice.job.vehicle.model}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Job</span>

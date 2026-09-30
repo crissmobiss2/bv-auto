@@ -3,7 +3,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, Clock, Car, RefreshCw, Maximize2 } from "lucide-react";
@@ -60,13 +59,13 @@ function JobCard({ job, technicians }: { job: Job; technicians: { id: string; na
       <div className="space-y-1">
         <div className="flex items-center gap-1.5 text-xs text-gray-700">
           <Car className="h-3 w-3 text-gray-400 flex-shrink-0" />
-          <span className="truncate">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</span>
+          <span className="truncate">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</span>
           {job.vehicle.plate && <span className="text-gray-400">({job.vehicle.plate})</span>}
         </div>
         <div className="flex items-center gap-1.5 text-xs text-gray-600">
           <Phone className="h-3 w-3 text-gray-400 flex-shrink-0" />
           <Link href={`/customers/${job.customer.id}`} className="hover:underline truncate">
-            {job.customer.firstName} {job.customer.lastName}
+            {`${job.customer.firstName} ${job.customer.lastName}`}
           </Link>
           <a href={`tel:${job.customer.phone}`} className="text-blue-600 hover:underline ml-auto flex-shrink-0">
             {job.customer.phone}
@@ -147,7 +146,7 @@ export default function ShopBoardPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data: _data, isLoading, refetch } = useQuery({
     queryKey: ["shop-board"],
     queryFn: () =>
       axios.get("/api/jobs?limit=200&status=SCHEDULED,IN_PROGRESS,PARTS_WAITING,COMPLETED").then((r) => r.data),

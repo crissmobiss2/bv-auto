@@ -41,14 +41,14 @@ export default function ResetRequestPage() {
         <Card>
           <CardHeader>
             <CardTitle>Reset password</CardTitle>
-            <CardDescription>Enter your email and we'll send a reset link</CardDescription>
+            <CardDescription>Enter your email and we&rsquo;ll send a reset link</CardDescription>
           </CardHeader>
           <CardContent>
             {sent ? (
               <div className="text-center space-y-4 py-2">
                 <CheckCircle className="h-10 w-10 text-green-500 mx-auto" />
                 <p className="text-sm text-gray-700 font-medium">Check your email</p>
-                <p className="text-xs text-gray-500">If an account exists for <strong>{email}</strong>, you'll receive a reset link within a few minutes.</p>
+                <p className="text-xs text-gray-500">If an account exists for <strong>{email}</strong>, you&rsquo;ll receive a reset link within a few minutes.</p>
                 <Link href="/login" className="text-xs text-blue-600 hover:underline flex items-center justify-center gap-1">
                   <ArrowLeft className="h-3 w-3" /> Back to sign in
                 </Link>

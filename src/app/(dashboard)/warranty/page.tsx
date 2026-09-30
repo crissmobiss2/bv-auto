@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+
+
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Shield, AlertTriangle, CheckCircle, XCircle, Clock } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 type Warranty = {
   id: string;
@@ -68,6 +68,7 @@ export default function WarrantyPage() {
   const stats = data?.stats || {};
 
   const daysLeft = (expiryDate: string) => {
+    // eslint-disable-next-line react-hooks/purity -- days-left display intentionally recalculates each render
     const days = Math.ceil((new Date(expiryDate).getTime() - Date.now()) / 86400000);
     return days;
   };
@@ -140,11 +141,11 @@ export default function WarrantyPage() {
                         <span className="font-medium text-sm">{w.job.title}</span>
                         <span className="text-xs text-gray-400">{w.job.jobNumber}</span>
                         <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>
-                          {status.icon} {status.label}
+                          {`${status.icon} ${status.label}`}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mb-2">
-                        {w.customer.firstName} {w.customer.lastName} · {w.vehicle.year} {w.vehicle.make} {w.vehicle.model}
+                        {`${w.customer.firstName} ${w.customer.lastName}`} · {`${w.vehicle.year} ${w.vehicle.make}`} {w.vehicle.model}
                         {w.vehicle.plate && ` · ${w.vehicle.plate}`}
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
@@ -221,8 +222,8 @@ export default function WarrantyPage() {
             <div className="space-y-4">
               <div className="p-3 bg-gray-50 rounded text-sm">
                 <p className="font-medium">{claimDialog.job.title}</p>
-                <p className="text-gray-500">{claimDialog.customer.firstName} {claimDialog.customer.lastName}</p>
-                <p className="text-gray-500">{claimDialog.vehicle.year} {claimDialog.vehicle.make} {claimDialog.vehicle.model}</p>
+                <p className="text-gray-500">{`${claimDialog.customer.firstName} ${claimDialog.customer.lastName}`}</p>
+                <p className="text-gray-500">{`${claimDialog.vehicle.year} ${claimDialog.vehicle.make}`} {claimDialog.vehicle.model}</p>
               </div>
               <div className="space-y-2">
                 <Label>Claim Notes *</Label>

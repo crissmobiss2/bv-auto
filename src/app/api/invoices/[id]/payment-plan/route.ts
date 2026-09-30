@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   return apiSuccess(created, 201);
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params: _params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
   if (error) return error;
 

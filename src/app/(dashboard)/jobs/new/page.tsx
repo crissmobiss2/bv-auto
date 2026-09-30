@@ -16,7 +16,7 @@ import { AddVehicleDialog } from "@/components/features/add-vehicle-dialog";
 
 function NewJobForm() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const preCustomerId = searchParams.get("customerId") || "";
 
@@ -93,7 +93,7 @@ function NewJobForm() {
                 <SelectTrigger><SelectValue placeholder="Select customer..." /></SelectTrigger>
                 <SelectContent>
                   {customers?.map((c: { id: string; firstName: string; lastName: string }) => (
-                    <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{`${c.firstName} ${c.lastName}`}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -119,7 +119,7 @@ function NewJobForm() {
                   <SelectTrigger><SelectValue placeholder={form.customerId ? "Select vehicle..." : "Select customer first"} /></SelectTrigger>
                   <SelectContent>
                     {vehicles?.map((v: { id: string; year: number; make: string; model: string }) => (
-                      <SelectItem key={v.id} value={v.id}>{v.year} {v.make} {v.model}</SelectItem>
+                      <SelectItem key={v.id} value={v.id}>{`${v.year} ${v.make}`} {v.model}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

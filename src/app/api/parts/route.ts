@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { z } from "zod";
-import { AuditAction, PartStatus } from "@prisma/client";
+import { AuditAction } from "@prisma/client";
 
 const createSchema = z.object({
   jobId: z.string(),

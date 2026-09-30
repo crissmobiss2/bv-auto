@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -106,7 +106,7 @@ export default function CustomersPage() {
                   <TableRow key={c.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{c.firstName} {c.lastName}</p>
+                        <p className="font-medium">{`${c.firstName} ${c.lastName}`}</p>
                         {c.company && <p className="text-xs text-gray-500">{c.company}</p>}
                       </div>
                     </TableCell>

@@ -117,24 +117,34 @@ export function Sidebar() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setOpenSections(new Set(JSON.parse(saved)));
+      if (saved) {
+        const parsed = new Set<string>(JSON.parse(saved));
+        // Merge rather than replace so the auto-opened active section survives
+        queueMicrotask(() => setOpenSections(prev => new Set([...prev, ...parsed])));
+      }
     } catch { /* ignore */ }
   }, []);
 
-  // Auto-open the section containing the active route
-  useEffect(() => {
+  // Auto-open the section containing the active route (render-time adjustment)
+  const [prevPathname, setPrevPathname] = useState<string | null>(null);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     for (const section of SECTIONS) {
       if (section.items.some(item => pathname.startsWith(item.href))) {
         setOpenSections(prev => new Set([...prev, section.id]));
         break;
       }
     }
-  }, [pathname]);
+  }
 
   function toggleSection(id: string) {
     setOpenSections(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
       return next;
     });

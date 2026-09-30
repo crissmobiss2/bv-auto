@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import {
   Send,
   Camera,
 } from "lucide-react";
+import { apiWrite } from "@/lib/offline-queue";
 
 type Condition = "GOOD" | "NEEDS_ATTENTION" | "CRITICAL" | "FAIR" | "NA";
 
@@ -95,7 +96,10 @@ export default function TechInspectionPage() {
   const job: Job | undefined = data?.job;
   const savedChecklist: InspectionData | null = data?.checklist || null;
 
-  useEffect(() => {
+  // Hydrate form state when the loaded data changes (render-time adjustment)
+  const [hydratedFor, setHydratedFor] = useState<unknown>(null);
+  if (data && data !== hydratedFor) {
+    setHydratedFor(data);
     if (savedChecklist) {
       setItems(savedChecklist.items || []);
       setMileage(savedChecklist.mileage?.toString() || "");
@@ -116,11 +120,11 @@ export default function TechInspectionPage() {
       cats.forEach((c) => (openAll[c] = true));
       setOpenCategories(openAll);
     }
-  }, [data]);
+  }
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      axios.post(`/api/jobs/${id}/inspection`, {
+      apiWrite(`/api/jobs/${id}/inspection`, "post", {
         mileage: mileage ? parseInt(mileage) : undefined,
         items,
         technicianNotes: techNotes,
@@ -129,7 +133,7 @@ export default function TechInspectionPage() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: () => axios.post(`/api/jobs/${id}/inspection/send`),
+    mutationFn: () => apiWrite(`/api/jobs/${id}/inspection/send`, "post"),
     onSuccess: () => setSendSent(true),
   });
 
@@ -177,7 +181,7 @@ export default function TechInspectionPage() {
             <p className="font-bold text-gray-900 truncate">Inspection Complete</p>
             {job && (
               <p className="text-xs text-gray-500 truncate">
-                {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+                {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
               </p>
             )}
           </div>
@@ -284,8 +288,8 @@ export default function TechInspectionPage() {
           <p className="font-bold text-gray-900 truncate">Vehicle Inspection</p>
           {job && (
             <p className="text-xs text-gray-500 truncate">
-              {job.vehicle.year} {job.vehicle.make} {job.vehicle.model} ·{" "}
-              {job.customer.firstName} {job.customer.lastName}
+              {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model} ·{" "}
+              {`${job.customer.firstName} ${job.customer.lastName}`}
             </p>
           )}
         </div>

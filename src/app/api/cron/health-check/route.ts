@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const ago7d  = new Date(now.getTime() - 7  * 24 * 60 * 60 * 1000);
-  const ago30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const _ago30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   // ── Gather all platform health data in parallel ────────────────────────────
   const [

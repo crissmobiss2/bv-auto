@@ -51,12 +51,13 @@ export function VehicleCombobox({ placeholder, value, onChange, fetchUrl, disabl
     }, 200);
   }, [open, query, fetchUrl]);
 
-  useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
+  const handleOpenChange = (o: boolean) => {
+    setOpen(o);
+    if (!o) setQuery("");
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

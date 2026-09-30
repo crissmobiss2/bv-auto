@@ -68,7 +68,7 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
 
-  const customer = await prisma.customer.update({
+  const _customer = await prisma.customer.update({
     where: { id },
     data: { isActive: false },
   });

@@ -71,7 +71,9 @@ export default function AuditLogPage() {
 
   function handleExportCsv() {
     const qs = buildQueryString({ export: "csv" });
-    window.location.href = `/api/audit?${qs}`;
+    const a = document.createElement("a");
+    a.href = `/api/audit?${qs}`;
+    a.click();
   }
 
   function resetFilters() {

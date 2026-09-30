@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-helpers";
+import { rateLimit, getIP } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -17,6 +18,9 @@ const schema = z.object({
 const STAFF_ROLES = ["TECHNICIAN", "SERVICE_ADVISOR", "PARTS_COORDINATOR", "DISPATCHER"];
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`register:${getIP(req)}`, 10, 10 * 60_000)) {
+    return apiError("Too many requests", 429);
+  }
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) return apiError("Invalid registration data", 400);

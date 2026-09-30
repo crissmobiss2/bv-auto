@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [showLowStock, setShowLowStock] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
-  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
+  const [_editItem, _setEditItem] = useState<InventoryItem | null>(null);
   const [form, setForm] = useState({
     name: "", partNumber: "", description: "", category: "",
     quantityOnHand: "0", reorderPoint: "2", unitCost: "0", location: "", notes: "",

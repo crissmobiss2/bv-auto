@@ -12,7 +12,7 @@ import { ArrowLeft, Car, Edit, Wrench, Plus, Trash2, Bell, AlertOctagon, CheckCi
 import Link from "next/link";
 import { formatDate, JOB_STATUS_COLORS, formatCurrency, INVOICE_STATUS_COLORS } from "@/lib/utils";
 import { useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
+
 
 interface MaintenanceInterval {
   id: string; serviceName: string; intervalMiles?: number; intervalDays?: number;
@@ -54,6 +54,7 @@ function MaintenanceSection({ vehicleId }: { vehicleId: string }) {
 
   const isDueSoon = (interval: MaintenanceInterval) => {
     if (interval.nextDueDate) {
+      // eslint-disable-next-line react-hooks/purity -- due-date display intentionally recalculates each render
       const days = (new Date(interval.nextDueDate).getTime() - Date.now()) / 86400000;
       if (days <= 14) return true;
     }
@@ -220,11 +221,11 @@ export default function VehicleDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">
-            {vehicle.year} {vehicle.make} {vehicle.model}
+            {`${vehicle.year} ${vehicle.make}`} {vehicle.model}
             {vehicle.trim && <span className="text-gray-500 ml-2 text-lg">{vehicle.trim}</span>}
           </h1>
           <Link href={`/customers/${vehicle.customer?.id}`} className="text-sm text-blue-600 hover:underline">
-            {vehicle.customer?.firstName} {vehicle.customer?.lastName}
+            {`${vehicle.customer?.firstName} ${vehicle.customer?.lastName}`}
           </Link>
         </div>
         <Button variant="outline" size="sm" onClick={openEdit}>

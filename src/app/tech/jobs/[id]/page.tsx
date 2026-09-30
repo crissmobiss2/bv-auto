@@ -5,11 +5,12 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Phone, MapPin, ClipboardCheck, Camera, FileText, Clock, CheckCircle, Shield, Navigation } from "lucide-react";
+import { apiWrite } from "@/lib/offline-queue";
 import { JOB_STATUS_COLORS, formatDateTime } from "@/lib/utils";
 import { InspectionChecklist } from "@/components/features/inspection-checklist";
 import { PhotoUpload } from "@/components/features/photo-upload";
@@ -28,7 +29,7 @@ export default function TechJobDetailPage() {
 
   useEffect(() => {
     if (navigator.geolocation) {
-      setGpsStatus("locating");
+      queueMicrotask(() => setGpsStatus("locating"));
       navigator.geolocation.getCurrentPosition(
         (pos) => { setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsStatus("ready"); },
         () => setGpsStatus("denied"),
@@ -43,17 +44,17 @@ export default function TechJobDetailPage() {
   });
 
   const clockInMutation = useMutation({
-    mutationFn: () => axios.post(`/api/jobs/${id}/timelog`, { action: "clock-in", lat: gpsCoords?.lat, lng: gpsCoords?.lng }),
+    mutationFn: () => apiWrite(`/api/jobs/${id}/timelog`, "post", { action: "clock-in", lat: gpsCoords?.lat, lng: gpsCoords?.lng }),
     onSuccess: () => refetchTime(),
   });
 
   const clockOutMutation = useMutation({
-    mutationFn: (logId: string) => axios.post(`/api/jobs/${id}/timelog`, { action: "clock-out", logId }),
+    mutationFn: (logId: string) => apiWrite(`/api/jobs/${id}/timelog`, "post", { action: "clock-out", logId }),
     onSuccess: () => refetchTime(),
   });
 
   const healthScoreMutation = useMutation({
-    mutationFn: () => axios.post(`/api/jobs/${id}/health-score`),
+    mutationFn: () => apiWrite(`/api/jobs/${id}/health-score`, "post"),
     onSuccess: (res) => setHealthScore(res.data),
   });
 
@@ -63,12 +64,12 @@ export default function TechJobDetailPage() {
   });
 
   const statusMutation = useMutation({
-    mutationFn: (status: string) => axios.patch(`/api/jobs/${id}`, { status }),
+    mutationFn: (status: string) => apiWrite(`/api/jobs/${id}`, "patch", { status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["job", id] }),
   });
 
   const noteMutation = useMutation({
-    mutationFn: () => axios.post(`/api/jobs/${id}/notes`, { content: note, isInternal: false }),
+    mutationFn: () => apiWrite(`/api/jobs/${id}/notes`, "post", { content: note, isInternal: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["job", id] });
       setNote("");
@@ -87,7 +88,7 @@ export default function TechJobDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-gray-900 truncate">{job.title}</h1>
-          <p className="text-sm text-gray-500">{job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
+          <p className="text-sm text-gray-500">{`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}</p>
         </div>
       </div>
 
@@ -111,7 +112,7 @@ export default function TechJobDetailPage() {
         <CardContent className="p-4 space-y-3 text-sm">
           <a href={`tel:${job.customer.phone}`} className="flex items-center gap-2 text-blue-600 font-medium">
             <Phone className="h-4 w-4" />
-            {job.customer.firstName} {job.customer.lastName} · {job.customer.phone}
+            {`${job.customer.firstName} ${job.customer.lastName}`} · {job.customer.phone}
           </a>
           {job.serviceLocation && (
             <a
@@ -211,7 +212,7 @@ export default function TechJobDetailPage() {
                       return (
                         <span key={cond} className="flex items-center gap-1 text-xs text-gray-600">
                           <span className={`inline-block w-2 h-2 rounded-full ${colors[cond]}`} />
-                          {count} {labels[cond]}
+                          {`${count} ${labels[cond]}`}
                         </span>
                       );
                     })}

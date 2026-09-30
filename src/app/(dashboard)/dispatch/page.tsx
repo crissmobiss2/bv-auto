@@ -1,12 +1,12 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDateTime, JOB_STATUS_COLORS } from "@/lib/utils";
+import { JOB_STATUS_COLORS } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Calendar, MapPin, Navigation, Plus } from "lucide-react";
+import { MapPin, Navigation, Plus } from "lucide-react";
 import { useState } from "react";
 
 function getDaysInView(date: Date) {
@@ -31,7 +31,7 @@ export default function DispatchPage() {
       axios.get("/api/jobs?limit=100&status=SCHEDULED,APPROVED,IN_PROGRESS").then((r) => r.data),
   });
 
-  const { data: technicians } = useQuery({
+  const { data: _technicians } = useQuery({
     queryKey: ["technicians"],
     queryFn: () => axios.get("/api/users?role=TECHNICIAN").then((r) => r.data),
   });
@@ -138,7 +138,7 @@ export default function DispatchPage() {
                     <div>
                       <p className="text-sm font-medium">{job.title}</p>
                       <p className="text-xs text-gray-500">
-                        {job.customer.firstName} {job.customer.lastName} · {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+                        {`${job.customer.firstName} ${job.customer.lastName}`} · {`${job.vehicle.year} ${job.vehicle.make}`} {job.vehicle.model}
                       </p>
                       {job.serviceLocation && (
                         <p className="text-xs text-gray-400 flex items-center gap-1">
