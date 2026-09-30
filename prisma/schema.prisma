@@ -527,6 +527,7 @@ model PartsVendor {
   state       String?
   zip         String?
   accountNum  String?
+  website     String?
   notes       String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -582,6 +583,8 @@ model JobPhoto {
   jobId        String
   uploadedById String
   url          String
+  data         Bytes?
+  mimeType     String?
   caption      String?
   takenAt      DateTime @default(now())
   createdAt    DateTime @default(now())

@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Eye, Download, DollarSign, Send, Plus, Loader2, FileText } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate, INVOICE_STATUS_COLORS } from "@/lib/utils";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const PAYMENT_METHODS = ["CASH", "CHECK", "CREDIT_CARD", "DEBIT_CARD", "VENMO", "ZELLE", "ACH", "OTHER"];
 
@@ -37,6 +37,9 @@ function InvoicesContent() {
   const [payDialog, setPayDialog] = useState<Invoice | null>(null);
   const [payForm, setPayForm] = useState({ amount: "", method: "CASH", reference: "", notes: "" });
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [newDialog, setNewDialog] = useState(false);
+  const [newJobId, setNewJobId] = useState("");
+  const router = useRouter();
 
   const { data, isLoading } = useQuery({
     queryKey: ["invoices", statusFilter],
@@ -45,6 +48,22 @@ function InvoicesContent() {
   });
 
   const invoices: Invoice[] = data?.invoices || [];
+
+  const { data: jobsData } = useQuery<{ jobs: { id: string; jobNumber: string; status: string; customer?: { firstName: string; lastName: string } | null; vehicle?: { year: number; make: string; model: string } | null; quote?: { id: string } | null; invoice?: { id: string } | null }[] }>({
+    queryKey: ["jobs-for-invoice"],
+    queryFn: () => axios.get("/api/jobs").then(r => r.data),
+    enabled: newDialog,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: () => axios.post("/api/invoices", { jobId: newJobId }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      setNewDialog(false);
+      const id = res.data?.id;
+      if (id) router.push(`/invoices/${id}`);
+    },
+  });
 
   const totalDue = invoices
     .filter(i => ["SENT", "VIEWED", "PARTIAL", "OVERDUE"].includes(i.status))
@@ -97,11 +116,9 @@ function InvoicesContent() {
           <a href="/api/invoices/export" download>
             <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export CSV</Button>
           </a>
-          <Link href="/jobs/new">
-            <Button className="bg-blue-600 hover:bg-blue-700" size="sm">
-              <Plus className="h-4 w-4 mr-1" /> New Invoice
-            </Button>
-          </Link>
+          <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => setNewDialog(true)}>
+            <Plus className="h-4 w-4 mr-1" /> New Invoice
+          </Button>
         </div>
       </div>
 
@@ -282,6 +299,50 @@ function InvoicesContent() {
               disabled={!payForm.amount || parseFloat(payForm.amount) <= 0 || payMutation.isPending}
             >
               {payMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Saving...</> : <><DollarSign className="h-4 w-4 mr-2" /> Record Payment</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New invoice — pick a job that has a quote and no invoice yet */}
+      <Dialog open={newDialog} onOpenChange={setNewDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Invoice</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-500">
+            Invoices are created from a job&apos;s approved quote. Select the job to bill:
+          </p>
+          <div className="space-y-1">
+            <Label className="text-xs">Job</Label>
+            <Select value={newJobId} onValueChange={setNewJobId}>
+              <SelectTrigger><SelectValue placeholder="Select a job" /></SelectTrigger>
+              <SelectContent>
+                {(jobsData?.jobs || [])
+                  .filter(j => j.quote && !j.invoice)
+                  .map(j => (
+                    <SelectItem key={j.id} value={j.id}>
+                      {j.jobNumber} — {j.customer ? `${j.customer.firstName} ${j.customer.lastName}` : "—"}
+                      {j.vehicle ? ` · ${j.vehicle.year} ${j.vehicle.make} ${j.vehicle.model}` : ""}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            {jobsData && !(jobsData.jobs || []).some(j => j.quote && !j.invoice) && (
+              <p className="text-xs text-gray-500">No billable jobs — create a job with a quote first.</p>
+            )}
+          </div>
+          {createMutation.isError && (
+            <p className="text-sm text-red-600">Failed to create invoice. Please try again.</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewDialog(false)}>Cancel</Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => createMutation.mutate()}
+              disabled={!newJobId || createMutation.isPending}
+            >
+              {createMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating...</> : "Create Invoice"}
             </Button>
           </DialogFooter>
         </DialogContent>

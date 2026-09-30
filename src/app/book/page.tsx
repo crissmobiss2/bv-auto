@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,10 @@ export default function BookPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [shopPhone, setShopPhone] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/shop-info").then(r => r.json()).then(d => setShopPhone(d.phone || null)).catch(() => {});
+  }, []);
 
   const handleSubmit = async () => {
     if (!form.name || !form.phone || !form.serviceType || !form.description) {
@@ -62,7 +66,7 @@ export default function BookPage() {
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900">Request Received!</h2>
           <p className="text-gray-500 mt-2">We&apos;ll review your request and contact you within a few hours to confirm your appointment.</p>
-          <p className="text-sm text-gray-400 mt-4">Questions? Call <a href="tel:5550001000" className="text-blue-600">(555) 000-1000</a></p>
+          {shopPhone && <p className="text-sm text-gray-400 mt-4">Questions? Call <a href={`tel:${shopPhone}`} className="text-blue-600">{shopPhone}</a></p>}
         </CardContent>
       </Card>
     </div>
@@ -91,7 +95,7 @@ export default function BookPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Phone *</Label>
-                <Input placeholder="(555) 000-1000" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Input placeholder="(555) 555-5555" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
@@ -155,7 +159,7 @@ export default function BookPage() {
       </Card>
 
       <div className="text-center text-sm text-gray-400">
-        <p>Or call us directly: <a href="tel:5550001000" className="text-blue-600 font-medium">(555) 000-1000</a></p>
+        {shopPhone && <p>Or call us directly: <a href={`tel:${shopPhone}`} className="text-blue-600 font-medium">{shopPhone}</a></p>}
       </div>
     </div>
   );

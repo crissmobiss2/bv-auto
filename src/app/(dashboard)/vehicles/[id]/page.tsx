@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -175,6 +175,7 @@ function RecallAlerts({ vehicleId }: { vehicleId: string }) {
 
 export default function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
@@ -230,6 +231,16 @@ export default function VehicleDetailPage() {
         </div>
         <Button variant="outline" size="sm" onClick={openEdit}>
           <Edit className="h-4 w-4 mr-1" /> Edit
+        </Button>
+        <Button
+          variant="outline" size="sm"
+          className="text-red-600 border-red-200 hover:bg-red-50"
+          onClick={() => {
+            if (!confirm("Remove this vehicle? It will be hidden from lists.")) return;
+            axios.delete(`/api/vehicles/${id}`).then(() => router.push("/vehicles"));
+          }}
+        >
+          <Trash2 className="h-4 w-4 mr-1" /> Delete
         </Button>
         <Link href={`/jobs/new?customerId=${vehicle.customerId}`}>
           <Button size="sm"><Wrench className="h-4 w-4 mr-1" /> New Job</Button>

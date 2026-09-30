@@ -9,13 +9,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Package, ShoppingCart, CheckCircle, XCircle, Loader2, Zap, Check } from "lucide-react";
+import { Search, Package, ShoppingCart, CheckCircle, XCircle, Loader2, Zap, Check, ExternalLink, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface PartResult {
   supplier: string; partNumber: string; description: string; brand: string;
   price: number; coreCharge: number; inStock: boolean; stockQty: number;
   location: string; condition: string; warranty: string;
+}
+
+function supplierSearchUrl(supplier: string, q: string): string | null {
+  const query = encodeURIComponent(q);
+  if (supplier.includes("NAPA")) return `https://www.napaonline.com/en/search?text=${query}`;
+  if (supplier.includes("O'Reilly") || supplier.includes("O’Reilly")) return `https://www.oreillyauto.com/search?q=${query}`;
+  if (supplier.includes("AutoZone")) return `https://www.autozone.com/searchresult?searchText=${query}`;
+  if (supplier.includes("Worldpac")) return `https://speeddial.worldpac.com`;
+  return null;
 }
 
 const SUPPLIER_COLORS: Record<string, string> = {
@@ -103,7 +112,7 @@ export default function PartsSearchPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Package className="h-6 w-6 text-green-600" /> Live Parts Search</h1>
-        <p className="text-sm text-gray-500">Search NAPA, Worldpac, and O&rsquo;Reilly simultaneously — AI-powered catalog</p>
+        <p className="text-sm text-gray-500">AI price estimates across suppliers — verify live stock &amp; order on the supplier site</p>
       </div>
 
       <Card>
@@ -166,13 +175,16 @@ export default function PartsSearchPage() {
             <div className="p-12 text-center text-gray-400 border-2 border-dashed rounded-lg">
               <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
               <p className="font-medium">Search for a part to see results</p>
-              <p className="text-sm mt-1">Results from NAPA, Worldpac, and O&rsquo;Reilly will appear here</p>
+              <p className="text-sm mt-1">AI-generated estimates across NAPA, Worldpac, and O&rsquo;Reilly will appear here</p>
             </div>
           )}
 
           {results.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-500 font-medium">{results.length} results across {new Set(results.map(r => r.supplier)).size} suppliers</p>
+              <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                <span>{results.length} AI-estimated results — pricing/stock are estimates, not live catalog data. Use &quot;Check live&quot; to order at the supplier site.</span>
+              </div>
               {results.map((part, i) => {
                 const inCart = cartItems.some(c => c.partNumber === part.partNumber && c.supplier === part.supplier);
                 return (
@@ -194,6 +206,11 @@ export default function PartsSearchPage() {
                             <span>{part.condition}</span>
                             <span>{part.warranty}</span>
                             {part.location && <span>📍 {part.location}</span>}
+                            {supplierSearchUrl(part.supplier, part.partNumber) && (
+                              <a href={supplierSearchUrl(part.supplier, part.partNumber)!} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                                <ExternalLink className="h-3 w-3" /> Check live at {part.supplier}
+                              </a>
+                            )}
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">

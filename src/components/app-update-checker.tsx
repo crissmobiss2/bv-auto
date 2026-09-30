@@ -6,6 +6,7 @@ import axios from "axios";
 interface AppVersionInfo {
   version?: string;
   androidVersionCode?: number;
+  androidVersionName?: string;
   downloadUrl?: string;
   playStoreUrl?: string;
   appStoreUrl?: string;
@@ -39,7 +40,7 @@ export function AppUpdateChecker() {
         if (!cancelled && latestCode > installed) {
           const url = data.downloadUrl || data.playStoreUrl;
           if (url) {
-            setUpdate({ version: data.version || "", url, force: !!data.forceUpdate });
+            setUpdate({ version: data.androidVersionName || data.version || "", url, force: !!data.forceUpdate });
           }
         }
       } catch {
@@ -66,13 +67,17 @@ export function AppUpdateChecker() {
               try {
                 const { Capacitor } = await import("@capacitor/core");
                 if (Capacitor.isNativePlatform()) {
-                  const { Browser } = await import("@capacitor/browser");
-                  await Browser.open({ url: update.url });
+                  try {
+                    const { Browser } = await import("@capacitor/browser");
+                    await Browser.open({ url: update.url });
+                  } catch {
+                    window.open(update.url, "_system");
+                  }
                 } else {
                   window.open(update.url, "_blank", "noreferrer");
                 }
               } catch {
-                window.open(update.url, "_blank", "noreferrer");
+                window.location.href = update.url;
               }
             }}
             className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg"

@@ -8,7 +8,7 @@ import {
   Smartphone, Boxes, CalendarCheck, Brain, BookOpen, CalendarDays,
   LayoutGrid, Building2, Megaphone, ShoppingCart, Timer, Star, MapPin,
   Calendar, TrendingUp, DollarSign, MessageSquare, ChevronDown, ChevronUp,
-  Briefcase,
+  Briefcase, HelpCircle,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -98,6 +98,7 @@ const SECTIONS: NavSection[] = [
       { name: "Tech View",     href: "/tech",          icon: Smartphone,roles: null },
       { name: "Audit Log",     href: "/audit",         icon: Shield,    roles: ["ADMIN"] },
       { name: "Settings",      href: "/settings",      icon: Settings,  roles: null },
+      { name: "Guide",         href: "/guide",         icon: HelpCircle,roles: null },
     ],
   },
 ];

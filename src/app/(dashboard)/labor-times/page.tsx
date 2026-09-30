@@ -128,6 +128,11 @@ export default function LaborTimesPage() {
               >
                 {lookupMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Looking up...</> : <><Search className="h-4 w-4 mr-2" /> Get Labor Time</>}
               </Button>
+              {lookupMutation.isError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                  Labor lookup failed — the AI service isn&rsquo;t responding (check the ANTHROPIC_API_KEY). Try again in a moment.
+                </p>
+              )}
             </CardContent>
           </Card>
 

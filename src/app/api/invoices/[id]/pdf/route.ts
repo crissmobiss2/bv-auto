@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError } from "@/lib/api-helpers";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getShopPhone } from "@/lib/shop";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
@@ -21,8 +22,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
   if (!invoice) return apiError("Invoice not found", 404);
 
-  // Generate HTML-based PDF
-  const html = generateInvoiceHTML(invoice);
+  const phone = await getShopPhone();
+  const html = generateInvoiceHTML(invoice, phone);
 
   return new NextResponse(html, {
     headers: {
@@ -68,7 +69,9 @@ function generateInvoiceHTML(invoice: {
     taxable: boolean;
   }[];
   payments: { method: string; amount: unknown; receivedAt: Date }[];
-}) {
+}, shopPhone: string | null = null) {
+  const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  const phone = shopPhone ? esc(shopPhone) : null;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,7 +108,7 @@ function generateInvoiceHTML(invoice: {
   <div class="company">
     <h1>B&V Mobile Auto</h1>
     <p>Mobile Automotive Repair</p>
-    <p>Phone: (555) 000-0000</p>
+    ${phone ? `<p>Phone: ${phone}</p>` : ""}
     <p>bvauto@email.com</p>
   </div>
   <div class="invoice-meta">
@@ -167,7 +170,7 @@ function generateInvoiceHTML(invoice: {
 ${invoice.notes ? `<div style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;font-size:13px;color:#374151"><strong>Notes:</strong> ${invoice.notes}</div>` : ""}
 
 <div class="footer">
-  <p>Thank you for choosing B&V Mobile Auto! · For questions call (555) 000-0000</p>
+  <p>Thank you for choosing B&V Mobile Auto!${phone ? ` · For questions call ${phone}` : ""}</p>
 </div>
 
 <script>window.onload = function() { window.print(); }</script>
