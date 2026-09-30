@@ -18,6 +18,7 @@ export default async function proxy(req: NextRequest) {
   // Always-public routes
   if (
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/app-version") ||
     pathname.startsWith("/api/approve") ||
     pathname.startsWith("/api/stripe/webhook") ||
     pathname.startsWith("/api/sms/webhook") ||
