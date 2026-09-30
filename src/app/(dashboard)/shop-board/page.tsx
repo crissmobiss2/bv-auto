@@ -34,7 +34,27 @@ function JobCard({ job, technicians }: { job: Job; technicians: { id: string; na
 
   const statusMutation = useMutation({
     mutationFn: (status: string) => axios.patch(`/api/jobs/${job.id}`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shop-board"] }),
+    onMutate: async (status) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["shop-board-active"] }),
+      ]);
+      const prev = queryClient.getQueryData<Record<string, Job[]>>(["shop-board-active"]);
+      queryClient.setQueryData<Record<string, Job[]>>(["shop-board-active"], (old) => {
+        if (!old) return old;
+        const next: Record<string, Job[]> = {};
+        for (const [k, list] of Object.entries(old)) next[k] = list.filter(j => j.id !== job.id);
+        if (next[status]) next[status] = [{ ...job, status }, ...next[status]];
+        return next;
+      });
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["shop-board-active"], ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["shop-board"] });
+      queryClient.invalidateQueries({ queryKey: ["shop-board-active"] });
+    },
   });
 
   const techMutation = useMutation({

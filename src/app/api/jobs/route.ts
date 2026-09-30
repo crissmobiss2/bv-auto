@@ -37,7 +37,10 @@ export async function GET(req: NextRequest) {
   const vehicleId = searchParams.get("vehicleId");
 
   const where: Record<string, unknown> = {};
-  if (status) where.status = status as JobStatus;
+  if (status) {
+    const statuses = status.split(",").map(s => s.trim()).filter(Boolean) as JobStatus[];
+    where.status = statuses.length > 1 ? { in: statuses } : statuses[0];
+  }
   if (technicianId) where.technicianId = technicianId;
   if (customerId) where.customerId = customerId;
   if (vehicleId) where.vehicleId = vehicleId;

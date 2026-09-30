@@ -112,7 +112,9 @@ button, a, input, select, textarea {
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
 }
 
-/* ── Dark mode (.dark on <html>) ─────────────────────────────── */
+@custom-variant dark (&:is(.dark *));
+
+/* Dark mode (.dark on <html>) */
 .dark {
   color-scheme: dark;
   --background: 222 47% 8%;
@@ -160,7 +162,7 @@ button, a, input, select, textarea {
 .dark .bg-red-50 { background-color: hsl(0 45% 16%); }
 .dark .bg-orange-50 { background-color: hsl(30 55% 15%); }
 .dark .bg-purple-50 { background-color: hsl(270 40% 17%); }
-.dark .bg-blue-50\/50, .dark .bg-blue-100 { background-color: hsl(224 40% 18%); }
+.dark .bg-blue-100 { background-color: hsl(224 40% 18%); }
 .dark .text-gray-900, .dark .text-slate-900 { color: hsl(210 40% 94%); }
 .dark .text-gray-800, .dark .text-slate-800 { color: hsl(210 40% 90%); }
 .dark .text-gray-700, .dark .text-slate-700 { color: hsl(210 30% 80%); }
@@ -175,9 +177,6 @@ button, a, input, select, textarea {
   border-color: hsl(217 33% 20%);
 }
 .dark .hover\:bg-gray-50:hover, .dark .hover\:bg-gray-100:hover { background-color: hsl(217 33% 16%); }
-.dark .shadow, .dark .shadow-sm, .dark .shadow-md, .dark .shadow-lg {
-  --tw-shadow-color: rgb(0 0 0 / 0.4);
-}
 .dark .skeleton {
   background: linear-gradient(90deg, hsl(217 33% 15%) 25%, hsl(217 33% 20%) 50%, hsl(217 33% 15%) 75%);
   background-size: 800px 100%;

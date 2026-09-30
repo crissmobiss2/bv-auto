@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -234,14 +235,16 @@ const US_STATES = [
 ];
 
 // ── Main Page ────────────────────────────────────────────────────────────────
-export default function DiagnosticsPage() {
-  const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window !== "undefined") {
-      const t = new URLSearchParams(window.location.search).get("tab");
-      if (t && TABS.some(x => x.id === t)) return t as Tab;
-    }
-    return "ai";
-  });
+function DiagnosticsPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const urlTab = searchParams.get("tab");
+  const [localTab, setLocalTab] = useState<Tab>("ai");
+  const tab: Tab = urlTab && TABS.some(x => x.id === urlTab) ? urlTab as Tab : localTab;
+  const setTab = (t: Tab) => {
+    setLocalTab(t);
+    if (urlTab) router.replace("/diagnostics");
+  };
 
   // Shared vehicle state (synced across tabs)
   const [vehicle, setVehicle] = useState<VehicleVal>({ year: "", make: "", model: "", mileage: "" });
@@ -593,7 +596,7 @@ export default function DiagnosticsPage() {
               tab === t.id ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-800"
             }`}
           >
-            {`${t.icon} ${t.label}`}
+            {t.icon}<span>{t.label}</span>
           </button>
         ))}
       </div>
@@ -1779,5 +1782,13 @@ export default function DiagnosticsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DiagnosticsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading…</div>}>
+      <DiagnosticsPageInner />
+    </Suspense>
   );
 }
