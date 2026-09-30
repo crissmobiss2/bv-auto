@@ -1,9 +1,8 @@
 import { PrismaClient, UserRole } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
 import bcrypt from "bcryptjs";
+import { createAdapter } from "../src/lib/prisma";
 
-const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient({ adapter: createAdapter() });
 
 async function main() {
   console.log("Seeding B&V Mobile Auto database...");

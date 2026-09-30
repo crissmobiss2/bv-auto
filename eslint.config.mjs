@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Electron main/preload are CommonJS by design
+    "electron/**",
+    "android/**",
+    "ios/**",
   ]),
 ]);
 

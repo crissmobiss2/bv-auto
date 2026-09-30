@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { requireAuth } from "@/lib/api-helpers";
 
 const client = new Anthropic();
 
 export async function POST(req: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
   const body = await req.json();
   const { dtcCode, freezeFrameData, year, make, model, engine } = body;
 

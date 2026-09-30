@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { getToken } from "next-auth/jwt";
 
-type SessionPayload = { role?: string; sub?: string };
-
-function getRole(req: NextRequest): string | null {
-  try {
-    const token =
-      req.cookies.get("authjs.session-token")?.value ||
-      req.cookies.get("__Secure-authjs.session-token")?.value;
-    if (!token) return null;
-    const payload = jwtDecode<SessionPayload>(token);
-    return payload?.role || null;
-  } catch {
-    return null;
-  }
+function roleDest(role: string | null | undefined) {
+  return role === "CUSTOMER" ? "/customer" : role === "TECHNICIAN" ? "/tech" : "/dashboard";
 }
 
-export default function proxy(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Always-public routes
@@ -43,32 +32,30 @@ export default function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionToken =
-    req.cookies.get("authjs.session-token")?.value ||
-    req.cookies.get("__Secure-authjs.session-token")?.value;
+  // Auth.js session tokens are JWE-encrypted — getToken decrypts them.
+  const session = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const role = (session as { role?: string } | null)?.role;
 
   if (pathname.startsWith("/login")) {
-    if (sessionToken) {
-      const role = getRole(req);
-      const dest = role === "CUSTOMER" ? "/customer" : role === "TECHNICIAN" ? "/tech" : "/dashboard";
-      return NextResponse.redirect(new URL(dest, req.url));
+    if (session) {
+      return NextResponse.redirect(new URL(roleDest(role), req.url));
     }
     return NextResponse.next();
   }
 
   if (pathname === "/") {
-    if (!sessionToken) return NextResponse.redirect(new URL("/login", req.url));
-    const role = getRole(req);
-    const dest = role === "CUSTOMER" ? "/customer" : role === "TECHNICIAN" ? "/tech" : "/dashboard";
-    return NextResponse.redirect(new URL(dest, req.url));
+    if (!session) return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL(roleDest(role), req.url));
   }
 
-  if (!sessionToken) {
+  if (!session) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, req.url));
   }
 
   // Prevent customers from accessing the staff dashboard
-  const role = getRole(req);
   if (role === "CUSTOMER" && pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/customer", req.url));
   }

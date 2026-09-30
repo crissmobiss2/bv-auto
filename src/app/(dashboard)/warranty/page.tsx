@@ -68,6 +68,7 @@ export default function WarrantyPage() {
   const stats = data?.stats || {};
 
   const daysLeft = (expiryDate: string) => {
+    // eslint-disable-next-line react-hooks/purity -- days-left display intentionally recalculates each render
     const days = Math.ceil((new Date(expiryDate).getTime() - Date.now()) / 86400000);
     return days;
   };

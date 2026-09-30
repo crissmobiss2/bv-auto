@@ -56,7 +56,10 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
   const [completed, setCompleted] = useState(false);
   const [sendEmail, setSendEmail] = useState(false);
 
-  useEffect(() => {
+  // Hydrate form state once inspection data arrives (render-time adjustment)
+  const [hydrated, setHydrated] = useState(false);
+  if (inspectionData && !hydrated) {
+    setHydrated(true);
     if (savedChecklist) {
       setItems(savedChecklist.items || []);
       setMileage(savedChecklist.mileage?.toString() || "");
@@ -65,7 +68,7 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
     } else if (defaultItems.length > 0) {
       setItems(defaultItems.map((d) => ({ ...d, condition: "GOOD", notes: "" })));
     }
-  }, [inspectionData]);
+  }
 
   const saveMutation = useMutation({
     mutationFn: () =>

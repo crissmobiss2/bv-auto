@@ -95,7 +95,10 @@ export default function TechInspectionPage() {
   const job: Job | undefined = data?.job;
   const savedChecklist: InspectionData | null = data?.checklist || null;
 
-  useEffect(() => {
+  // Hydrate form state once data arrives (render-time adjustment)
+  const [hydrated, setHydrated] = useState(false);
+  if (data && !hydrated) {
+    setHydrated(true);
     if (savedChecklist) {
       setItems(savedChecklist.items || []);
       setMileage(savedChecklist.mileage?.toString() || "");
@@ -116,7 +119,7 @@ export default function TechInspectionPage() {
       cats.forEach((c) => (openAll[c] = true));
       setOpenCategories(openAll);
     }
-  }, [data]);
+  }
 
   const saveMutation = useMutation({
     mutationFn: () =>

@@ -7,6 +7,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
     // Use unpooled URL for migrations (Neon requires direct connection for DDL)
     url: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL!,
   },

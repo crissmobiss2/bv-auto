@@ -258,7 +258,7 @@ export default function CustomerPortalPage() {
                   </div>
                 </div>
                 {job.jobNotes && job.jobNotes.length > 0 && (
-                  <p className="text-xs text-gray-600 mt-2 bg-gray-50 rounded p-2 italic">"{job.jobNotes[0].content}"</p>
+                  <p className="text-xs text-gray-600 mt-2 bg-gray-50 rounded p-2 italic">&quot;{job.jobNotes[0].content}&quot;</p>
                 )}
                 {job.photos && job.photos.length > 0 && (
                   <div className="mt-2">
@@ -329,7 +329,7 @@ export default function CustomerPortalPage() {
               )}
               {messageSent && (
                 <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded p-3 text-sm">
-                  <CheckCircle className="h-4 w-4" /> Message sent! We'll respond shortly.
+                  <CheckCircle className="h-4 w-4" /> Message sent! We&rsquo;ll respond shortly.
                 </div>
               )}
               <Textarea

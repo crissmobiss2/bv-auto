@@ -317,19 +317,18 @@ export default function DiagnosticsPage() {
   const [safetyForm, setSafetyForm] = useState<VehicleVal>({ year: "", make: "", model: "" });
   const [safetyTrigger, setSafetyTrigger] = useState<"safety" | "complaints" | null>(null);
 
-  // Sync shared vehicle to active tab forms
-  useEffect(() => {
-    if (vehicle.make) {
-      setDtcCode(prev => prev);
-      if (!specsVehicle.make) setSpecsVehicle(vehicle);
-      if (!freezeVehicle.make) setFreezeVehicle(vehicle);
-      if (!patternVehicle.make) setPatternVehicle(vehicle);
-      if (!tsbSearch.make) setTsbSearch(vehicle);
-      if (!adasVehicle.make) setAdasVehicle(vehicle);
-      if (!emissionsVehicle.make) setEmissionsVehicle(vehicle);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicle.make, vehicle.model, vehicle.year]);
+  // Sync shared vehicle to active tab forms (render-time adjustment)
+  const vehicleKey = `${vehicle.year}|${vehicle.make}|${vehicle.model}`;
+  const [prevVehicleKey, setPrevVehicleKey] = useState("");
+  if (vehicle.make && vehicleKey !== prevVehicleKey) {
+    setPrevVehicleKey(vehicleKey);
+    if (!specsVehicle.make) setSpecsVehicle(vehicle);
+    if (!freezeVehicle.make) setFreezeVehicle(vehicle);
+    if (!patternVehicle.make) setPatternVehicle(vehicle);
+    if (!tsbSearch.make) setTsbSearch(vehicle);
+    if (!adasVehicle.make) setAdasVehicle(vehicle);
+    if (!emissionsVehicle.make) setEmissionsVehicle(vehicle);
+  }
 
   // ── Mutations / Queries ──────────────────────────────────────────────────
 
@@ -448,10 +447,12 @@ export default function DiagnosticsPage() {
     enabled: patternTrigger && !!patternVehicle.make,
   });
 
-  // Keep patternResults updated
-  useEffect(() => {
-    if (patternQuery.data) setPatternResults(patternQuery.data);
-  }, [patternQuery.data]);
+  // Keep patternResults updated (render-time adjustment)
+  const [lastPatternData, setLastPatternData] = useState<unknown>(null);
+  if (patternQuery.data && patternQuery.data !== lastPatternData) {
+    setLastPatternData(patternQuery.data);
+    setPatternResults(patternQuery.data);
+  }
 
   // ── Customer explanation text ─────────────────────────────────────────────
   function buildCustomerText() {

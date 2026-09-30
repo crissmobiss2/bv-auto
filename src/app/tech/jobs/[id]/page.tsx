@@ -28,7 +28,7 @@ export default function TechJobDetailPage() {
 
   useEffect(() => {
     if (navigator.geolocation) {
-      setGpsStatus("locating");
+      queueMicrotask(() => setGpsStatus("locating"));
       navigator.geolocation.getCurrentPosition(
         (pos) => { setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsStatus("ready"); },
         () => setGpsStatus("denied"),

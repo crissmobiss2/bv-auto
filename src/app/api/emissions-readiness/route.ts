@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { requireAuth } from "@/lib/api-helpers";
 
 const client = new Anthropic();
 
@@ -23,6 +24,8 @@ const STATE_REQUIREMENTS: Record<string, { hasTest: boolean; obd2Year: number; t
 };
 
 export async function GET(req: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
   const { searchParams } = new URL(req.url);
   const year  = searchParams.get("year");
   const make  = searchParams.get("make");

@@ -120,7 +120,7 @@ export default function ReviewsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-yellow-800">
             <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">1.</span> Job status changes to COMPLETED or invoice is marked PAID</div>
             <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">2.</span> 24 hours later, daily cron auto-sends a personalized text with your Google Review link</div>
-            <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">3.</span> You see who clicked — use "Send Now" to manually trigger for any job</div>
+            <div className="flex items-start gap-2"><span className="font-bold text-yellow-600">3.</span> You see who clicked — use &quot;Send Now&quot; to manually trigger for any job</div>
           </div>
           <div className="mt-3 flex items-center gap-2 text-xs text-yellow-700">
             <ExternalLink className="h-3 w-3" />

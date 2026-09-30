@@ -14,6 +14,29 @@ import {
   AlertTriangle, Printer, Radio, Navigation
 } from "lucide-react";
 
+function SpecCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          {icon} {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm space-y-1.5">{children}</CardContent>
+    </Card>
+  );
+}
+
+function Row({ label, value, highlight }: { label: string; value?: string | number | null; highlight?: boolean }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div className="flex justify-between gap-2">
+      <span className="text-gray-500 shrink-0">{label}</span>
+      <span className={`font-medium text-right ${highlight ? "text-blue-700" : "text-gray-900"}`}>{value}</span>
+    </div>
+  );
+}
+
 export default function SpecsPage() {
   // Vehicle selector state
   const [year, setYear] = useState("");
@@ -32,30 +55,6 @@ export default function SpecsPage() {
     if (!year || !make || !model) return;
     setSearchParams({ year, make, model });
     setSearched(true);
-  }
-
-  // Spec section card helper
-  function SpecCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            {icon} {title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm space-y-1.5">{children}</CardContent>
-      </Card>
-    );
-  }
-
-  function Row({ label, value, highlight }: { label: string; value?: string | number | null; highlight?: boolean }) {
-    if (!value && value !== 0) return null;
-    return (
-      <div className="flex justify-between gap-2">
-        <span className="text-gray-500 shrink-0">{label}</span>
-        <span className={`font-medium text-right ${highlight ? "text-blue-700" : "text-gray-900"}`}>{value}</span>
-      </div>
-    );
   }
 
   return (

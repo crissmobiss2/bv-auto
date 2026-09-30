@@ -54,6 +54,7 @@ function MaintenanceSection({ vehicleId }: { vehicleId: string }) {
 
   const isDueSoon = (interval: MaintenanceInterval) => {
     if (interval.nextDueDate) {
+      // eslint-disable-next-line react-hooks/purity -- due-date display intentionally recalculates each render
       const days = (new Date(interval.nextDueDate).getTime() - Date.now()) / 86400000;
       if (days <= 14) return true;
     }

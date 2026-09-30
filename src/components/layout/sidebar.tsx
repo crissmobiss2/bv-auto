@@ -117,19 +117,24 @@ export function Sidebar() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setOpenSections(new Set(JSON.parse(saved)));
+      if (saved) {
+        const parsed = new Set<string>(JSON.parse(saved));
+        queueMicrotask(() => setOpenSections(parsed));
+      }
     } catch { /* ignore */ }
   }, []);
 
-  // Auto-open the section containing the active route
-  useEffect(() => {
+  // Auto-open the section containing the active route (render-time adjustment)
+  const [prevPathname, setPrevPathname] = useState<string | null>(null);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     for (const section of SECTIONS) {
       if (section.items.some(item => pathname.startsWith(item.href))) {
         setOpenSections(prev => new Set([...prev, section.id]));
         break;
       }
     }
-  }, [pathname]);
+  }
 
   function toggleSection(id: string) {
     setOpenSections(prev => {

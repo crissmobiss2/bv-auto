@@ -148,7 +148,7 @@ export default function MarketingPage() {
                       <Badge variant="outline" className="text-xs">{campaign.type}</Badge>
                       <Badge variant="outline" className="text-xs">{TRIGGER_LABELS[campaign.triggerType] || campaign.triggerType}</Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1 bg-gray-50 rounded p-2 border mt-2 italic">"{campaign.messageTemplate.substring(0, 120)}{campaign.messageTemplate.length > 120 ? "..." : ""}"</p>
+                    <p className="text-sm text-gray-600 mt-1 bg-gray-50 rounded p-2 border mt-2 italic">&quot;{campaign.messageTemplate.substring(0, 120)}{campaign.messageTemplate.length > 120 ? "..." : ""}&quot;</p>
                     <div className="flex gap-4 mt-2 text-xs text-gray-500">
                       <span className="flex items-center gap-1"><Users className="h-3 w-3" />{campaign.sentCount} sent</span>
                       {campaign.lastRunAt && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />Last run: {formatDate(campaign.lastRunAt)}</span>}

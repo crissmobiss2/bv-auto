@@ -46,7 +46,11 @@ export default function LaborTimesPage() {
     }).catch(() => {});
     try {
       const saved = localStorage.getItem("labor_times_history");
-      if (saved) setHistory(JSON.parse(saved));
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Async hand-off so this doesn't cascade renders during the effect
+        queueMicrotask(() => setHistory(parsed));
+      }
     } catch {}
   }, []);
 

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { rateLimit, getIP } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const bookingSchema = z.object({
@@ -17,6 +18,10 @@ const bookingSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Public endpoint — limit to 5 booking requests per 10 min per IP
+  if (!rateLimit(`booking:${getIP(req)}`, 5, 10 * 60_000)) {
+    return apiError("Too many requests. Please call the shop directly.", 429);
+  }
   const body = await req.json();
   const parsed = bookingSchema.safeParse(body);
   if (!parsed.success) return apiError("Invalid data", 400);

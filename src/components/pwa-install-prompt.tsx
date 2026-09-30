@@ -24,8 +24,10 @@ export function PwaInstallPrompt() {
     const isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
 
     if (isIosBrowser && isSafari) {
-      setIsIos(true);
-      setTimeout(() => setShow(true), 3000);
+      setTimeout(() => {
+        setIsIos(true);
+        setShow(true);
+      }, 3000);
       return;
     }
 
