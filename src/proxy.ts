@@ -48,7 +48,11 @@ export default async function proxy(req: NextRequest) {
   }
 
   // Auth.js session tokens are JWE-encrypted — getToken decrypts them.
-  const session = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const session = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+    secureCookie: req.nextUrl.protocol === "https:",
+  });
   const role = (session as { role?: string } | null)?.role;
 
   if (pathname.startsWith("/login")) {
