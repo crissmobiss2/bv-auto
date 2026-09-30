@@ -13,6 +13,7 @@ const createSchema = z.object({
   state: z.string().optional(),
   zip: z.string().optional(),
   accountNum: z.string().optional(),
+  website: z.string().optional(),
   notes: z.string().optional(),
 });
 

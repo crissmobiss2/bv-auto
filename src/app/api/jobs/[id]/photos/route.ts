@@ -18,28 +18,36 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!file) return apiError("No file provided");
 
-  const filename = `jobs/${id}/${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
-
-  let url: string;
   if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const filename = `jobs/${id}/${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
     const blob = await put(filename, file, { access: "public" });
-    url = blob.url;
-  } else {
-    // Dev fallback — store as data URL (not for production)
-    url = `https://placehold.co/400x300?text=Photo+Upload`;
-    console.log("[BLOB STUB] Vercel Blob not configured — using placeholder");
+    const photo = await prisma.jobPhoto.create({
+      data: {
+        jobId: id,
+        uploadedById: session!.user.id,
+        url: blob.url,
+        caption: caption || undefined,
+      },
+    });
+    return apiSuccess(photo, 201);
   }
 
+  // No object storage configured — persist the image bytes in Postgres
+  // and serve them back through /api/photos/[id].
+  const bytes = Buffer.from(await file.arrayBuffer());
   const photo = await prisma.jobPhoto.create({
     data: {
       jobId: id,
       uploadedById: session!.user.id,
-      url,
+      url: "",
+      data: bytes,
+      mimeType: file.type || "image/jpeg",
       caption: caption || undefined,
     },
   });
+  await prisma.jobPhoto.update({ where: { id: photo.id }, data: { url: `/api/photos/${photo.id}` } });
 
-  return apiSuccess(photo, 201);
+  return apiSuccess({ ...photo, url: `/api/photos/${photo.id}` }, 201);
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

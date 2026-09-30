@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { getShopPhone } from "@/lib/shop";
 
 const client =
   process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
@@ -40,9 +41,10 @@ export async function sendInvoiceSMS(opts: {
   amountDue: string;
   paymentUrl?: string;
 }) {
+  const phone = await getShopPhone();
   const body = opts.paymentUrl
     ? `B&V Auto: Hi ${opts.customerName}, invoice ${opts.invoiceNumber} — ${opts.amountDue} due. Pay now: ${opts.paymentUrl}`
-    : `B&V Auto: Hi ${opts.customerName}, invoice ${opts.invoiceNumber} — ${opts.amountDue} due. Call (555) 000-1000 to pay.`;
+    : `B&V Auto: Hi ${opts.customerName}, invoice ${opts.invoiceNumber} — ${opts.amountDue} due.${phone ? ` Call ${phone} to pay.` : ""}`;
   return send(opts.to, body);
 }
 

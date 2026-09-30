@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getShopPhone } from "@/lib/shop";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = "B&V Mobile Auto <service@bvauto.com>";
@@ -34,6 +35,7 @@ export async function sendQuoteEmail(opts: {
   approvalToken: string;
 }) {
   const approvalUrl = `${BASE_URL}/approve/${opts.approvalToken}`;
+  const phone = await getShopPhone();
   const html = baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Your Estimate is Ready</h2>
     <p>Hi ${opts.customerName},</p>
@@ -44,7 +46,7 @@ export async function sendQuoteEmail(opts: {
     </div>
     <a href="${approvalUrl}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">Review &amp; Approve Estimate</a>
     <p style="color:#6b7280;font-size:13px;">You can approve or decline this estimate. No account required.</p>
-    <p style="color:#6b7280;font-size:13px;">Questions? Call us at (555) 000-1000</p>
+    ${phone ? `<p style="color:#6b7280;font-size:13px;">Questions? Call us at ${phone}</p>` : ""}
   `);
   return send(opts.to, `Your Estimate is Ready — ${opts.quoteNumber}`, html);
 }
@@ -81,12 +83,13 @@ export async function sendInspectionEmail(opts: {
   inspectionHtml: string;
   jobId: string;
 }) {
+  const phone = await getShopPhone();
   const html = baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Vehicle Inspection Report</h2>
     <p>Hi ${opts.customerName},</p>
     <p>Here is the inspection report for your <strong>${opts.vehicleDescription}</strong>:</p>
     <div style="margin:16px 0;">${opts.inspectionHtml}</div>
-    <p style="color:#6b7280;font-size:13px;">Questions? Call us at (555) 000-1000</p>
+    ${phone ? `<p style="color:#6b7280;font-size:13px;">Questions? Call us at ${phone}</p>` : ""}
   `);
   return send(opts.to, `Vehicle Inspection Report — ${opts.vehicleDescription}`, html);
 }
@@ -117,10 +120,11 @@ export async function sendFollowUpEmail(opts: {
   customerName: string;
   message: string;
 }) {
+  const phone = await getShopPhone();
   const html = baseTemplate(`
     <p>Hi ${opts.customerName},</p>
     <p>${opts.message}</p>
-    <p>To schedule service, call us at <strong>(555) 000-1000</strong> or reply to this email.</p>
+    ${phone ? `<p>To schedule service, call us at <strong>${phone}</strong> or reply to this email.</p>` : "<p>Reply to this email to schedule service.</p>"}
   `);
   return send(opts.to, "Service Reminder from B&V Mobile Auto", html);
 }

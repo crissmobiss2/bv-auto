@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Wrench, Shield, Loader2, Eye, EyeOff, CheckCircle,
+  Wrench, Shield, Loader2, Eye, EyeOff,
   Calendar, FileText, BarChart3, Smartphone,
 } from "lucide-react";
 
@@ -30,7 +30,6 @@ export default function LoginPage() {
   const [needsTotp, setNeedsTotp] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,20 +63,6 @@ export default function LoginPage() {
     }
   }
 
-  async function handleDemo() {
-    setDemoLoading(true);
-    setError("");
-    try {
-      const { data } = await axios.post("/api/auth/demo");
-      const result = await signIn("credentials", { email: data.email, password: data.password, redirect: false });
-      if (result?.error) setError("Demo login failed. Please try again.");
-      else router.push("/");
-    } catch {
-      setError("Demo unavailable right now.");
-    } finally {
-      setDemoLoading(false);
-    }
-  }
 
   return (
     <div className="min-h-screen flex">
@@ -253,22 +238,7 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-5 space-y-4">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
-                  <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">or</span></div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full h-10 border-gray-200 text-gray-700 hover:bg-gray-50 font-medium"
-                  onClick={handleDemo}
-                  disabled={demoLoading}
-                >
-                  {demoLoading
-                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading demo...</>
-                    : <><CheckCircle className="h-4 w-4 text-green-500" /> Try the Live Demo</>}
-                </Button>
-              </div>
+
             </div>
           </div>
 

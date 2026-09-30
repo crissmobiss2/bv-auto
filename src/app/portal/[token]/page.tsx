@@ -63,6 +63,13 @@ export default function CustomerPortalPage() {
   const [message, setMessage] = useState("");
   const [messageSent, setMessageSent] = useState(false);
 
+  const { data: shopInfo } = useQuery({
+    queryKey: ["shop-info"],
+    queryFn: () => axios.get("/api/shop-info").then(r => r.data),
+    staleTime: Infinity,
+  });
+  const shopPhone: string | null = shopInfo?.phone || null;
+
   const { data: customer, isLoading, error } = useQuery({
     queryKey: ["portal", token],
     queryFn: () => axios.get(`/api/portal/${token}`).then(r => r.data),
@@ -90,7 +97,7 @@ export default function CustomerPortalPage() {
           <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-lg font-bold">Portal Link Not Found</h2>
           <p className="text-gray-500 mt-2">This link is invalid or expired. Call us to get a new one.</p>
-          <a href="tel:5550001000" className="mt-4 inline-block text-blue-600 font-medium">(555) 000-1000</a>
+          {shopPhone && <a href={`tel:${shopPhone}`} className="mt-4 inline-block text-blue-600 font-medium">{shopPhone}</a>}
         </CardContent>
       </Card>
     </div>
@@ -382,7 +389,7 @@ export default function CustomerPortalPage() {
       </Card>
 
       <div className="text-center text-sm text-gray-400">
-        <p>Questions? <a href="tel:5550001000" className="text-blue-600">(555) 000-1000</a></p>
+        {shopPhone && <p>Questions? <a href={`tel:${shopPhone}`} className="text-blue-600">{shopPhone}</a></p>}
       </div>
     </div>
   );

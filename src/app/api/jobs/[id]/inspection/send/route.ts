@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError } from "@/lib/api-helpers";
+import { getShopPhone } from "@/lib/shop";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
@@ -26,7 +27,8 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     completedAt?: string;
   };
 
-  const html = generateInspectionHTML(job, checklist);
+  const phone = await getShopPhone();
+  const html = generateInspectionHTML(job, checklist, phone);
 
   // In production: send via Resend/email
   // const resend = new Resend(process.env.RESEND_API_KEY);
@@ -45,7 +47,8 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
 
 function generateInspectionHTML(
   job: { vehicle: { year: number; make: string; model: string; vin?: string | null }; customer: { firstName: string; lastName: string } },
-  checklist: { items: { id: string; category: string; item: string; condition: string; notes?: string }[]; mileage?: number; technicianNotes?: string; completedAt?: string }
+  checklist: { items: { id: string; category: string; item: string; condition: string; notes?: string }[]; mileage?: number; technicianNotes?: string; completedAt?: string },
+  phone: string | null = null
 ) {
   const conditionColor: Record<string, string> = {
     GOOD: "#16a34a",
@@ -107,9 +110,7 @@ ${checklist.technicianNotes ? `
     ${checklist.technicianNotes}
   </div>` : ""}
 
-<p style="margin-top:32px;font-size:12px;color:#9ca3af;text-align:center">
-  Questions? Call B&V Mobile Auto at (555) 000-0000
-</p>
+${phone ? `<p style="margin-top:32px;font-size:12px;color:#9ca3af;text-align:center">Questions? Call B&V Mobile Auto at ${phone}</p>` : ""}
 </body>
 </html>`;
 }

@@ -22,7 +22,7 @@ export default function PartsPage() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [showVendor, setShowVendor] = useState(false);
-  const [vendorForm, setVendorForm] = useState({ name: "", contactName: "", phone: "", email: "", address: "", city: "", state: "", zip: "", accountNum: "" });
+  const [vendorForm, setVendorForm] = useState({ name: "", contactName: "", phone: "", email: "", address: "", city: "", state: "", zip: "", accountNum: "", website: "" });
 
   const { data: parts, isLoading } = useQuery({
     queryKey: ["all-parts", statusFilter],
@@ -144,7 +144,7 @@ export default function PartsPage() {
             <Plus className="h-4 w-4 mr-2" /> Add Vendor
           </Button>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {vendors?.map((v: { id: string; name: string; contactName?: string; phone?: string; email?: string; accountNum?: string }) => (
+            {vendors?.map((v: { id: string; name: string; contactName?: string; phone?: string; email?: string; accountNum?: string; website?: string }) => (
               <Card key={v.id}>
                 <CardContent className="p-4 text-sm space-y-1">
                   <p className="font-semibold text-base">{v.name}</p>
@@ -152,6 +152,7 @@ export default function PartsPage() {
                   {v.phone && <a href={`tel:${v.phone}`} className="text-blue-600">{v.phone}</a>}
                   {v.email && <p className="text-gray-500">{v.email}</p>}
                   {v.accountNum && <p className="text-gray-400 text-xs">Acct: {v.accountNum}</p>}
+                  {v.website && <a href={v.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs block">Ordering portal ↗</a>}
                 </CardContent>
               </Card>
             ))}
@@ -248,6 +249,7 @@ export default function PartsPage() {
               { label: "Phone", key: "phone" },
               { label: "Email", key: "email" },
               { label: "Account #", key: "accountNum" },
+              { label: "Ordering Portal URL", key: "website", col: 2 },
               { label: "Address", key: "address", col: 2 },
               { label: "City", key: "city" },
               { label: "State", key: "state" },
