@@ -38,8 +38,13 @@ export async function GET(req: NextRequest) {
 
   const where: Record<string, unknown> = {};
   if (status) {
-    const statuses = status.split(",").map(s => s.trim()).filter(Boolean) as JobStatus[];
-    where.status = statuses.length > 1 ? { in: statuses } : statuses[0];
+    const validStatuses = new Set<string>(Object.values(JobStatus));
+    const statuses = status.split(",").map(s => s.trim()).filter(Boolean);
+    const invalid = statuses.filter(s => !validStatuses.has(s));
+    if (invalid.length) {
+      return apiError(`Invalid status value(s): ${invalid.join(", ")}`, 400);
+    }
+    where.status = statuses.length > 1 ? { in: statuses as JobStatus[] } : statuses[0];
   }
   if (technicianId) where.technicianId = technicianId;
   if (customerId) where.customerId = customerId;
