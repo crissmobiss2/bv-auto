@@ -61,14 +61,24 @@ export function AppUpdateChecker() {
           <p className="text-xs opacity-90">Version {update.version} is ready to install.</p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <a
-            href={update.url}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            onClick={async () => {
+              try {
+                const { Capacitor } = await import("@capacitor/core");
+                if (Capacitor.isNativePlatform()) {
+                  const { Browser } = await import("@capacitor/browser");
+                  await Browser.open({ url: update.url });
+                } else {
+                  window.open(update.url, "_blank", "noreferrer");
+                }
+              } catch {
+                window.open(update.url, "_blank", "noreferrer");
+              }
+            }}
             className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg"
           >
             Update
-          </a>
+          </button>
           {!update.force && (
             <button
               onClick={() => setDismissed(true)}
