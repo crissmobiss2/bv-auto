@@ -3,27 +3,25 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-function compareVersions(a: string, b: string) {
-  const pa = a.split(".").map(Number);
-  const pb = b.split(".").map(Number);
-  for (let i = 0; i < 3; i++) {
-    if ((pa[i] ?? 0) > (pb[i] ?? 0)) return 1;
-    if ((pa[i] ?? 0) < (pb[i] ?? 0)) return -1;
-  }
-  return 0;
+interface AppVersionInfo {
+  version?: string;
+  androidVersionCode?: number;
+  downloadUrl?: string;
+  playStoreUrl?: string;
+  appStoreUrl?: string;
+  forceUpdate?: boolean;
 }
 
-function getInstalledVersion(): string | null {
-  if (typeof window === "undefined") return null;
-  // Capacitor sets this on the native bridge
+async function getInstalledBuild(): Promise<number | null> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cap = (window as any).Capacitor;
-    if (cap?.isNativePlatform?.()) {
-      return cap.getPlatform() === "android" ? "0.1.0" : "0.1.0";
-    }
-  } catch { /* not in Capacitor */ }
-  return null;
+    const { Capacitor } = await import("@capacitor/core");
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return null;
+    const { App } = await import("@capacitor/app");
+    const info = await App.getInfo();
+    return parseInt(info.build || "0", 10) || 0;
+  } catch {
+    return null;
+  }
 }
 
 export function AppUpdateChecker() {
@@ -31,17 +29,24 @@ export function AppUpdateChecker() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const installedVersion = getInstalledVersion();
-    if (!installedVersion) return;
-
-    axios.get("/api/app-version").then(({ data }) => {
-      if (compareVersions(data.version, installedVersion) > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const platform = (window as any).Capacitor?.getPlatform?.();
-        const url = platform === "ios" ? data.appStoreUrl : data.playStoreUrl;
-        setUpdate({ version: data.version, url, force: data.forceUpdate });
+    let cancelled = false;
+    (async () => {
+      const installed = await getInstalledBuild();
+      if (installed === null) return;
+      try {
+        const { data } = await axios.get<AppVersionInfo>("/api/app-version");
+        const latestCode = data.androidVersionCode ?? 0;
+        if (!cancelled && latestCode > installed) {
+          const url = data.downloadUrl || data.playStoreUrl;
+          if (url) {
+            setUpdate({ version: data.version || "", url, force: !!data.forceUpdate });
+          }
+        }
+      } catch {
+        // never block startup for an update check
       }
-    }).catch(() => {/* ignore */});
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   if (!update || dismissed) return null;
