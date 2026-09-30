@@ -235,7 +235,13 @@ const US_STATES = [
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function DiagnosticsPage() {
-  const [tab, setTab] = useState<Tab>("ai");
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (t && TABS.some(x => x.id === t)) return t as Tab;
+    }
+    return "ai";
+  });
 
   // Shared vehicle state (synced across tabs)
   const [vehicle, setVehicle] = useState<VehicleVal>({ year: "", make: "", model: "", mileage: "" });
@@ -775,6 +781,10 @@ export default function DiagnosticsPage() {
               const codes = [...new Set([...r.stored, ...r.pending, ...r.permanent])];
               if (codes.length) setDtcList(prev => [...new Set([...prev, ...codes])]);
               if (r.stored[0]) setDtcCode(r.stored[0]);
+              if (r.vinDecoded?.make) {
+                const v = { year: r.vinDecoded.year ?? "", make: r.vinDecoded.make ?? "", model: r.vinDecoded.model ?? "", mileage: "" };
+                setVehicle(v); setSpecsVehicle(v); setFreezeVehicle(v); setPatternVehicle(v);
+              }
             }}
           />
         </div>

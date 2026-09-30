@@ -39,10 +39,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
-        {/* Force light mode — app UI is not dark-mode compatible */}
+        {/* Apply saved/system theme before paint to avoid FOUC */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.remove('dark');localStorage.removeItem('theme');`,
+            __html: `try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){}`,
           }}
         />
       </head>

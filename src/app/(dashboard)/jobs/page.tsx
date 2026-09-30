@@ -167,6 +167,8 @@ function JobsContent() {
                       key={job.id}
                       className="group hover:bg-blue-50/30 transition-colors cursor-pointer"
                       onClick={() => router.push(`/jobs/${job.id}`)}
+                      onMouseEnter={() => router.prefetch(`/jobs/${job.id}`)}
+                      onTouchStart={() => router.prefetch(`/jobs/${job.id}`)}
                     >
                       <TableCell className="font-mono text-xs text-gray-500">{job.jobNumber}</TableCell>
                       <TableCell>

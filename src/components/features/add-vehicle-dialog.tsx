@@ -1,5 +1,6 @@
 "use client";
 
+import { VinScanButton } from "@/components/features/vin-scan-button";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -149,6 +150,7 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
               className="font-mono text-sm"
               maxLength={17}
             />
+            <VinScanButton onVin={(v) => { setVinInput(v); }} className="shrink-0" />
             <Button
               type="button"
               size="sm"

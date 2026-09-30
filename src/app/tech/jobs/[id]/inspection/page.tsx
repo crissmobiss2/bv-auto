@@ -19,6 +19,7 @@ import {
   Send,
   Camera,
 } from "lucide-react";
+import { apiWrite } from "@/lib/offline-queue";
 
 type Condition = "GOOD" | "NEEDS_ATTENTION" | "CRITICAL" | "FAIR" | "NA";
 
@@ -123,7 +124,7 @@ export default function TechInspectionPage() {
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      axios.post(`/api/jobs/${id}/inspection`, {
+      apiWrite(`/api/jobs/${id}/inspection`, "post", {
         mileage: mileage ? parseInt(mileage) : undefined,
         items,
         technicianNotes: techNotes,
@@ -132,7 +133,7 @@ export default function TechInspectionPage() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: () => axios.post(`/api/jobs/${id}/inspection/send`),
+    mutationFn: () => apiWrite(`/api/jobs/${id}/inspection/send`, "post"),
     onSuccess: () => setSendSent(true),
   });
 

@@ -111,3 +111,75 @@ button, a, input, select, textarea {
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* ── Dark mode (.dark on <html>) ─────────────────────────────── */
+.dark {
+  color-scheme: dark;
+  --background: 222 47% 8%;
+  --foreground: 210 40% 94%;
+  --card: 222 30% 12%;
+  --card-foreground: 210 40% 94%;
+  --popover: 222 30% 12%;
+  --popover-foreground: 210 40% 94%;
+  --secondary: 217 33% 18%;
+  --secondary-foreground: 210 40% 94%;
+  --muted: 217 33% 18%;
+  --muted-foreground: 215 20% 62%;
+  --accent: 217 33% 18%;
+  --accent-foreground: 210 40% 94%;
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
+  --ring: 224 76% 60%;
+  --color-background: hsl(222 47% 8%);
+  --color-foreground: hsl(210 40% 94%);
+  --color-card: hsl(222 30% 12%);
+  --color-card-foreground: hsl(210 40% 94%);
+  --color-popover: hsl(222 30% 12%);
+  --color-popover-foreground: hsl(210 40% 94%);
+  --color-secondary: hsl(217 33% 18%);
+  --color-secondary-foreground: hsl(210 40% 94%);
+  --color-muted: hsl(217 33% 18%);
+  --color-muted-foreground: hsl(215 20% 62%);
+  --color-accent: hsl(217 33% 18%);
+  --color-accent-foreground: hsl(210 40% 94%);
+  --color-border: hsl(217 33% 20%);
+  --color-input: hsl(217 33% 20%);
+  --color-ring: hsl(224 76% 60%);
+}
+
+/* Hardcoded light-utility remaps under .dark (unlayered CSS wins over Tailwind layers) */
+.dark .bg-white, .dark .bg-background { background-color: hsl(222 30% 12%); }
+.dark .bg-gray-50, .dark .bg-slate-50 { background-color: hsl(222 30% 11%); }
+.dark .bg-gray-100, .dark .bg-slate-100 { background-color: hsl(217 33% 17%); }
+.dark .bg-gray-200 { background-color: hsl(217 33% 22%); }
+.dark .bg-blue-50 { background-color: hsl(224 40% 16%); }
+.dark .bg-green-50 { background-color: hsl(160 40% 14%); }
+.dark .bg-amber-50, .dark .bg-yellow-50 { background-color: hsl(38 50% 15%); }
+.dark .bg-red-50 { background-color: hsl(0 45% 16%); }
+.dark .bg-orange-50 { background-color: hsl(30 55% 15%); }
+.dark .bg-purple-50 { background-color: hsl(270 40% 17%); }
+.dark .bg-blue-50\/50, .dark .bg-blue-100 { background-color: hsl(224 40% 18%); }
+.dark .text-gray-900, .dark .text-slate-900 { color: hsl(210 40% 94%); }
+.dark .text-gray-800, .dark .text-slate-800 { color: hsl(210 40% 90%); }
+.dark .text-gray-700, .dark .text-slate-700 { color: hsl(210 30% 80%); }
+.dark .text-gray-600, .dark .text-slate-600 { color: hsl(215 20% 68%); }
+.dark .text-gray-500, .dark .text-slate-500 { color: hsl(215 20% 60%); }
+.dark .text-gray-400 { color: hsl(215 16% 50%); }
+.dark .border-gray-100, .dark .border-gray-200, .dark .border-slate-200,
+.dark .border-gray-300, .dark .border-slate-300, .dark .border {
+  border-color: hsl(217 33% 20%);
+}
+.dark .divide-gray-100 > * + *, .dark .divide-gray-200 > * + *, .dark .divide-y > * + * {
+  border-color: hsl(217 33% 20%);
+}
+.dark .hover\:bg-gray-50:hover, .dark .hover\:bg-gray-100:hover { background-color: hsl(217 33% 16%); }
+.dark .shadow, .dark .shadow-sm, .dark .shadow-md, .dark .shadow-lg {
+  --tw-shadow-color: rgb(0 0 0 / 0.4);
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, hsl(217 33% 15%) 25%, hsl(217 33% 20%) 50%, hsl(217 33% 15%) 75%);
+  background-size: 800px 100%;
+}
+.dark ::-webkit-scrollbar-thumb { background: hsl(217 33% 25%); }

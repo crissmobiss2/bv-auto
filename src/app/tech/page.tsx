@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Wrench, MapPin, Phone, Clock, ChevronRight } from "lucide-react";
+import { apiWrite } from "@/lib/offline-queue";
 import { JOB_STATUS_COLORS, formatDateTime } from "@/lib/utils";
 
 const QUICK_STATUSES = ["SCHEDULED", "IN_PROGRESS", "PARTS_WAITING", "COMPLETED"];
@@ -27,8 +28,19 @@ export default function TechDashboardPage() {
 
   const statusMutation = useMutation({
     mutationFn: ({ jobId, status }: { jobId: string; status: string }) =>
-      axios.patch(`/api/jobs/${jobId}`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tech-jobs"] }),
+      apiWrite(`/api/jobs/${jobId}`, "patch", { status }),
+    onMutate: async ({ jobId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["tech-jobs"] });
+      const prev = queryClient.getQueryData<{ jobs: { id: string; status: string }[] }>(["tech-jobs"]);
+      queryClient.setQueryData(["tech-jobs"], (old: { jobs: { id: string; status: string }[] } | undefined) =>
+        old ? { ...old, jobs: old.jobs.map(j => j.id === jobId ? { ...j, status } : j) } : old
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["tech-jobs"], ctx.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["tech-jobs"] }),
   });
 
   const myJobs = (data?.jobs || []).filter((j: { technicianId?: string }) =>
