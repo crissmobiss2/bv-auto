@@ -240,9 +240,11 @@ function DiagnosticsPageInner() {
   const router = useRouter();
   const urlTab = searchParams.get("tab");
   const [localTab, setLocalTab] = useState<Tab>("ai");
-  const tab: Tab = urlTab && TABS.some(x => x.id === urlTab) ? urlTab as Tab : localTab;
+  const [tabOverridden, setTabOverridden] = useState(false);
+  const tab: Tab = !tabOverridden && urlTab && TABS.some(x => x.id === urlTab) ? urlTab as Tab : localTab;
   const setTab = (t: Tab) => {
     setLocalTab(t);
+    setTabOverridden(true);
     if (urlTab) router.replace("/diagnostics");
   };
 
