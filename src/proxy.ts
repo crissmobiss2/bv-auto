@@ -19,6 +19,7 @@ export default async function proxy(req: NextRequest) {
   if (
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/app-version") ||
+    pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/shop-info") ||
     pathname.startsWith("/api/approve") ||
     pathname.startsWith("/api/stripe/webhook") ||
