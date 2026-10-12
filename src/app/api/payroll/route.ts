@@ -9,10 +9,17 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const fromParam = searchParams.get("from") || searchParams.get("start");
   const toParam = searchParams.get("to") || searchParams.get("end");
-  const from = fromParam ? new Date(fromParam) : new Date(new Date().setDate(1));
-  const to = toParam ? new Date(toParam) : new Date();
-  // Include the whole end day when only a date is given
-  if (toParam && to.getHours() === 0) to.setHours(23, 59, 59, 999);
+  // Date-only params (YYYY-MM-DD) must be treated as LOCAL days, not UTC —
+  // `new Date("2026-10-01")` lands at 7pm on Sep 30 in US timezones.
+  const parseDateParam = (v: string | null, endOfDay = false) => {
+    if (!v) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      return new Date(`${v}T${endOfDay ? "23:59:59.999" : "00:00:00"}`);
+    }
+    return new Date(v);
+  };
+  const from = parseDateParam(fromParam) ?? new Date(new Date().setDate(1));
+  const to = parseDateParam(toParam, true) ?? new Date();
   const format = searchParams.get("format");
 
   const staff = await prisma.user.findMany({

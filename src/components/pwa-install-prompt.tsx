@@ -9,6 +9,9 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+// Customer-facing pages where an install banner would block the primary action
+const HIDDEN_ROUTES = [/^\/approve/, /^\/portal/, /^\/track/, /^\/book/, /^\/review/];
+
 export function PwaInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
@@ -19,25 +22,35 @@ export function PwaInstallPrompt() {
     // Don't show if already installed as PWA
     if (window.matchMedia("(display-mode: standalone)").matches) return;
     if (sessionStorage.getItem("pwa-prompt-dismissed")) return;
+    if (HIDDEN_ROUTES.some((r) => r.test(window.location.pathname))) return;
 
     const isIosBrowser = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
     const isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
 
+    let autoHide: ReturnType<typeof setTimeout> | undefined;
     if (isIosBrowser && isSafari) {
       setTimeout(() => {
         setIsIos(true);
         setShow(true);
+        // Never let the banner sit on screen long enough to block the UI
+        autoHide = setTimeout(() => setShow(false), 12_000);
       }, 3000);
-      return;
+      return () => { if (autoHide) clearTimeout(autoHide); };
     }
 
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setTimeout(() => setShow(true), 3000);
+      setTimeout(() => {
+        setShow(true);
+        autoHide = setTimeout(() => setShow(false), 12_000);
+      }, 3000);
     };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      if (autoHide) clearTimeout(autoHide);
+    };
   }, []);
 
   const handleInstall = async () => {
@@ -57,8 +70,8 @@ export function PwaInstallPrompt() {
   if (!show || dismissed) return null;
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-50 animate-in slide-in-from-bottom-4">
-      <div className="bg-gray-900 text-white rounded-2xl shadow-2xl p-4 flex items-start gap-3">
+    <div className="fixed bottom-20 md:bottom-6 left-4 right-4 max-w-sm mx-auto md:left-auto md:right-6 md:mx-0 z-50 animate-in slide-in-from-bottom-4 pointer-events-none">
+      <div className="bg-gray-900 text-white rounded-2xl shadow-2xl p-4 flex items-start gap-3 pointer-events-auto">
         <div className="bg-blue-500 rounded-xl p-2 flex-shrink-0">
           <Smartphone className="h-5 w-5 text-white" />
         </div>

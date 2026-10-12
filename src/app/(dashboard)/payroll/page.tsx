@@ -31,11 +31,14 @@ type TechPayroll = {
   }[];
 };
 
+const toLocalDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 export default function PayrollPage() {
   const queryClient = useQueryClient();
   const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
-  const endOfDay = today.toISOString().split("T")[0];
+  const firstOfMonth = toLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  const endOfDay = toLocalDate(today);
 
   const [startDate, setStartDate] = useState(firstOfMonth);
   const [endDate, setEndDate] = useState(endOfDay);
@@ -90,12 +93,12 @@ export default function PayrollPage() {
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => {
                 const d = new Date(); const start = new Date(d.getFullYear(), d.getMonth(), 1);
-                setStartDate(start.toISOString().split("T")[0]); setEndDate(d.toISOString().split("T")[0]);
+                setStartDate(toLocalDate(start)); setEndDate(toLocalDate(d));
               }}>This Month</Button>
               <Button variant="outline" size="sm" onClick={() => {
                 const d = new Date(); const start = new Date(d.getFullYear(), d.getMonth() - 1, 1);
                 const end = new Date(d.getFullYear(), d.getMonth(), 0);
-                setStartDate(start.toISOString().split("T")[0]); setEndDate(end.toISOString().split("T")[0]);
+                setStartDate(toLocalDate(start)); setEndDate(toLocalDate(end));
               }}>Last Month</Button>
             </div>
           </div>
