@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Loader2 } from "lucide-react";
 import { VehicleCombobox } from "./vehicle-combobox";
 
@@ -168,19 +167,18 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {/* Year */}
+          {/* Year — native select (most reliable on touch devices) */}
           <div className="space-y-1">
             <Label className="text-xs">Year *</Label>
-            <Select value={form.year} onValueChange={(v) => setVal("year", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Year" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {ALL_YEARS.map((y) => (
-                  <SelectItem key={y} value={y}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={form.year}
+              onChange={(e) => setVal("year", e.target.value)}
+              className="h-9 w-full rounded-md border border-gray-300 bg-white px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {ALL_YEARS.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
           </div>
 
           {/* Make — NHTSA autocomplete */}
@@ -208,12 +206,12 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
 
           <div className="space-y-1">
             <Label className="text-xs">Trim</Label>
-            <Input placeholder="LE, XSE, Sport..." value={form.trim} onChange={set("trim")} />
+            <Input autoCapitalize="words" placeholder="LE, XSE, Sport..." value={form.trim} onChange={set("trim")} />
           </div>
 
           <div className="space-y-1">
             <Label className="text-xs">Color</Label>
-            <Input placeholder="Silver" value={form.color} onChange={set("color")} />
+            <Input autoCapitalize="words" placeholder="Silver" value={form.color} onChange={set("color")} />
           </div>
 
           <div className="space-y-1">
@@ -227,24 +225,26 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
               className="font-mono text-sm"
               placeholder="17-character VIN"
               maxLength={17}
+              autoCapitalize="characters"
+              autoCorrect="off"
               value={form.vin}
-              onChange={set("vin")}
+              onChange={(e) => setForm((f) => ({ ...f, vin: e.target.value.toUpperCase() }))}
             />
           </div>
 
           <div className="space-y-1">
             <Label className="text-xs">License Plate</Label>
-            <Input placeholder="ABC1234" value={form.plate} onChange={set("plate")} />
+            <Input autoCapitalize="characters" placeholder="ABC1234" value={form.plate} onChange={set("plate")} />
           </div>
 
           <div className="space-y-1">
             <Label className="text-xs">Plate State</Label>
-            <Input placeholder="TX" maxLength={2} value={form.plateState} onChange={set("plateState")} />
+            <Input autoCapitalize="characters" placeholder="TX" maxLength={2} value={form.plateState} onChange={set("plateState")} />
           </div>
 
           <div className="space-y-1">
             <Label className="text-xs">Engine</Label>
-            <Input placeholder="2.5L I4" value={form.engine} onChange={set("engine")} />
+            <Input autoCapitalize="words" placeholder="2.5L I4" value={form.engine} onChange={set("engine")} />
           </div>
 
           <div className="space-y-1">

@@ -28,14 +28,23 @@ export async function POST(
     return apiSuccess({ url: invoice.stripePaymentUrl, sessionId: invoice.stripeSessionId });
   }
 
-  const session = await createInvoiceCheckoutSession({
-    invoiceId: invoice.id,
-    invoiceNumber: invoice.invoiceNumber,
-    amountDue: Number(invoice.amountDue),
-    customerName: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
-    customerEmail: invoice.customer.email ?? undefined,
-    description: `${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model} — ${invoice.invoiceNumber}`,
-  });
+  let session;
+  try {
+    session = await createInvoiceCheckoutSession({
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      amountDue: Number(invoice.amountDue),
+      customerName: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
+      customerEmail: invoice.customer.email ?? undefined,
+      description: `${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model} — ${invoice.invoiceNumber}`,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to create payment session";
+    const hint = /not configured|api key|secret/i.test(msg)
+      ? "Online card payments aren't set up yet. Add STRIPE_SECRET_KEY to your environment variables (Vercel → Settings → Environment Variables), then redeploy."
+      : msg;
+    return apiError(hint, 400);
+  }
 
   await prisma.invoice.update({
     where: { id },

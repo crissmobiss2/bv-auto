@@ -72,7 +72,10 @@ export function VehicleCombobox({ placeholder, value, onChange, fetchUrl, disabl
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent
+          className="p-0 w-[var(--radix-popover-trigger-width)] min-w-[200px] max-w-[320px]"
+          align="start"
+        >
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={`Search ${placeholder.toLowerCase()}...`}
@@ -85,7 +88,23 @@ export function VehicleCombobox({ placeholder, value, onChange, fetchUrl, disabl
                 <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
               </div>
             )}
-            {!loading && items.length === 0 && (
+            {!loading && query.trim() && !items.includes(query.trim()) && (
+              <CommandGroup>
+                <CommandItem
+                  value={`__custom__${query}`}
+                  onSelect={() => {
+                    onChange(query.trim());
+                    setOpen(false);
+                  }}
+                >
+                  Use &ldquo;{query.trim()}&rdquo;
+                </CommandItem>
+              </CommandGroup>
+            )}
+            {!loading && items.length === 0 && query.trim() && (
+              <CommandEmpty>No matches — use the option above.</CommandEmpty>
+            )}
+            {!loading && items.length === 0 && !query.trim() && (
               <CommandEmpty>No results found.</CommandEmpty>
             )}
             {!loading && items.length > 0 && (

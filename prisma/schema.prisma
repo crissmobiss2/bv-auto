@@ -533,16 +533,18 @@ model PartsVendor {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  parts JobPart[]
+  parts          JobPart[]
+  purchaseOrders PurchaseOrder[]
 
   @@index([name])
 }
 
 model JobPart {
-  id           String     @id @default(cuid())
-  jobId        String
-  vendorId     String?
-  status       PartStatus @default(REQUESTED)
+  id              String     @id @default(cuid())
+  jobId           String
+  vendorId        String?
+  purchaseOrderId String?
+  status          PartStatus @default(REQUESTED)
   partNumber   String?
   description  String
   quantity     Decimal    @default(1)
@@ -568,12 +570,46 @@ model JobPart {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  job    Job          @relation(fields: [jobId], references: [id])
-  vendor PartsVendor? @relation(fields: [vendorId], references: [id])
+  job           Job            @relation(fields: [jobId], references: [id])
+  vendor        PartsVendor?   @relation(fields: [vendorId], references: [id])
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
 
   @@index([jobId])
   @@index([vendorId])
   @@index([status])
+  @@index([purchaseOrderId])
+}
+
+// ─── PURCHASE ORDERS ──────────────────────────────────────────────────────────
+
+model PurchaseOrder {
+  id             String     @id @default(cuid())
+  poNumber       String     @unique
+  vendorId       String
+  status         POStatus   @default(DRAFT)
+  notes          String?
+  estimatedTotal Decimal    @default(0)
+  createdBy      String
+  orderedAt      DateTime?
+  expectedAt     DateTime?
+  receivedAt     DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  vendor PartsVendor @relation(fields: [vendorId], references: [id])
+  items  JobPart[]
+
+  @@index([vendorId])
+  @@index([status])
+}
+
+enum POStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  RECEIVED
+  CANCELLED
 }
 
 // ─── PHOTOS ───────────────────────────────────────────────────────────────────
@@ -957,6 +993,7 @@ model Shop {
   email       String?
   taxRate     Decimal  @default(0) @db.Decimal(5, 4)
   laborRate   Decimal  @default(0) @db.Decimal(10, 2)
+  partsMarkup Decimal  @default(40) @db.Decimal(5, 2)
   logoUrl     String?
   googleReviewUrl String?
   isActive    Boolean  @default(true)

@@ -9,6 +9,8 @@ const client =
 const FROM = process.env.TWILIO_PHONE_NUMBER || "+15550001000";
 const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
+export const smsConfigured = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+
 async function send(to: string, body: string) {
   const e164 = to.replace(/\D/g, "");
   const phone = e164.length === 10 ? `+1${e164}` : `+${e164}`;

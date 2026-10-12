@@ -7,11 +7,15 @@ export async function GET(req: NextRequest) {
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
-  const from = searchParams.get("from") ? new Date(searchParams.get("from")!) : new Date(new Date().setDate(1));
-  const to = searchParams.get("to") ? new Date(searchParams.get("to")!) : new Date();
+  const fromParam = searchParams.get("from") || searchParams.get("start");
+  const toParam = searchParams.get("to") || searchParams.get("end");
+  const from = fromParam ? new Date(fromParam) : new Date(new Date().setDate(1));
+  const to = toParam ? new Date(toParam) : new Date();
+  // Include the whole end day when only a date is given
+  if (toParam && to.getHours() === 0) to.setHours(23, 59, 59, 999);
   const format = searchParams.get("format");
 
-  const technicians = await prisma.user.findMany({
+  const staff = await prisma.user.findMany({
     where: { role: { in: ["TECHNICIAN", "ADMIN"] }, isActive: true },
     include: {
       payrollRate: true,
@@ -22,63 +26,64 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const payroll = technicians.map(tech => {
+  const technicians = staff.map((tech) => {
     const logs = tech.timeLogs;
-    const totalMinutes = logs.reduce((s, l) => {
-      if (!l.clockedOut) return s;
-      return s + Math.round((new Date(l.clockedOut).getTime() - new Date(l.clockedIn).getTime()) / 60000);
-    }, 0);
-    const totalHours = totalMinutes / 60;
-
     const rate = tech.payrollRate;
-    const rateType = rate?.rateType || "HOURLY";
-    const hourlyRate = Number(rate?.hourlyRate || 0);
+    const payType = rate?.rateType || "HOURLY";
+    const rateValue = payType === "COMMISSION"
+      ? Number(rate?.commissionPct || 0)
+      : Number(rate?.hourlyRate || 0);
     const flatRateMul = Number(rate?.flatRateMul || 1.0);
-    const commissionPct = Number(rate?.commissionPct || 0);
 
     let grossPay = 0;
-    if (rateType === "HOURLY") grossPay = totalHours * hourlyRate;
-    else if (rateType === "FLAT_RATE") grossPay = totalHours * flatRateMul * (hourlyRate || 25);
-    else if (rateType === "COMMISSION") {
-      const totalRevenue = logs.reduce((s, l) => s + Number(l.job?.invoice?.totalAmount || 0), 0);
-      grossPay = totalRevenue * (commissionPct / 100);
-    }
-
-    const jobBreakdown = logs.map(l => ({
-      jobNumber: l.job?.jobNumber,
-      jobTitle: l.job?.title,
-      clockedIn: l.clockedIn,
-      clockedOut: l.clockedOut,
-      minutes: l.clockedOut
-        ? Math.round((new Date(l.clockedOut).getTime() - new Date(l.clockedIn).getTime()) / 60000)
-        : null,
-    }));
+    const details = logs
+      .flatMap((l) => {
+        const clockedOut = l.clockedOut;
+        if (!clockedOut) return [];
+        const minutes = Math.round((clockedOut.getTime() - l.clockedIn.getTime()) / 60000);
+        const hours = minutes / 60;
+        let pay = 0;
+        if (payType === "HOURLY") pay = hours * rateValue;
+        else if (payType === "FLAT_RATE") pay = hours * flatRateMul * (rateValue || 25);
+        else if (payType === "COMMISSION") pay = Number(l.job?.invoice?.totalAmount || 0) * (rateValue / 100);
+        pay = Math.round(pay * 100) / 100;
+        grossPay += pay;
+        return [{
+          jobId: l.jobId,
+          jobTitle: l.job?.title || "Untitled job",
+          hours: Math.round(hours * 100) / 100,
+          pay,
+          type: payType,
+        }];
+      });
 
     return {
-      id: tech.id,
+      userId: tech.id,
       name: tech.name,
       email: tech.email,
       role: tech.role,
-      rateType,
-      hourlyRate,
-      totalHours: Math.round(totalHours * 100) / 100,
-      totalMinutes,
+      payType,
+      rate: rateValue,
+      totalHours: Math.round((logs.reduce((s, l) => {
+        if (!l.clockedOut) return s;
+        return s + (new Date(l.clockedOut).getTime() - new Date(l.clockedIn).getTime()) / 3600000;
+      }, 0)) * 100) / 100,
+      totalJobs: new Set(logs.map((l) => l.jobId)).size,
       grossPay: Math.round(grossPay * 100) / 100,
-      jobCount: new Set(logs.map(l => l.jobId)).size,
-      jobBreakdown,
+      details,
     };
   });
 
   if (format === "csv") {
-    const rows = ["Name,Role,Rate Type,Hourly Rate,Total Hours,Gross Pay,Job Count"];
-    for (const p of payroll) {
-      rows.push(`"${p.name}",${p.role},${p.rateType},${p.hourlyRate},${p.totalHours},${p.grossPay},${p.jobCount}`);
+    const rows = ["Name,Role,Rate Type,Rate,Total Hours,Gross Pay,Job Count"];
+    for (const p of technicians) {
+      rows.push(`"${p.name}",${p.role},${p.payType},${p.rate},${p.totalHours},${p.grossPay},${p.totalJobs}`);
     }
     // Detail rows
-    rows.push("", "JOB DETAIL", "Tech Name,Job Number,Job Title,Clock In,Clock Out,Minutes");
-    for (const p of payroll) {
-      for (const j of p.jobBreakdown) {
-        rows.push(`"${p.name}","${j.jobNumber || ""}","${j.jobTitle || ""}",${j.clockedIn},${j.clockedOut || ""},${j.minutes || ""}`);
+    rows.push("", "JOB DETAIL", "Tech Name,Job Title,Hours,Pay,Type");
+    for (const p of technicians) {
+      for (const j of p.details) {
+        rows.push(`"${p.name}","${j.jobTitle}",${j.hours ?? ""},${j.pay},${j.type}`);
       }
     }
     return new NextResponse(rows.join("\n"), {
@@ -89,23 +94,38 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const totalGross = payroll.reduce((s, p) => s + p.grossPay, 0);
-  const totalHours = payroll.reduce((s, p) => s + p.totalHours, 0);
+  const totalGross = technicians.reduce((s, p) => s + p.grossPay, 0);
+  const totalHours = technicians.reduce((s, p) => s + p.totalHours, 0);
 
-  return apiSuccess({ payroll, totals: { grossPay: Math.round(totalGross * 100) / 100, hours: Math.round(totalHours * 100) / 100 }, period: { from, to } });
+  return apiSuccess({
+    technicians,
+    summary: {
+      techCount: technicians.length,
+      totalPayroll: Math.round(totalGross * 100) / 100,
+      totalHours: Math.round(totalHours * 100) / 100,
+      avgPay: technicians.length ? Math.round((totalGross / technicians.length) * 100) / 100 : 0,
+    },
+    period: { from, to },
+  });
 }
 
 export async function PATCH(req: NextRequest) {
   const { error } = await requireAuth();
   if (error) return error;
 
-  const { userId, rateType, hourlyRate, flatRateMul, commissionPct } = await req.json();
+  const body = await req.json();
+  const userId: string = body.userId;
+  // Accept both the page's simple shape {payType, rate} and the detailed one
+  const rateType: string = body.rateType || body.payType || "HOURLY";
+  const rate = body.rate != null ? Number(body.rate) : null;
+  const hourlyRate = body.hourlyRate != null ? Number(body.hourlyRate) : rateType === "COMMISSION" ? null : rate;
+  const commissionPct = body.commissionPct != null ? Number(body.commissionPct) : rateType === "COMMISSION" ? (rate ?? 0) : 0;
 
-  const rate = await prisma.payrollRate.upsert({
+  const pay = await prisma.payrollRate.upsert({
     where: { userId },
-    create: { userId, rateType, hourlyRate: hourlyRate ? Number(hourlyRate) : null, flatRateMul: flatRateMul ? Number(flatRateMul) : 1.0, commissionPct: commissionPct ? Number(commissionPct) : 0 },
-    update: { rateType, hourlyRate: hourlyRate ? Number(hourlyRate) : null, flatRateMul: flatRateMul ? Number(flatRateMul) : 1.0, commissionPct: commissionPct ? Number(commissionPct) : 0 },
+    create: { userId, rateType, hourlyRate: hourlyRate ?? undefined, flatRateMul: body.flatRateMul != null ? Number(body.flatRateMul) : 1.0, commissionPct },
+    update: { rateType, hourlyRate: hourlyRate ?? undefined, flatRateMul: body.flatRateMul != null ? Number(body.flatRateMul) : undefined, commissionPct },
   });
 
-  return apiSuccess(rate);
+  return apiSuccess(pay);
 }

@@ -11,12 +11,13 @@ export async function GET() {
   const shop = await prisma.shop.findFirst({
     where: { isActive: true },
     orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
-    select: { id: true, name: true, laborRate: true, taxRate: true, phone: true, googleReviewUrl: true },
+    select: { id: true, name: true, laborRate: true, taxRate: true, partsMarkup: true, phone: true, googleReviewUrl: true },
   });
 
   return apiSuccess({
     laborRate: shop ? Number(shop.laborRate) : 105,
     taxRate: shop ? Number(shop.taxRate) * 100 : 0, // stored as 0.0825, return as 8.25
+    partsMarkup: shop ? Number(shop.partsMarkup) : 40, // stored as percent, e.g. 40 = 40%
     shopName: shop?.name ?? "B&V Mobile Auto",
     shopPhone: shop?.phone ?? "",
     googleReviewUrl: shop?.googleReviewUrl ?? "",

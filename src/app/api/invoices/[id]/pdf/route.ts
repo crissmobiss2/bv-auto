@@ -68,10 +68,12 @@ function generateInvoiceHTML(invoice: {
     total: unknown;
     taxable: boolean;
   }[];
-  payments: { method: string; amount: unknown; receivedAt: Date }[];
+  payments: { method: string; amount: unknown; receivedAt: Date; reference?: string | null }[];
 }, shopPhone: string | null = null) {
   const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
   const phone = shopPhone ? esc(shopPhone) : null;
+  const methodLabel = (m: string) => m.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  const isPaidInFull = Number(invoice.amountDue) <= 0 && Number(invoice.amountPaid) > 0;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -164,8 +166,34 @@ function generateInvoiceHTML(invoice: {
   ${Number(invoice.discountAmount) > 0 ? `<div class="totals-row" style="color:#16a34a"><span>Discount</span><span>-${formatCurrency(Number(invoice.discountAmount))}</span></div>` : ""}
   <div class="totals-total"><span>Total</span><span>${formatCurrency(Number(invoice.totalAmount))}</span></div>
   ${Number(invoice.amountPaid) > 0 ? `<div class="totals-row" style="color:#16a34a"><span>Paid</span><span>${formatCurrency(Number(invoice.amountPaid))}</span></div>` : ""}
-  <div class="totals-due"><span>Balance Due</span><span>${formatCurrency(Number(invoice.amountDue))}</span></div>
+  ${isPaidInFull
+    ? `<div class="totals-row" style="color:#16a34a;font-weight:700"><span>Balance Due</span><span>$0.00 — PAID IN FULL</span></div>`
+    : `<div class="totals-due"><span>Balance Due</span><span>${formatCurrency(Number(invoice.amountDue))}</span></div>`}
 </div>
+
+${invoice.payments.length > 0 ? `
+<div style="margin-top:32px">
+  <h3 style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#9ca3af;margin-bottom:8px;">Payments Received</h3>
+  <table style="margin-bottom:0">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Payment Method</th>
+        <th>Reference</th>
+        <th style="text-align:right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${[...invoice.payments].reverse().map((p) => `
+      <tr>
+        <td>${formatDate(p.receivedAt)}</td>
+        <td>${methodLabel(p.method)}</td>
+        <td style="color:#9ca3af;font-size:12px">${p.reference ? esc(p.reference) : "—"}</td>
+        <td style="text-align:right;font-weight:500;color:#16a34a">${formatCurrency(Number(p.amount))}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>
+</div>` : ""}
 
 ${invoice.notes ? `<div style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;font-size:13px;color:#374151"><strong>Notes:</strong> ${invoice.notes}</div>` : ""}
 

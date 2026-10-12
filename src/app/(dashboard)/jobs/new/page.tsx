@@ -13,10 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { AddVehicleDialog } from "@/components/features/add-vehicle-dialog";
+import { CustomerFormDialog } from "@/components/features/customer-form-dialog";
 
 function NewJobForm() {
   const router = useRouter();
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const preCustomerId = searchParams.get("customerId") || "";
 
@@ -34,6 +35,7 @@ function NewJobForm() {
     customerNotes: "",
   });
   const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
 
   const { data: customers } = useQuery({
     queryKey: ["customers-list"],
@@ -84,19 +86,31 @@ function NewJobForm() {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-2">
               <Label>Job Title *</Label>
-              <Input placeholder="e.g. Oil Change, Brake Replacement" {...f("title")} />
+              <Input autoCapitalize="words" placeholder="e.g. Oil Change, Brake Replacement" {...f("title")} />
             </div>
 
             <div className="space-y-2">
               <Label>Customer *</Label>
-              <Select value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v, vehicleId: "" })}>
-                <SelectTrigger><SelectValue placeholder="Select customer..." /></SelectTrigger>
-                <SelectContent>
-                  {customers?.map((c: { id: string; firstName: string; lastName: string }) => (
-                    <SelectItem key={c.id} value={c.id}>{`${c.firstName} ${c.lastName}`}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v, vehicleId: "" })}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select customer..." /></SelectTrigger>
+                  <SelectContent>
+                    {customers?.map((c: { id: string; firstName: string; lastName: string }) => (
+                      <SelectItem key={c.id} value={c.id}>{`${c.firstName} ${c.lastName}`}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="New customer"
+                  className="shrink-0 text-blue-600 border-blue-300 hover:bg-blue-50"
+                  onClick={() => setShowAddCustomer(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -154,7 +168,7 @@ function NewJobForm() {
 
             <div className="col-span-2 space-y-2">
               <Label>Service Location</Label>
-              <Input placeholder="Customer address or drop-off location" {...f("serviceLocation")} />
+              <Input autoCapitalize="words" autoComplete="street-address" placeholder="Customer address or drop-off location" {...f("serviceLocation")} />
             </div>
 
             <div className="space-y-2">
@@ -213,6 +227,15 @@ function NewJobForm() {
           invalidateKeys={[["vehicles", form.customerId]]}
         />
       )}
+
+      <CustomerFormDialog
+        open={showAddCustomer}
+        onOpenChange={setShowAddCustomer}
+        onSuccess={(customer) => {
+          queryClient.invalidateQueries({ queryKey: ["customers-list"] });
+          setForm((f) => ({ ...f, customerId: customer.id, vehicleId: "" }));
+        }}
+      />
     </div>
   );
 }

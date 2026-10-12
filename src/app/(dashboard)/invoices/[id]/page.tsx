@@ -135,9 +135,17 @@ export default function InvoiceDetailPage() {
     queryFn: () => axios.get(`/api/invoices/${id}`).then((r) => r.data),
   });
 
+  const [sendResult, setSendResult] = useState<null | {
+    emailSent: boolean; smsSent: boolean; emailError?: string; smsError?: string; emailTo?: string | null; smsTo?: string | null;
+  }>(null);
+
   const sendMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/send`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["invoice", id] }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+      setSendResult(res.data);
+    },
+    onError: () => setSendResult(null),
   });
 
   const textToPayMutation = useMutation({
@@ -204,6 +212,29 @@ export default function InvoiceDetailPage() {
           )}
         </div>
       </div>
+
+      {sendMutation.isError && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-md">
+          Failed to send invoice: {(sendMutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Please try again."}
+        </p>
+      )}
+      {sendResult && (
+        <div className="text-sm rounded-md p-3 space-y-1 bg-blue-50 border border-blue-200">
+          {sendResult.emailSent ? (
+            <p className="text-green-700">✓ Email sent to {sendResult.emailTo}</p>
+          ) : sendResult.emailError ? (
+            <p className="text-orange-700">⚠ Email not sent — {sendResult.emailError}</p>
+          ) : null}
+          {sendResult.smsSent ? (
+            <p className="text-green-700">✓ Text sent to {sendResult.smsTo}</p>
+          ) : sendResult.smsError ? (
+            <p className="text-orange-700">⚠ Text not sent — {sendResult.smsError}</p>
+          ) : null}
+          {!sendResult.emailSent && !sendResult.smsSent && !sendResult.emailError && !sendResult.smsError && (
+            <p className="text-orange-700">⚠ Customer has no email or phone number on file — add one on their customer page and send again.</p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-6">
         {/* Customer Info */}

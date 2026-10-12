@@ -14,8 +14,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     where: { id },
     data: {
       ...body,
-      taxRate: body.taxRate != null ? Number(body.taxRate) : undefined,
+      taxRate: body.taxRate != null ? Number(body.taxRate) / 100 : undefined,
       laborRate: body.laborRate != null ? Number(body.laborRate) : undefined,
+      partsMarkup: body.partsMarkup != null ? Number(body.partsMarkup) : undefined,
     },
   });
   return apiSuccess(shop);

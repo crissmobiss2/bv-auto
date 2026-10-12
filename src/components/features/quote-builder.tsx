@@ -11,8 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Send, CheckCircle, XCircle, Brain, Loader2 } from "lucide-react";
 import { formatCurrency, calculateLineItemTotal } from "@/lib/utils";
+import { PartsCatalogDialog, type PickedPart } from "@/components/features/parts-catalog-dialog";
+import { ShoppingCart } from "lucide-react";
 
 const LINE_ITEM_TYPES = ["LABOR", "PART", "FLUID", "SUBLET", "SHOP_SUPPLY", "FEE", "DISCOUNT", "OTHER"];
+// Only parts-type lines get a markup; labor is billed at the labor rate.
+const MARKUP_TYPES = ["PART", "FLUID", "SUBLET", "SHOP_SUPPLY"];
 
 type LineItem = {
   id?: string;
@@ -59,10 +63,29 @@ export function QuoteBuilder({ job }: { job: Job }) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
   const [shopLaborRate, setShopLaborRate] = useState(105);
+  const [defaultPartsMarkup, setDefaultPartsMarkup] = useState(40);
+  const [showPartsSearch, setShowPartsSearch] = useState(false);
+
+  const addPartsFromCatalog = (parts: PickedPart[]) => {
+    setItems((prev) => [
+      ...prev,
+      ...parts.map((p) => ({
+        type: "PART",
+        description: p.description,
+        partNumber: p.partNumber,
+        quantity: p.quantity,
+        unitPrice: p.unitPrice,
+        markup: p.markup,
+        taxable: true,
+        total: calculateLineItemTotal(p.quantity, p.unitPrice, p.markup),
+      })),
+    ]);
+  };
 
   useEffect(() => {
     axios.get("/api/shops/settings").then(({ data }) => {
       setShopLaborRate(data.laborRate || 105);
+      setDefaultPartsMarkup(data.partsMarkup ?? 40);
       // Only set tax rate for new quotes (not yet saved)
       if (!quote) setTaxRate(data.taxRate || 0);
     }).catch(() => {});
@@ -115,6 +138,10 @@ export function QuoteBuilder({ job }: { job: Job }) {
     const updated = [...items];
     (updated[index] as Record<string, unknown>)[field] = value;
     const item = updated[index];
+    // Auto-apply the shop's default markup when a line becomes a parts-type item
+    if (field === "type" && MARKUP_TYPES.includes(String(value)) && !item.markup) {
+      item.markup = defaultPartsMarkup;
+    }
     item.total = calculateLineItemTotal(
       Number(item.quantity),
       Number(item.unitPrice),
@@ -278,16 +305,19 @@ export function QuoteBuilder({ job }: { job: Job }) {
                   onChange={(e) => updateItem(i, "unitPrice", parseFloat(e.target.value) || 0)}
                 />
               </div>
-              <div className="col-span-2 sm:col-span-1">
-                <Input
-                  className="h-8 text-sm"
-                  type="number"
-                  min="0"
-                  placeholder="Markup%"
-                  value={item.markup || ""}
-                  onChange={(e) => updateItem(i, "markup", parseFloat(e.target.value) || 0)}
-                />
-              </div>
+              {MARKUP_TYPES.includes(item.type) ? (
+                <div className="col-span-2 sm:col-span-1">
+                  <Input
+                    className="h-8 text-sm"
+                    type="number"
+                    min="0"
+                    placeholder="Markup%"
+                    title={`Parts markup (shop default: ${defaultPartsMarkup}%)`}
+                    value={item.markup || ""}
+                    onChange={(e) => updateItem(i, "markup", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              ) : null}
               <div className="col-span-4 sm:col-span-1 text-right text-sm font-medium py-1 whitespace-nowrap">
                 {formatCurrency(item.total)}
               </div>
@@ -303,6 +333,13 @@ export function QuoteBuilder({ job }: { job: Job }) {
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={addItem}>
             <Plus className="h-4 w-4 mr-1" /> Add Line Item
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            onClick={() => setShowPartsSearch(true)}
+            className="border-green-300 text-green-700 hover:bg-green-50"
+          >
+            <ShoppingCart className="h-4 w-4 mr-1" /> Find Parts
           </Button>
           <Button
             variant="outline" size="sm"
@@ -355,6 +392,14 @@ export function QuoteBuilder({ job }: { job: Job }) {
           </Button>
         </div>
       </CardContent>
+
+      <PartsCatalogDialog
+        open={showPartsSearch}
+        onOpenChange={setShowPartsSearch}
+        vehicle={job.vehicle ?? null}
+        defaultMarkup={defaultPartsMarkup}
+        onAdd={addPartsFromCatalog}
+      />
     </Card>
   );
 }

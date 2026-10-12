@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Phone, Mail, MapPin, Plus,
-  ArrowLeft, Link2,
+  ArrowLeft, Link2, Pencil,
   TrendingUp, AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +17,7 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus as PlusIcon, CheckCircle } from "lucide-react";
 import { AddVehicleDialog } from "@/components/features/add-vehicle-dialog";
+import { CustomerFormDialog } from "@/components/features/customer-form-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -210,6 +211,7 @@ export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const _queryClient = useQueryClient();
   const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ["customer", id],
@@ -232,6 +234,9 @@ export default function CustomerDetailPage() {
           </h1>
           {customer.company && <p className="text-gray-500">{customer.company}</p>}
         </div>
+        <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+          <Pencil className="h-4 w-4 mr-1" /> Edit
+        </Button>
         <Button variant="outline" size="sm" onClick={async () => {
           const res = await axios.post(`/api/portal/${id}`);
           if (res.data.portalUrl) {
@@ -454,6 +459,12 @@ export default function CustomerDetailPage() {
         onOpenChange={setShowAddVehicle}
         customerId={id}
         invalidateKeys={[["customer", id]]}
+      />
+
+      <CustomerFormDialog
+        open={showEdit}
+        onOpenChange={setShowEdit}
+        customer={customer}
       />
     </div>
   );

@@ -19,6 +19,17 @@ export default function ApproveQuotePage() {
   const [showDecline, setShowDecline] = useState(false);
   const [result, setResult] = useState<"approved" | "declined" | null>(null);
 
+  const { data: shopInfo } = useQuery({
+    queryKey: ["shop-info"],
+    queryFn: () => axios.get("/api/shop-info").then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+  });
+  const shopPhone = shopInfo?.phone as string | null | undefined;
+  const formatShopPhone = (p: string) => {
+    const d = p.replace(/\D/g, "");
+    return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p;
+  };
+
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ["approve-quote", token],
     queryFn: () => axios.get(`/api/approve/${token}`).then((r) => r.data),
@@ -47,7 +58,9 @@ export default function ApproveQuotePage() {
           <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-gray-900">Link Not Found</h2>
           <p className="text-gray-500 mt-2">This estimate link is invalid or has expired. Please contact us.</p>
-          <a href="tel:5550001000" className="mt-4 inline-block text-blue-600 font-medium">(555) 000-1000</a>
+          {shopPhone && (
+            <a href={`tel:${shopPhone}`} className="mt-4 inline-block text-blue-600 font-medium">{formatShopPhone(shopPhone)}</a>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -60,7 +73,9 @@ export default function ApproveQuotePage() {
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900">Estimate Approved!</h2>
           <p className="text-gray-500 mt-2">Thank you, {signerName || "Customer"}. We&apos;ll be in touch to confirm your appointment.</p>
-          <p className="text-sm text-gray-400 mt-4">Questions? Call (555) 000-1000</p>
+          <p className="text-sm text-gray-400 mt-4">
+            {shopPhone ? <>Questions? Call {formatShopPhone(shopPhone)}</> : "Questions? Reply to the text we sent you."}
+          </p>
         </CardContent>
       </Card>
     </div>
@@ -73,7 +88,9 @@ export default function ApproveQuotePage() {
           <XCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900">Estimate Declined</h2>
           <p className="text-gray-500 mt-2">We&apos;ve noted your response. Feel free to call us if you have questions or would like to discuss.</p>
-          <a href="tel:5550001000" className="mt-4 inline-block text-blue-600 font-medium">(555) 000-1000</a>
+          {shopPhone && (
+            <a href={`tel:${shopPhone}`} className="mt-4 inline-block text-blue-600 font-medium">{formatShopPhone(shopPhone)}</a>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -243,7 +260,11 @@ export default function ApproveQuotePage() {
       )}
 
       <div className="text-center text-sm text-gray-400">
-        <p>Questions? Call us at <a href="tel:5550001000" className="text-blue-600">(555) 000-1000</a></p>
+        {shopPhone ? (
+          <p>Questions? Call us at <a href={`tel:${shopPhone}`} className="text-blue-600">{formatShopPhone(shopPhone)}</a></p>
+        ) : (
+          <p>Questions? Reply to the text message we sent you.</p>
+        )}
       </div>
     </div>
   );

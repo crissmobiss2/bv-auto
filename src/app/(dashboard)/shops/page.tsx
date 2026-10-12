@@ -14,13 +14,13 @@ import { formatCurrency } from "@/lib/utils";
 
 interface Shop {
   id: string; name: string; address?: string; city?: string; state?: string; zip?: string;
-  phone?: string; email?: string; taxRate: number; laborRate: number;
+  phone?: string; email?: string; taxRate: number; laborRate: number; partsMarkup?: number;
   googleReviewUrl?: string; isActive: boolean; isDefault: boolean;
 }
 
 const emptyForm = {
   name: "", address: "", city: "", state: "", zip: "", phone: "", email: "",
-  taxRate: "8.25", laborRate: "105", googleReviewUrl: "", isDefault: false,
+  taxRate: "8.25", laborRate: "105", partsMarkup: "40", googleReviewUrl: "", isDefault: false,
 };
 
 export default function ShopsPage() {
@@ -49,13 +49,19 @@ export default function ShopsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shops"] }),
   });
 
+  const setDefaultMutation = useMutation({
+    mutationFn: (id: string) => axios.patch(`/api/shops/${id}`, { isDefault: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shops"] }),
+  });
+
   const openEdit = (shop: Shop) => {
     setEditing(shop);
     setForm({
       name: shop.name, address: shop.address || "", city: shop.city || "",
       state: shop.state || "", zip: shop.zip || "", phone: shop.phone || "",
-      email: shop.email || "", taxRate: String(shop.taxRate * 100 || "8.25"),
-      laborRate: String(shop.laborRate || "105"), googleReviewUrl: shop.googleReviewUrl || "",
+      email: shop.email || "", taxRate: String(Number(shop.taxRate) * 100 || "8.25"),
+      laborRate: String(shop.laborRate || "105"), partsMarkup: String(shop.partsMarkup ?? 40),
+      googleReviewUrl: shop.googleReviewUrl || "",
       isDefault: shop.isDefault,
     });
   };
@@ -103,6 +109,10 @@ export default function ShopsPage() {
                     <p className="font-bold">{formatCurrency(shop.laborRate)}/hr</p>
                   </div>
                   <div className="bg-gray-100 rounded p-2">
+                    <p className="text-xs text-gray-500">Parts Markup</p>
+                    <p className="font-bold">{Number(shop.partsMarkup ?? 40)}%</p>
+                  </div>
+                  <div className="bg-gray-100 rounded p-2">
                     <p className="text-xs text-gray-500">Tax Rate</p>
                     <p className="font-bold">{(Number(shop.taxRate) * 100).toFixed(2)}%</p>
                   </div>
@@ -115,7 +125,7 @@ export default function ShopsPage() {
                 )}
                 {!shop.isDefault && (
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => updateMutation.mutate()}>Set Default</Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setDefaultMutation.mutate(shop.id)}>Set Default</Button>
                     <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-50" onClick={() => deleteMutation.mutate(shop.id)}>Remove</Button>
                   </div>
                 )}
@@ -170,6 +180,10 @@ export default function ShopsPage() {
             <div className="space-y-1">
               <Label>Tax Rate (%)</Label>
               <Input type="number" step="0.01" value={form.taxRate} onChange={e => setForm({ ...form, taxRate: e.target.value })} placeholder="8.25" />
+            </div>
+            <div className="space-y-1">
+              <Label>Parts Markup (%)</Label>
+              <Input type="number" step="1" min="0" value={form.partsMarkup} onChange={e => setForm({ ...form, partsMarkup: e.target.value })} placeholder="40" />
             </div>
             <div className="col-span-2 space-y-1">
               <Label>Google Review URL</Label>

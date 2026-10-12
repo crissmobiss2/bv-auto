@@ -5,6 +5,8 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 const FROM = "B&V Mobile Auto <service@bvauto.com>";
 const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
+export const emailConfigured = !!resend;
+
 async function send(to: string, subject: string, html: string) {
   if (!resend) {
     console.log(`[EMAIL STUB] To: ${to} | Subject: ${subject}`);

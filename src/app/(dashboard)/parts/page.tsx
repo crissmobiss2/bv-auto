@@ -11,12 +11,47 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, DollarSign, ClipboardCopy, ExternalLink, ChevronDown, ChevronRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, PART_STATUS_COLORS } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 const PART_STATUSES = ["REQUESTED", "QUOTED", "ORDERED", "SHIPPED", "PICKED_UP", "RECEIVED", "INSTALLED", "RETURNED", "CREDITED", "CANCELLED"];
+const PO_STATUSES = ["DRAFT", "SENT", "CONFIRMED", "RECEIVED", "CANCELLED"];
+const PO_STATUS_COLORS: Record<string, string> = {
+  DRAFT: "bg-gray-100 text-gray-700",
+  SENT: "bg-blue-100 text-blue-700",
+  CONFIRMED: "bg-purple-100 text-purple-700",
+  RECEIVED: "bg-green-100 text-green-700",
+  CANCELLED: "bg-red-100 text-red-700",
+};
+const OPEN_PART_STATUSES = ["REQUESTED", "QUOTED"];
+
+type Part = {
+  id: string;
+  description: string;
+  partNumber?: string;
+  quantity: number;
+  unitCost?: number;
+  unitPrice?: number;
+  status: string;
+  totalPrice?: number;
+  vendor?: { name: string } | null;
+  job: { id: string; jobNumber: string; customer: { firstName: string; lastName: string } };
+};
+
+type PurchaseOrder = {
+  id: string;
+  poNumber: string;
+  status: string;
+  notes?: string | null;
+  estimatedTotal: number;
+  orderedAt?: string | null;
+  expectedAt?: string | null;
+  receivedAt?: string | null;
+  vendor: { id: string; name: string; phone?: string; email?: string; website?: string };
+  items: { id: string; description: string; partNumber?: string; quantity: number; unitCost?: number; status: string; job?: { id: string; jobNumber: string; customer: { firstName: string; lastName: string } } }[];
+};
 
 export default function PartsPage() {
   const queryClient = useQueryClient();
@@ -25,6 +60,12 @@ export default function PartsPage() {
   const emptyVendor = { name: "", contactName: "", phone: "", email: "", address: "", city: "", state: "", zip: "", accountNum: "", website: "" };
   const [vendorForm, setVendorForm] = useState(emptyVendor);
   const [editingVendor, setEditingVendor] = useState<string | null>(null);
+
+  const [selectedParts, setSelectedParts] = useState<Set<string>>(new Set());
+  const [showOrderDialog, setShowOrderDialog] = useState(false);
+  const [orderForm, setOrderForm] = useState({ vendorId: "", expectedAt: "", notes: "" });
+  const [expandedPO, setExpandedPO] = useState<string | null>(null);
+  const [poError, setPoError] = useState("");
 
   const { data: parts, isLoading } = useQuery({
     queryKey: ["all-parts", statusFilter],
@@ -41,6 +82,11 @@ export default function PartsPage() {
   const { data: marginData } = useQuery({
     queryKey: ["parts-margin"],
     queryFn: () => axios.get("/api/parts/margin").then((r) => r.data),
+  });
+
+  const { data: purchaseOrders } = useQuery({
+    queryKey: ["purchase-orders"],
+    queryFn: () => axios.get("/api/purchase-orders").then((r) => r.data),
   });
 
   const saveVendorMutation = useMutation({
@@ -71,6 +117,71 @@ export default function PartsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["all-parts"] }),
   });
 
+  const createPOMutation = useMutation({
+    mutationFn: () =>
+      axios.post("/api/purchase-orders", {
+        vendorId: orderForm.vendorId,
+        partIds: Array.from(selectedParts),
+        expectedAt: orderForm.expectedAt || undefined,
+        notes: orderForm.notes || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-parts"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      setShowOrderDialog(false);
+      setSelectedParts(new Set());
+      setOrderForm({ vendorId: "", expectedAt: "", notes: "" });
+      setPoError("");
+    },
+    onError: (e: unknown) => {
+      setPoError((e as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to create order");
+    },
+  });
+
+  const poStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => axios.patch(`/api/purchase-orders/${id}`, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["all-parts"] });
+    },
+  });
+
+  const togglePart = (id: string) => {
+    setSelectedParts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const buildOrderText = (po: PurchaseOrder) => {
+    const lines = [
+      `Purchase Order ${po.poNumber} — ${po.vendor.name}`,
+      `From: B&V Mobile Auto`,
+      "",
+      ...po.items.map((i) => `• ${Number(i.quantity)} × ${i.description}${i.partNumber ? ` (PN: ${i.partNumber})` : ""}`),
+      "",
+      po.notes ? `Notes: ${po.notes}` : "",
+      `Estimated total: ${formatCurrency(Number(po.estimatedTotal))}`,
+      "Please confirm availability and ETA. Thank you!",
+    ].filter(Boolean);
+    return lines.join("\n");
+  };
+
+  const copyOrder = async (po: PurchaseOrder) => {
+    try {
+      await navigator.clipboard.writeText(buildOrderText(po));
+      alert("Order list copied — paste it into a text or email to the vendor.");
+    } catch {
+      // clipboard may be blocked; fall back to a printable window
+      const w = window.open("", "_blank");
+      if (w) {
+        w.document.write(`<pre style="font-family:monospace;font-size:14px;white-space:pre-wrap">${buildOrderText(po).replace(/</g, "&lt;")}</pre>`);
+        w.document.close();
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Parts</h1>
@@ -78,12 +189,13 @@ export default function PartsPage() {
       <Tabs defaultValue="parts">
         <TabsList>
           <TabsTrigger value="parts">Active Parts</TabsTrigger>
+          <TabsTrigger value="orders">Purchase Orders ({purchaseOrders?.length || 0})</TabsTrigger>
           <TabsTrigger value="vendors">Vendors ({vendors?.length || 0})</TabsTrigger>
           <TabsTrigger value="margin">Margin Tracker</TabsTrigger>
         </TabsList>
 
         <TabsContent value="parts" className="mt-4 space-y-4">
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center flex-wrap">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48"><SelectValue placeholder="All Statuses" /></SelectTrigger>
               <SelectContent>
@@ -91,6 +203,15 @@ export default function PartsPage() {
                 {PART_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
               </SelectContent>
             </Select>
+            {selectedParts.size > 0 && (
+              <Button
+                onClick={() => { setPoError(""); setOrderForm((f) => ({ ...f, vendorId: f.vendorId || "" })); setShowOrderDialog(true); }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Create Purchase Order ({selectedParts.size})
+              </Button>
+            )}
           </div>
 
           <Card>
@@ -103,6 +224,7 @@ export default function PartsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-8"></TableHead>
                       <TableHead>Part</TableHead>
                       <TableHead className="hidden sm:table-cell">Job</TableHead>
                       <TableHead className="hidden md:table-cell">Vendor</TableHead>
@@ -111,16 +233,19 @@ export default function PartsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {parts.map((part: {
-                      id: string;
-                      description: string;
-                      partNumber?: string;
-                      status: string;
-                      totalPrice?: number;
-                      vendor?: { name: string } | null;
-                      job: { id: string; jobNumber: string; customer: { firstName: string; lastName: string } };
-                    }) => (
+                    {parts.map((part: Part) => (
                       <TableRow key={part.id}>
+                        <TableCell>
+                          {OPEN_PART_STATUSES.includes(part.status) ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedParts.has(part.id)}
+                              onChange={() => togglePart(part.id)}
+                              className="h-4 w-4 cursor-pointer"
+                              title="Select to order"
+                            />
+                          ) : null}
+                        </TableCell>
                         <TableCell>
                           <p className="font-medium text-sm">{part.description}</p>
                           {part.partNumber && <p className="text-xs text-gray-400 font-mono">{part.partNumber}</p>}
@@ -154,6 +279,88 @@ export default function PartsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="orders" className="mt-4 space-y-4">
+          {!purchaseOrders?.length ? (
+            <Card>
+              <CardContent className="p-8 text-center text-gray-400">
+                <p className="font-medium">No purchase orders yet</p>
+                <p className="text-sm mt-1">Select open parts on the Active Parts tab, then click &ldquo;Create Purchase Order&rdquo;.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            purchaseOrders.map((po: PurchaseOrder) => (
+              <Card key={po.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <button
+                      className="flex items-center gap-2 text-left"
+                      onClick={() => setExpandedPO(expandedPO === po.id ? null : po.id)}
+                    >
+                      {expandedPO === po.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      <div>
+                        <CardTitle className="text-base">{po.poNumber}</CardTitle>
+                        <p className="text-xs text-gray-500">
+                          {po.vendor.name} · {po.items.length} item{po.items.length === 1 ? "" : "s"} · {formatCurrency(Number(po.estimatedTotal))}
+                          {po.orderedAt ? ` · ordered ${new Date(po.orderedAt).toLocaleDateString()}` : ""}
+                        </p>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <Badge className={PO_STATUS_COLORS[po.status]}>{po.status}</Badge>
+                      <Select value={po.status} onValueChange={(v) => poStatusMutation.mutate({ id: po.id, status: v })}>
+                        <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PO_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardHeader>
+                {expandedPO === po.id && (
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="border rounded divide-y text-sm">
+                      {po.items.map((i) => (
+                        <div key={i.id} className="flex items-center justify-between px-3 py-2">
+                          <div>
+                            <p className="font-medium">{Number(i.quantity)} × {i.description}</p>
+                            <p className="text-xs text-gray-400">
+                              {i.partNumber && <span className="font-mono mr-2">{i.partNumber}</span>}
+                              {i.job && (
+                                <Link href={`/jobs/${i.job.id}`} className="text-blue-600 hover:underline">
+                                  {i.job.jobNumber} — {i.job.customer.firstName} {i.job.customer.lastName}
+                                </Link>
+                              )}
+                            </p>
+                          </div>
+                          <span className="text-gray-500 text-xs">{i.status.replace(/_/g, " ")}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {po.notes && <p className="text-sm text-gray-500">Notes: {po.notes}</p>}
+                    <div className="flex gap-2 flex-wrap">
+                      <Button size="sm" variant="outline" onClick={() => copyOrder(po)}>
+                        <ClipboardCopy className="h-3 w-3 mr-1" /> Copy Order List
+                      </Button>
+                      {po.vendor.website && /^https?:\/\//i.test(po.vendor.website) && (
+                        <a href={po.vendor.website} target="_blank" rel="noreferrer">
+                          <Button size="sm" variant="outline">
+                            <ExternalLink className="h-3 w-3 mr-1" /> {po.vendor.name} Portal
+                          </Button>
+                        </a>
+                      )}
+                      {po.vendor.phone && (
+                        <a href={`tel:${po.vendor.phone}`}>
+                          <Button size="sm" variant="outline">Call {po.vendor.name}</Button>
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="vendors" className="mt-4 space-y-4">
@@ -259,6 +466,51 @@ export default function PartsPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Create Purchase Order Dialog */}
+      <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Purchase Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">{selectedParts.size} part{selectedParts.size === 1 ? "" : "s"} selected</p>
+            <div className="space-y-2">
+              <Label>Vendor *</Label>
+              <Select value={orderForm.vendorId} onValueChange={(v) => setOrderForm({ ...orderForm, vendorId: v })}>
+                <SelectTrigger><SelectValue placeholder="Pick a vendor..." /></SelectTrigger>
+                <SelectContent>
+                  {vendors?.map((v: { id: string; name: string }) => (
+                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {vendors?.length === 0 && (
+                <p className="text-xs text-orange-600">No vendors yet — add one in the Vendors tab first.</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Expected Delivery</Label>
+              <Input type="date" value={orderForm.expectedAt} onChange={(e) => setOrderForm({ ...orderForm, expectedAt: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Input
+                placeholder="e.g. need by Friday for brake job"
+                value={orderForm.notes}
+                onChange={(e) => setOrderForm({ ...orderForm, notes: e.target.value })}
+              />
+            </div>
+            {poError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">{poError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOrderDialog(false)}>Cancel</Button>
+            <Button onClick={() => createPOMutation.mutate()} disabled={!orderForm.vendorId || createPOMutation.isPending}>
+              {createPOMutation.isPending ? "Creating..." : "Create Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showVendor} onOpenChange={setShowVendor}>
         <DialogContent>
