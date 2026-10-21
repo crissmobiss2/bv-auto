@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { AuditAction, JobStatus } from "@prisma/client";
+import { AuditAction, JobStatus, WarrantyType } from "@prisma/client";
 import twilio from "twilio";
 import { sendPushToUser, sendPushToRole } from "@/lib/push";
 
@@ -137,6 +137,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       { status: existing.status },
       { status: updated.status }
     );
+    if (updated.status === JobStatus.COMPLETED && !existing.completedAt) {
+      await createDefaultWarranty(updated).catch((e) => console.error("[warranty] auto-create failed", e));
+    }
     // Auto-send SMS on key status transitions
     sendStatusSms(id, updated.status as JobStatus);
     // Push notifications for key transitions
@@ -152,4 +155,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   return apiSuccess(updated);
+}
+
+// Default shop policy: 12 months / 12,000 miles parts & labor, created once per job.
+const DEFAULT_WARRANTY_DAYS = 365;
+const DEFAULT_WARRANTY_MILES = 12000;
+
+async function createDefaultWarranty(job: { id: string; title: string; customerId: string; vehicleId: string; mileageIn: number | null }) {
+  const exists = await prisma.warranty.findFirst({ where: { jobId: job.id }, select: { id: true } });
+  if (exists) return;
+  const startDate = new Date();
+  await prisma.warranty.create({
+    data: {
+      jobId: job.id,
+      customerId: job.customerId,
+      vehicleId: job.vehicleId,
+      type: WarrantyType.PARTS_AND_LABOR,
+      description: `Parts & labor — ${job.title}`,
+      startDate,
+      expiryDate: new Date(startDate.getTime() + DEFAULT_WARRANTY_DAYS * 86400000),
+      durationDays: DEFAULT_WARRANTY_DAYS,
+      mileageAtService: job.mileageIn,
+      mileageLimit: DEFAULT_WARRANTY_MILES,
+    },
+  });
 }
