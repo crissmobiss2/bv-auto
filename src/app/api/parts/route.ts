@@ -58,7 +58,16 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
   const unitCost = data.unitCost ?? 0;
-  const markup = data.markup ?? 0;
+  let markup = data.markup;
+  if (markup == null && data.unitPrice == null) {
+    const shop = await prisma.shop.findFirst({
+      where: { isActive: true },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      select: { partsMarkup: true },
+    });
+    markup = shop ? Number(shop.partsMarkup) : 40;
+  }
+  markup ??= 0;
   const unitPrice = data.unitPrice ?? (unitCost * (1 + markup / 100));
   const totalCost = unitCost * data.quantity;
   const totalPrice = unitPrice * data.quantity;
@@ -66,6 +75,7 @@ export async function POST(req: NextRequest) {
   const part = await prisma.jobPart.create({
     data: {
       ...data,
+      markup,
       unitPrice,
       totalCost,
       totalPrice,
