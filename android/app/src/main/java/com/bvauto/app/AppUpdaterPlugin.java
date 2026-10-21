@@ -89,8 +89,17 @@ public class AppUpdaterPlugin extends Plugin {
         conn.setConnectTimeout(20_000);
         conn.setReadTimeout(60_000);
         conn.setRequestProperty("Cache-Control", "no-cache");
-        int code = conn.getResponseCode();
-        if (code != HttpURLConnection.HTTP_OK) throw new Exception("HTTP " + code);
+        try {
+            int code = conn.getResponseCode();
+            if (code != HttpURLConnection.HTTP_OK) throw new Exception("HTTP " + code);
+            copyWithProgress(conn, out);
+        } finally {
+            conn.disconnect();
+        }
+        return out;
+    }
+
+    private void copyWithProgress(HttpURLConnection conn, File out) throws Exception {
         long total = conn.getContentLengthLong();
         long done = 0;
         int lastPercent = -1;
@@ -110,10 +119,7 @@ public class AppUpdaterPlugin extends Plugin {
                     }
                 }
             }
-        } finally {
-            conn.disconnect();
         }
-        return out;
     }
 
     private void verifyAndInstall(PluginCall call, File apk) throws Exception {
