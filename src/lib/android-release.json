@@ -1,7 +1,7 @@
 {
-  "versionCode": 4,
-  "versionName": "1.3",
-  "apkSha256": "e376a2ec760e07677acb63db224b27c4edea17382928f80c1d845ea79a726134",
-  "signerCertSha256": "07b8a3ca73cea7e7222ad532dc869eedb9bf406836cd989e39edf68373498ca9",
-  "requiresReinstallBelow": 4
+  "versionCode": 5,
+  "versionName": "1.4",
+  "apkSha256": "4b2ae933ee6354e361fe4a895556685ff430b87fb0ca2cb3d5313301a9fca64f",
+  "signerCertSha256": "ccdd77cbcdb2d79cf947be8f962d9fd07422a1bb678c4cc1c24ae9d472d9f02f",
+  "requiresReinstallBelow": 5
 }
