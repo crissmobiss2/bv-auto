@@ -37,18 +37,20 @@ export async function GET(req: NextRequest) {
     if (![1, 7, 14].includes(daysOverdue)) continue;
 
     const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
-    await sendInvoiceEmail({
+    const sent = await sendInvoiceEmail({
       to: invoice.customer.email,
       customerName: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
       invoiceNumber: invoice.invoiceNumber,
       vehicleDescription: `${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model}`,
       totalAmount: formatCurrency(Number(invoice.totalAmount)),
       amountDue: formatCurrency(Number(invoice.amountDue)),
-      invoiceUrl: `${BASE_URL}/invoices/${invoice.id}`,
+      invoiceUrl: invoice.customer.portalToken
+        ? `${BASE_URL}/portal/${invoice.customer.portalToken}`
+        : `${BASE_URL}/invoices/${invoice.id}`,
       paymentUrl: invoice.stripePaymentUrl || undefined,
-    }).catch(console.error);
+    }).catch((e) => { console.error(e); return null; });
 
-    remindersSent++;
+    if (sent) remindersSent++;
   }
 
   return NextResponse.json({

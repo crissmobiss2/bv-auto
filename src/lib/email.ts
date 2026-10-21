@@ -10,7 +10,7 @@ export const emailConfigured = !!resend;
 async function send(to: string, subject: string, html: string) {
   if (!resend) {
     console.log(`[EMAIL STUB] To: ${to} | Subject: ${subject}`);
-    return { id: "stub" };
+    return null;
   }
   return resend.emails.send({ from: FROM, to, subject, html });
 }
