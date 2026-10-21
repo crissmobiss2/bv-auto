@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError } from "@/lib/api-helpers";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, lineItemSalePrice } from "@/lib/utils";
 import { getShopPhone } from "@/lib/shop";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -65,6 +65,7 @@ function generateInvoiceHTML(invoice: {
     description: string;
     quantity: unknown;
     unitPrice: unknown;
+    markup?: unknown;
     total: unknown;
     taxable: boolean;
   }[];
@@ -154,7 +155,7 @@ function generateInvoiceHTML(invoice: {
       <td>${li.description}</td>
       <td style="color:#9ca3af;font-size:12px">${li.type}</td>
       <td style="text-align:center">${li.quantity}</td>
-      <td style="text-align:right">${formatCurrency(Number(li.unitPrice))}</td>
+      <td style="text-align:right">${formatCurrency(lineItemSalePrice(Number(li.unitPrice), Number(li.markup ?? 0)))}</td>
       <td style="text-align:right;font-weight:500">${formatCurrency(Number(li.total))}</td>
     </tr>`).join("")}
   </tbody>
