@@ -1,10 +1,10 @@
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(req)) {
     return new Response("Unauthorized", { status: 401 });
   }
 

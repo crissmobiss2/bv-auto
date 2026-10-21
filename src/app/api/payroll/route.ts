@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const body = await req.json();

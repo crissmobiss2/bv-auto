@@ -1,10 +1,10 @@
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (secret !== process.env.CRON_SECRET) return apiError("Unauthorized", 401);
+  if (!isCronAuthorized(req)) return apiError("Unauthorized", 401);
 
   const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
