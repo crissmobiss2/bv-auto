@@ -22,14 +22,12 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
 
   const reviewUrl = `${BASE_URL}/api/review/${request.reviewToken}`;
 
-  const defaultReviewUrl = process.env.GOOGLE_REVIEW_URL || reviewUrl;
-
   let smsSent = false;
   if (job.customer.phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
     try {
       const twilio = (await import("twilio")).default;
       const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      const body = `Hi ${job.customer.firstName}, thank you for choosing B&V Auto! If you had a great experience, a quick Google review means the world to us: ${defaultReviewUrl}`;
+      const body = `Hi ${job.customer.firstName}, thank you for choosing B&V Auto! If you had a great experience, a quick Google review means the world to us: ${reviewUrl}`;
       await client.messages.create({ body, from: process.env.TWILIO_PHONE_NUMBER!, to: job.customer.phone });
       await prisma.smsMessage.create({
         data: {
@@ -44,10 +42,12 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     } catch { /* non-fatal */ }
   }
 
-  await prisma.reviewRequest.update({
-    where: { id: request.id },
-    data: { sentAt: new Date() },
-  });
+  if (smsSent) {
+    await prisma.reviewRequest.update({
+      where: { id: request.id },
+      data: { sentAt: new Date() },
+    });
+  }
 
-  return apiSuccess({ sent: true, smsSent, reviewUrl });
+  return apiSuccess({ sent: smsSent, smsSent, reviewUrl });
 }

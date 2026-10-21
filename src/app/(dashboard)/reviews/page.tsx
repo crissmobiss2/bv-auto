@@ -22,8 +22,12 @@ export default function ReviewsPage() {
 
   const sendMutation = useMutation({
     mutationFn: (jobId: string) => axios.post(`/api/reviews/${jobId}/send`),
-    onSuccess: (_, jobId) => {
+    onSuccess: (res, jobId) => {
       queryClient.invalidateQueries({ queryKey: ["reviews-dashboard"] });
+      if (!res.data?.smsSent) {
+        window.prompt("Text not sent (no customer phone or SMS isn't configured). Copy this review link to send it yourself:", res.data?.reviewUrl ?? "");
+        return;
+      }
       setSuccessId(jobId);
       setSentId(null);
       setTimeout(() => setSuccessId(null), 3000);

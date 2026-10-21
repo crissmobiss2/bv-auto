@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const GOOGLE_REVIEW_URL = process.env.GOOGLE_REVIEW_URL || "https://g.page/r/review";
-
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
@@ -17,5 +15,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     });
   }
 
-  return NextResponse.redirect(GOOGLE_REVIEW_URL);
+  const shop = await prisma.shop
+    .findFirst({
+      where: { isActive: true },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      select: { googleReviewUrl: true },
+    })
+    .catch(() => null);
+  const target = shop?.googleReviewUrl || process.env.GOOGLE_REVIEW_URL;
+
+  if (review && target && /^https:\/\//.test(target)) {
+    return NextResponse.redirect(target);
+  }
+  return NextResponse.redirect(new URL(`/review/${encodeURIComponent(token)}?status=${review ? "thanks" : "invalid"}`, req.url));
 }

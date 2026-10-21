@@ -31,6 +31,7 @@ export default async function proxy(req: NextRequest) {
     pathname.startsWith("/book") ||
     pathname.startsWith("/review") ||
     pathname.startsWith("/register") ||
+    pathname.startsWith("/reset") ||
     pathname.startsWith("/offline") ||
     pathname.startsWith("/icons") ||
     pathname.startsWith("/sw.js") ||
