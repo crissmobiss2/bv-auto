@@ -1,0 +1,4 @@
+{
+  "expectedSignerCertSha256": "ccdd77cbcdb2d79cf947be8f962d9fd07422a1bb678c4cc1c24ae9d472d9f02f",
+  "note": "SHA-256 of the signing certificate every published APK must carry (apksigner verify --print-certs). Keystore: Devin org secrets BVAUTO_KEYSTORE_BASE64 / BVAUTO_KEYSTORE_PASSWORD, alias bvauto. Changing it forces every installed app to be uninstalled and reinstalled."
+}
