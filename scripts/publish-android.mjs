@@ -50,7 +50,7 @@ const apk = apkArg
 if (!existsSync(apk)) fail(`No signed APK at ${apk} (an unsigned build is named app-release-unsigned.apk)`);
 
 const certs = execFileSync(buildTool("apksigner"), ["verify", "--print-certs", apk], { encoding: "utf8" });
-const signerDigests = [...certs.matchAll(/certificate SHA-256 digest: ([0-9a-f]{64})/g)].map((d) => d[1]);
+const signerDigests = [...certs.matchAll(/^Signer #\d+ certificate SHA-256 digest: ([0-9a-f]{64})$/gm)].map((d) => d[1]);
 if (signerDigests.length === 0) fail("apksigner could not read a signing certificate");
 if (signerDigests.length > 1) fail(`APK has ${signerDigests.length} signers; installed apps expect exactly one`);
 const [signerCertSha256] = signerDigests;
