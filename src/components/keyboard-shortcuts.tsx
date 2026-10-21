@@ -21,8 +21,8 @@ export function KeyboardShortcuts() {
 
       switch (e.key) {
         case "n": e.preventDefault(); router.push("/jobs/new"); break;
-        case "i": e.preventDefault(); router.push("/invoices/new"); break;
-        case "q": e.preventDefault(); router.push("/quotes/new"); break;
+        case "i": e.preventDefault(); router.push("/invoices"); break;
+        case "q": e.preventDefault(); router.push("/quotes"); break;
         case "s": case "/": e.preventDefault(); openGlobalSearch(); break;
         case "?": showShortcutsToast(); break;
       }
@@ -44,8 +44,8 @@ function showShortcutsToast() {
     <p class="font-sans font-semibold text-gray-200 pb-1 border-b border-gray-700 mb-2">Keyboard Shortcuts</p>
     <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
       <span class="text-gray-400">New Job</span><span>N</span>
-      <span class="text-gray-400">New Invoice</span><span>I</span>
-      <span class="text-gray-400">New Quote</span><span>Q</span>
+      <span class="text-gray-400">Invoices</span><span>I</span>
+      <span class="text-gray-400">Quotes</span><span>Q</span>
       <span class="text-gray-400">Search</span><span>/ or S</span>
       <span class="text-gray-400">Command palette</span><span>⌘K</span>
       <span class="text-gray-400">This help</span><span>?</span>
