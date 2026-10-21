@@ -1,0 +1,4 @@
+{
+  "expectedSignerCertSha256": "a770cdf26f1d15f45baf4d4d50b284682a945195ff064debe6f3a219ebe58cec",
+  "note": "SHA-256 of the signing certificate every published APK must carry (apksigner verify --print-certs). Changing it forces every installed app to be uninstalled and reinstalled."
+}

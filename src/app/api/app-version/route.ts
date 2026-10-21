@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import pkg from "../../../../package.json";
+import androidRelease from "@/lib/android-release.json";
 
 export async function GET(req: NextRequest) {
-  return NextResponse.json({
-    version: pkg.version,
-    androidVersionCode: 4,
-    androidVersionName: "1.3",
-    androidMinVersion: "0.1.0",
-    iosMinVersion: "0.1.0",
-    downloadUrl: new URL("/app-release.apk", req.nextUrl.origin).toString(),
-    playStoreUrl: "https://play.google.com/store/apps/details?id=com.bvauto.app",
-    appStoreUrl: "https://apps.apple.com/app/bv-auto/id0000000000",
-    releaseNotes: "New: parts catalog search & purchase orders, invoice payment history on PDF, send/delivery feedback, customer editing, faster data entry.",
-    forceUpdate: false,
-  });
+  const downloadUrl = new URL("/app-release.apk", req.nextUrl.origin);
+  downloadUrl.searchParams.set("v", String(androidRelease.versionCode));
+  return NextResponse.json(
+    {
+      version: pkg.version,
+      androidVersionCode: androidRelease.versionCode,
+      androidVersionName: androidRelease.versionName,
+      androidApkSha256: androidRelease.apkSha256,
+      androidRequiresReinstallBelow: androidRelease.requiresReinstallBelow,
+      androidMinVersion: "0.1.0",
+      iosMinVersion: "0.1.0",
+      downloadUrl: downloadUrl.toString(),
+      playStoreUrl: "https://play.google.com/store/apps/details?id=com.bvauto.app",
+      appStoreUrl: "https://apps.apple.com/app/bv-auto/id0000000000",
+      releaseNotes: "Update button now downloads and opens the installer directly.",
+      forceUpdate: false,
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

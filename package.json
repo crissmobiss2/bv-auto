@@ -29,7 +29,8 @@
     "desktop:build:win": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --config electron-builder.yml",
     "desktop:build:mac": "electron-builder --mac --config electron-builder.yml",
     "desktop:build:linux": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux --config electron-builder.yml",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "android:publish": "node scripts/publish-android.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
