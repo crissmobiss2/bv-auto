@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { rateLimit } from "@/lib/rate-limit";
 
+const CUSTOMER_API_PREFIXES = ["/api/customer/", "/api/push/"];
+
 const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
 function getIP(req: NextRequest) {
@@ -77,6 +79,11 @@ export default async function proxy(req: NextRequest) {
   // Prevent customers from accessing the staff dashboard
   if (role === "CUSTOMER" && pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/customer", req.url));
+  }
+
+  // Customers self-register, so staff APIs must never be reachable with a CUSTOMER session.
+  if (role === "CUSTOMER" && pathname.startsWith("/api/") && !CUSTOMER_API_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   return NextResponse.next();
