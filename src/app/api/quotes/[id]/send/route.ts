@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { sendQuoteEmail } from "@/lib/email";
-import { sendQuoteSMS } from "@/lib/sms";
+import { sendQuoteEmail, emailConfigured } from "@/lib/email";
+import { sendQuoteSMS, smsConfigured } from "@/lib/sms";
 import { formatCurrency } from "@/lib/utils";
 import { AuditAction } from "@prisma/client";
 import { randomBytes } from "crypto";
@@ -36,33 +36,50 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     },
   });
 
-  const emailSent = quote.customer.email
-    ? await sendQuoteEmail({
+  type Delivery = "sent" | "no_contact" | "not_configured" | "failed";
+
+  let emailStatus: Delivery = "no_contact";
+  if (quote.customer.email) {
+    if (!emailConfigured) emailStatus = "not_configured";
+    else {
+      const res = await sendQuoteEmail({
         to: quote.customer.email,
         customerName: `${quote.customer.firstName} ${quote.customer.lastName}`,
         quoteNumber: quote.quoteNumber,
         vehicleDescription: vehicleDesc,
         totalAmount: totalStr,
         approvalToken: token,
-      }).catch(() => null)
-    : null;
+      }).catch(() => null);
+      emailStatus = res && !res.error ? "sent" : "failed";
+    }
+  }
 
-  const smsSent = quote.customer.phone
-    ? await sendQuoteSMS({
+  let smsStatus: Delivery = "no_contact";
+  if (quote.customer.phone) {
+    if (!smsConfigured) smsStatus = "not_configured";
+    else {
+      const res = await sendQuoteSMS({
         to: quote.customer.phone,
         customerName: quote.customer.firstName,
         quoteNumber: quote.quoteNumber,
         totalAmount: totalStr,
         approvalToken: token,
-      }).catch(() => null)
-    : null;
+      }).catch(() => null);
+      smsStatus = res ? "sent" : "failed";
+    }
+  }
 
-  await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Quote", id, null, { token, emailSent: !!emailSent, smsSent: !!smsSent });
+  const emailSent = emailStatus === "sent";
+  const smsSent = smsStatus === "sent";
+
+  await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Quote", id, null, { token, emailStatus, smsStatus });
 
   const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
   return apiSuccess({
     approvalUrl: `${BASE_URL}/approve/${token}`,
-    emailSent: !!emailSent,
-    smsSent: !!smsSent,
+    emailSent,
+    smsSent,
+    emailStatus,
+    smsStatus,
   });
 }
