@@ -45,10 +45,12 @@ export default function PayrollPage() {
   const [rateDialog, setRateDialog] = useState<TechPayroll | null>(null);
   const [rateForm, setRateForm] = useState({ payType: "HOURLY", rate: "" });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["payroll", startDate, endDate],
     queryFn: () => axios.get(`/api/payroll?start=${startDate}&end=${endDate}`).then((r) => r.data),
+    retry: (n, e) => !(axios.isAxiosError(e) && e.response?.status === 403) && n < 3,
   });
+  const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
 
   const rateMutation = useMutation({
     mutationFn: ({ userId }: { userId: string }) =>
@@ -176,7 +178,9 @@ export default function PayrollPage() {
       {payoutError && <p className="text-sm text-red-600" role="alert">{payoutError}</p>}
 
       {/* Tech Table */}
-      {isLoading ? (
+      {forbidden ? (
+        <div role="alert" className="p-8 text-center text-gray-600">You don&apos;t have access to Payroll. Ask an admin if you need it.</div>
+      ) : isLoading ? (
         <div className="text-center text-gray-500 py-8">Calculating payroll...</div>
       ) : techs.length === 0 ? (
         <div className="text-center text-gray-500 py-12">
