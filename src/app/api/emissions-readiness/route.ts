@@ -23,6 +23,8 @@ const STATE_REQUIREMENTS: Record<string, { hasTest: boolean; obd2Year: number; t
   NC: { hasTest: true,  obd2Year: 1996, testType: "OBD-II",          notes: "48 of 100 counties." },
 };
 
+const STATE_CODES: Record<string, string> = { "ALABAMA": "AL", "ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE", "DISTRICT OF COLUMBIA": "DC", "FLORIDA": "FL", "GEORGIA": "GA", "HAWAII": "HI", "IDAHO": "ID", "ILLINOIS": "IL", "INDIANA": "IN", "IOWA": "IA", "KANSAS": "KS", "KENTUCKY": "KY", "LOUISIANA": "LA", "MAINE": "ME", "MARYLAND": "MD", "MASSACHUSETTS": "MA", "MICHIGAN": "MI", "MINNESOTA": "MN", "MISSISSIPPI": "MS", "MISSOURI": "MO", "MONTANA": "MT", "NEBRASKA": "NE", "NEVADA": "NV", "NEW HAMPSHIRE": "NH", "NEW JERSEY": "NJ", "NEW MEXICO": "NM", "NEW YORK": "NY", "NORTH CAROLINA": "NC", "NORTH DAKOTA": "ND", "OHIO": "OH", "OKLAHOMA": "OK", "OREGON": "OR", "PENNSYLVANIA": "PA", "RHODE ISLAND": "RI", "SOUTH CAROLINA": "SC", "SOUTH DAKOTA": "SD", "TENNESSEE": "TN", "TEXAS": "TX", "UTAH": "UT", "VERMONT": "VT", "VIRGINIA": "VA", "WASHINGTON": "WA", "WEST VIRGINIA": "WV", "WISCONSIN": "WI", "WYOMING": "WY" };
+
 export async function GET(req: NextRequest) {
   const { error } = await requireAuth();
   if (error) return error;
@@ -30,7 +32,8 @@ export async function GET(req: NextRequest) {
   const year  = searchParams.get("year");
   const make  = searchParams.get("make");
   const model = searchParams.get("model");
-  const state = searchParams.get("state")?.toUpperCase();
+  const rawState = searchParams.get("state")?.trim().toUpperCase();
+  const state = rawState ? STATE_CODES[rawState] ?? rawState : undefined;
   const monitors = searchParams.get("monitors"); // comma-separated incomplete monitor list
 
   const stateReq = state ? STATE_REQUIREMENTS[state] : null;
