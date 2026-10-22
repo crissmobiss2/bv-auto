@@ -22,7 +22,7 @@ const inspectionSchema = z.object({
   recommendedServices: z.array(z.string()).optional(),
 });
 
-export const DEFAULT_INSPECTION_ITEMS = [
+const DEFAULT_INSPECTION_ITEMS = [
   // Engine
   { id: "eng-oil", category: "Engine", item: "Engine Oil Level & Condition" },
   { id: "eng-coolant", category: "Engine", item: "Coolant Level & Condition" },
