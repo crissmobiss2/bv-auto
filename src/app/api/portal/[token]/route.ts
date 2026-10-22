@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { apiError, apiSuccess, requireAuth } from "@/lib/api-helpers";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -52,7 +52,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
 // Generate or refresh portal token for a customer (called internally)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   // token here = customerId (used by staff to generate the link)
+  const { error, session } = await requireAuth();
+  if (error) return error;
+  if (session!.user.role === "CUSTOMER") return apiError("Forbidden", 403);
+
   const { token: customerId } = await params;
+  const exists = await prisma.customer.findUnique({ where: { id: customerId }, select: { id: true } });
+  if (!exists) return apiError("Customer not found", 404);
 
   const portalToken = crypto.randomBytes(20).toString("hex");
   const customer = await prisma.customer.update({
