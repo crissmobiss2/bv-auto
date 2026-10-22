@@ -45,9 +45,13 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
   });
 
   const markPaidMutation = useMutation({
-    mutationFn: ({ installmentId, paidAmount }: { installmentId: string; paidAmount: number }) =>
-      axios.patch(`/api/invoices/${invoiceId}/payment-plan`, { installmentId, paidAmount }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payment-plan", invoiceId] }),
+    mutationFn: ({ installmentId }: { installmentId: string }) =>
+      axios.patch(`/api/invoices/${invoiceId}/payment-plan`, { installmentId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payment-plan", invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+    },
+    onError: (e) => alert((axios.isAxiosError(e) && e.response?.data?.error) || "Could not record installment payment"),
   });
 
   if (!show && (!plan || plan.length === 0)) {
@@ -109,7 +113,8 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
             </div>
             {inst.status !== "PAID" && (
               <Button size="sm" variant="outline" className="h-7 text-xs"
-                onClick={() => markPaidMutation.mutate({ installmentId: inst.id, paidAmount: inst.amount })}>
+                disabled={markPaidMutation.isPending}
+                onClick={() => markPaidMutation.mutate({ installmentId: inst.id })}>
                 Mark Paid
               </Button>
             )}
