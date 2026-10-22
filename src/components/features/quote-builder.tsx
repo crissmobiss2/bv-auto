@@ -191,7 +191,12 @@ export function QuoteBuilder({ job }: { job: Job }) {
       queryClient.invalidateQueries({ queryKey: ["job", job.id] });
       if (res.data.approvalUrl) {
         navigator.clipboard?.writeText(res.data.approvalUrl).catch(() => null);
-        alert(`Quote sent! Approval link copied to clipboard:\n${res.data.approvalUrl}`);
+        const via = [res.data.emailSent && "email", res.data.smsSent && "text"].filter(Boolean).join(" and ");
+        alert(
+          via
+            ? `Quote sent by ${via}. Approval link copied to clipboard:\n${res.data.approvalUrl}`
+            : `Quote NOT delivered: email/text isn't set up or the customer has no email/phone.\nThe approval link was copied to your clipboard. Send it to the customer yourself:\n${res.data.approvalUrl}`
+        );
       }
     },
   });
