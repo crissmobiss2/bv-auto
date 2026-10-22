@@ -7,6 +7,9 @@ const client = new Anthropic();
 export async function POST(req: NextRequest) {
   const { error } = await requireAuth();
   if (error) return error;
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "AI freeze-frame analysis is not configured (missing ANTHROPIC_API_KEY)" }, { status: 503 });
+  }
   const body = await req.json();
   const { dtcCode, freezeFrameData, year, make, model, engine } = body;
 
