@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Suspense } from "react";
 import { IntegrationsPanel } from "./integrations-panel";
 import { TotpSettings } from "./totp-settings";
+import { TeamMembers } from "./team-members";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -13,8 +14,8 @@ export default async function SettingsPage() {
   if (!["ADMIN", "ACCOUNTANT"].includes((session.user.role || "").toUpperCase())) redirect("/dashboard");
 
   const users = await prisma.user.findMany({
-    where: { isActive: true },
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    where: { role: { not: "CUSTOMER" } },
+    select: { id: true, name: true, email: true, role: true, isActive: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -22,24 +23,7 @@ export default async function SettingsPage() {
     <div className="max-w-4xl space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Team Members</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {users.map((u) => (
-              <div key={u.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">{u.name}</p>
-                  <p className="text-xs text-gray-500">{u.email}</p>
-                </div>
-                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded font-medium">
-                  {u.role.replace(/_/g, " ")}
-                </span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <TeamMembers users={users} currentUserId={session.user.id} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Business Information</CardTitle></CardHeader>

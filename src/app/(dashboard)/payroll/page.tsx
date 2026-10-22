@@ -59,6 +59,34 @@ export default function PayrollPage() {
     },
   });
 
+  const { data: payouts } = useQuery<{ id: string; userId: string; amount: string; paidAt: string }[]>({
+    queryKey: ["payroll-payouts", startDate, endDate],
+    queryFn: () => axios.get(`/api/payroll/payouts?start=${startDate}&end=${endDate}`).then((r) => r.data),
+  });
+
+  const [payoutError, setPayoutError] = useState<string | null>(null);
+  const payoutError_ = (e: unknown) =>
+    setPayoutError((axios.isAxiosError(e) && e.response?.data?.error) || "Could not update payout");
+
+  const markPaid = useMutation({
+    mutationFn: (tech: TechPayroll) =>
+      axios.post("/api/payroll/payouts", {
+        userId: tech.userId, start: startDate, end: endDate, hours: tech.totalHours, amount: tech.grossPay,
+      }),
+    onMutate: () => setPayoutError(null),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payroll-payouts"] }),
+    onError: payoutError_,
+  });
+
+  const undoPaid = useMutation({
+    mutationFn: (id: string) => axios.delete(`/api/payroll/payouts?id=${id}`),
+    onMutate: () => setPayoutError(null),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payroll-payouts"] }),
+    onError: payoutError_,
+  });
+
+  const payoutFor = (userId: string) => payouts?.find((p) => p.userId === userId);
+
   const downloadCSV = () => {
     window.open(`/api/payroll?start=${startDate}&end=${endDate}&format=csv`, "_blank");
   };
@@ -145,6 +173,8 @@ export default function PayrollPage() {
         </Card>
       </div>
 
+      {payoutError && <p className="text-sm text-red-600" role="alert">{payoutError}</p>}
+
       {/* Tech Table */}
       {isLoading ? (
         <div className="text-center text-gray-500 py-8">Calculating payroll...</div>
@@ -173,9 +203,38 @@ export default function PayrollPage() {
                       <p className="text-lg font-bold text-green-600">{formatCurrency(tech.grossPay)}</p>
                       <p className="text-xs text-gray-400">gross pay</p>
                     </div>
+                    {payoutFor(tech.userId) ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
+                          Paid {new Date(payoutFor(tech.userId)!.paidAt).toLocaleDateString()}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs"
+                          disabled={undoPaid.isPending}
+                          onClick={() => {
+                            if (confirm(`Undo the paid mark for ${tech.name}?`)) undoPaid.mutate(payoutFor(tech.userId)!.id);
+                          }}
+                        >
+                          Undo
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={markPaid.isPending || tech.grossPay <= 0}
+                        onClick={() => {
+                          if (confirm(`Mark ${formatCurrency(tech.grossPay)} paid to ${tech.name} for ${startDate} to ${endDate}?`)) markPaid.mutate(tech);
+                        }}
+                      >
+                        Mark paid
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
+                      aria-label={`Pay rate for ${tech.name}`}
                       onClick={() => {
                         setRateDialog(tech);
                         setRateForm({ payType: tech.payType, rate: String(tech.rate) });
