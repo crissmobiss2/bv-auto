@@ -197,6 +197,13 @@ export default function DashboardInspectionPage() {
         </div>
       </div>
 
+      {sendMutation.isError && (
+        <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
+          {(axios.isAxiosError(sendMutation.error) && sendMutation.error.response?.data?.error) ||
+            "Could not send the inspection report."}
+        </p>
+      )}
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {(["CRITICAL", "NEEDS_ATTENTION", "FAIR", "GOOD"] as const).map((key) => (

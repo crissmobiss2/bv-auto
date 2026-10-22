@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError } from "@/lib/api-helpers";
+import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { sendInspectionEmail, emailConfigured } from "@/lib/email";
 import { getShopPhone } from "@/lib/shop";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -30,19 +31,23 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
   const phone = await getShopPhone();
   const html = generateInspectionHTML(job, checklist, phone);
 
-  // In production: send via Resend/email
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // await resend.emails.send({
-  //   from: "noreply@bvauto.com",
-  //   to: job.customer.email,
-  //   subject: `Vehicle Inspection Report — ${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`,
-  //   html,
-  // });
+  if (!job.customer.email) return apiError("Customer has no email address on file. Add one, or print the report instead.", 400);
+  if (!emailConfigured) return apiError("Email isn't set up (RESEND_API_KEY missing), so the report was not sent. Print it instead.", 503);
 
-  // For demo: return HTML as preview
-  return new NextResponse(html, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
+  try {
+    const res = await sendInspectionEmail({
+      to: job.customer.email,
+      customerName: `${job.customer.firstName} ${job.customer.lastName}`,
+      vehicleDescription: `${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`,
+      inspectionHtml: html,
+      jobId: id,
+    });
+    if (res && "error" in res && res.error) throw new Error(res.error.message);
+  } catch (e) {
+    return apiError(`Email failed: ${e instanceof Error ? e.message : "unknown error"}`, 502);
+  }
+
+  return apiSuccess({ sent: true, to: job.customer.email });
 }
 
 function generateInspectionHTML(
