@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Download, Send, DollarSign, Phone, Smartphone, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS, lineItemSalePrice } from "@/lib/utils";
 import { useState } from "react";
 import { CollectPaymentButton } from "@/components/collect-payment-button";
 
@@ -290,7 +290,7 @@ export default function InvoiceDetailPage() {
         <CardContent>
           <div className="space-y-2">
             {invoice.lineItems?.map((li: {
-              id: string; type: string; description: string; quantity: number; unitPrice: number; total: number; taxable: boolean;
+              id: string; type: string; description: string; quantity: number; unitPrice: number; markup?: number | null; total: number; taxable: boolean;
             }) => (
               <div key={li.id} className="flex items-center justify-between py-2 border-b last:border-0 text-sm">
                 <div>
@@ -299,7 +299,7 @@ export default function InvoiceDetailPage() {
                   {!li.taxable && <span className="text-xs text-gray-400 ml-1">(non-taxable)</span>}
                 </div>
                 <div className="text-right">
-                  <p className="text-gray-500 text-xs">{li.quantity} × {formatCurrency(li.unitPrice)}</p>
+                  <p className="text-gray-500 text-xs">{li.quantity} × {formatCurrency(lineItemSalePrice(Number(li.unitPrice), Number(li.markup)))}</p>
                   <p className="font-medium">{formatCurrency(li.total)}</p>
                 </div>
               </div>

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, Car, FileText } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, lineItemSalePrice } from "@/lib/utils";
 
 export default function ApproveQuotePage() {
   const { token } = useParams<{ token: string }>();
@@ -138,11 +138,11 @@ export default function ApproveQuotePage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {quote.lineItems?.map((li: { id: string; description: string; quantity: number; unitPrice: number; total: number; type: string; taxable: boolean }) => (
+            {quote.lineItems?.map((li: { id: string; description: string; quantity: number; unitPrice: number; markup?: number | null; total: number; type: string; taxable: boolean }) => (
               <div key={li.id} className="flex justify-between items-start text-sm border-b pb-2 last:border-0">
                 <div>
                   <p className="font-medium">{li.description}</p>
-                  <p className="text-xs text-gray-400">{li.type} · {li.quantity} × {formatCurrency(li.unitPrice)}</p>
+                  <p className="text-xs text-gray-400">{li.type} · {li.quantity} × {formatCurrency(lineItemSalePrice(Number(li.unitPrice), Number(li.markup)))}</p>
                 </div>
                 <p className="font-medium">{formatCurrency(li.total)}</p>
               </div>

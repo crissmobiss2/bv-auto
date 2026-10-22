@@ -65,6 +65,12 @@ export function generateInvoiceNumber(): string {
   return `INV-${year}${month}-${random}`;
 }
 
+// LineItem.unitPrice is stored before markup; this is the per-unit price the customer pays.
+export function lineItemSalePrice(unitPrice: number, markup?: number | null): number {
+  const price = markup ? unitPrice * (1 + markup / 100) : unitPrice;
+  return Math.round(price * 100) / 100;
+}
+
 export function calculateLineItemTotal(
   quantity: number,
   unitPrice: number,
