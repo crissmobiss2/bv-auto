@@ -13,6 +13,7 @@ export interface QueuedRequest {
 
 const KEY = "bv-offline-queue";
 const FLUSH_EVENT = "bv-offline-flushed";
+const NEVER_REPLAY = /\/inspection\/send$/;
 
 export function queueSize(): number {
   if (typeof window === "undefined") return 0;
@@ -52,6 +53,8 @@ export async function sendOrQueue(url: string, method: string, data?: unknown): 
 export async function flushQueue(): Promise<number> {
   let sent = 0;
   for (const req of readQueue()) {
+    // Emails must never fire late; older builds queued these offline.
+    if (NEVER_REPLAY.test(req.url)) { dequeue(req.id); continue; }
     try {
       const res = await fetch(req.url, {
         method: req.method,
