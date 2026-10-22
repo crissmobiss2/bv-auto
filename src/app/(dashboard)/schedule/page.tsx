@@ -147,6 +147,13 @@ export default function SchedulePage() {
 
             {days.map((day) => {
               const dayJobs = jobsForDay(day);
+              const lanes = layoutLanes(
+                dayJobs.map((j) => {
+                  const top = slotTop(j.scheduledAt!);
+                  // 32px min-height on a 600px grid is ~5.4%
+                  return { id: j.id, top, end: top + Math.max(slotHeight(j.estimatedHours), 4, 5.4) };
+                }),
+              );
               return (
                 <div key={day.toISOString()} className={`border-l relative ${isSameDay(day, today) ? "bg-blue-50/30" : ""}`}>
                   {HOURS.map((h) => (
@@ -155,11 +162,13 @@ export default function SchedulePage() {
                   {dayJobs.map((job) => (
                     <div
                       key={job.id}
-                      className={`absolute left-0.5 right-0.5 rounded text-xs p-1 overflow-hidden cursor-pointer hover:opacity-90 border group ${
+                      className={`absolute rounded text-xs p-1 overflow-hidden cursor-pointer hover:opacity-90 border group ${
                         JOB_STATUS_COLORS[job.status] || "bg-gray-100 text-gray-700 border-gray-200"
                       }`}
                       style={{
                         top: `${slotTop(job.scheduledAt!)}%`,
+                        left: `calc(${(lanes.get(job.id)!.lane * 100) / lanes.get(job.id)!.count}% + 2px)`,
+                        width: `calc(${100 / lanes.get(job.id)!.count}% - 4px)`,
                         height: `${Math.max(slotHeight(job.estimatedHours), 4)}%`,
                         minHeight: "32px",
                       }}
@@ -264,4 +273,27 @@ export default function SchedulePage() {
       </Dialog>
     </div>
   );
+}
+
+function layoutLanes(items: { id: string; top: number; end: number }[]) {
+  const out = new Map<string, { lane: number; count: number }>();
+  const sorted = [...items].sort((a, b) => a.top - b.top);
+  let cluster: { id: string; lane: number }[] = [];
+  let laneEnds: number[] = [];
+  let clusterEnd = -Infinity;
+  const flush = () => {
+    for (const c of cluster) out.set(c.id, { lane: c.lane, count: laneEnds.length });
+    cluster = [];
+    laneEnds = [];
+  };
+  for (const it of sorted) {
+    if (it.top >= clusterEnd) flush();
+    let lane = laneEnds.findIndex((end) => end <= it.top);
+    if (lane === -1) lane = laneEnds.push(it.end) - 1;
+    else laneEnds[lane] = it.end;
+    cluster.push({ id: it.id, lane });
+    clusterEnd = Math.max(clusterEnd, it.end);
+  }
+  flush();
+  return out;
 }
