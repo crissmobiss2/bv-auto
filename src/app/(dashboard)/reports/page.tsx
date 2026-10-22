@@ -20,7 +20,7 @@ export default function ReportsPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const rangeValid = !!from && !!to && from <= to;
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["reports", shopId, rangeValid ? from : "", rangeValid ? to : ""],
     queryFn: () => {
       const qs = new URLSearchParams();
@@ -30,7 +30,9 @@ export default function ReportsPage() {
       return axios.get(`/api/reports${q ? `?${q}` : ""}`).then((r) => r.data);
     },
     placeholderData: (prev) => prev,
+    retry: (n, e) => !(axios.isAxiosError(e) && e.response?.status === 403) && n < 3,
   });
+  const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
 
   const { data: shops } = useQuery<{ id: string; name: string }[]>({
     queryKey: ["shops"],
@@ -42,6 +44,7 @@ export default function ReportsPage() {
     queryFn: () => axios.get("/api/quotes/conversions").then((r) => r.data),
   });
 
+  if (forbidden) return <div role="alert" className="p-8 text-center text-gray-600">You don&apos;t have access to Reports. Ask an admin if you need it.</div>;
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading reports...</div>;
 
   const d = data || {};
