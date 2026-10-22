@@ -28,6 +28,8 @@ export default async function proxy(req: NextRequest) {
     pathname.startsWith("/api/booking") ||
     pathname.startsWith("/api/review") ||
     pathname.startsWith("/api/portal") ||
+    // portal photo thumbnails; the route validates ?t= against the customer's portal token
+    (pathname.startsWith("/api/photos/") && req.nextUrl.searchParams.has("t")) ||
     pathname.startsWith("/approve") ||
     pathname.startsWith("/portal") ||
     pathname.startsWith("/book") ||
