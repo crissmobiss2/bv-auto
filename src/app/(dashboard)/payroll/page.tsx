@@ -103,9 +103,11 @@ export default function PayrollPage() {
           <h1 className="text-2xl font-bold text-gray-900">Payroll Export</h1>
           <p className="text-sm text-gray-500">Calculate and export technician pay</p>
         </div>
-        <Button onClick={downloadCSV} className="gap-2">
-          <Download className="h-4 w-4" /> Export CSV
-        </Button>
+        {!forbidden && (
+          <Button onClick={downloadCSV} className="gap-2">
+            <Download className="h-4 w-4" /> Export CSV
+          </Button>
+        )}
       </div>
 
       {/* Date Range */}
