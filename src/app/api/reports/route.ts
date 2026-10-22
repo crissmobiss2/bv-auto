@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: Request) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const shopId = new URL(req.url).searchParams.get("shopId") || null;

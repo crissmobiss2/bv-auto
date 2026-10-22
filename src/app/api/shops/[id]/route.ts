@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireAuth, requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN"]);
   if (error) return error;
   const { id } = await params;
   const body = await req.json();
@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN"]);
   if (error) return error;
   const { id } = await params;
   await prisma.shop.update({ where: { id }, data: { isActive: false } });
