@@ -46,6 +46,11 @@ export function PartsTab({ job }: { job: { id: string; parts: Part[] } }) {
     queryFn: () => axios.get("/api/vendors").then((r) => r.data),
   });
 
+  const { data: shopSettings } = useQuery({
+    queryKey: ["shop-settings"],
+    queryFn: () => axios.get("/api/shops/settings").then((r) => r.data as { partsMarkup: number }),
+  });
+
   const addMutation = useMutation({
     mutationFn: () =>
       axios.post("/api/parts", {
@@ -166,7 +171,7 @@ export function PartsTab({ job }: { job: { id: string; parts: Part[] } }) {
             </div>
             <div className="space-y-2">
               <Label>Markup %</Label>
-              <Input type="number" min="0" value={form.markup} onChange={(e) => setForm({ ...form, markup: e.target.value })} />
+              <Input type="number" min="0" value={form.markup} placeholder={shopSettings ? `${shopSettings.partsMarkup} (shop default)` : undefined} onChange={(e) => setForm({ ...form, markup: e.target.value })} />
             </div>
             <div className="col-span-2 space-y-2">
               <Label>Vendor</Label>
