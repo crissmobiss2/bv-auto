@@ -15,6 +15,12 @@ export async function GET(req: NextRequest) {
   const in7 = new Date(now.getTime() + 7 * 86400000);
   const in30 = new Date(now.getTime() + 30 * 86400000);
 
+  // Warranties lapse by date; flip them so filters and counts agree.
+  await prisma.warranty.updateMany({
+    where: { status: WarrantyStatus.ACTIVE, expiryDate: { lt: now } },
+    data: { status: WarrantyStatus.EXPIRED },
+  });
+
   const where: Record<string, unknown> = {};
   if (customerId) where.customerId = customerId;
   if (filter === "active") where.status = WarrantyStatus.ACTIVE;
