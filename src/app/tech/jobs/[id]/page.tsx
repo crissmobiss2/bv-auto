@@ -96,12 +96,12 @@ export default function TechJobDetailPage() {
       <TechLocationTracker jobId={job.id} active={job.status === "IN_PROGRESS"} />
 
       {/* Status */}
-      <Select value={job.status} onValueChange={(v) => statusMutation.mutate(v)}>
+      <Select value={job.status} disabled={!TECH_STATUSES.includes(job.status)} onValueChange={(v) => statusMutation.mutate(v)}>
         <SelectTrigger className={`w-full font-medium ${JOB_STATUS_COLORS[job.status]}`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {TECH_STATUSES.map((s) => (
+          {(TECH_STATUSES.includes(job.status) ? TECH_STATUSES : [job.status, ...TECH_STATUSES]).map((s) => (
             <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
           ))}
         </SelectContent>
