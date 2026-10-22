@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
   if (filter === "expiring") where.expiryDate = { lte: in30, gte: now };
   if (filter === "expiring_soon") where.expiryDate = { lte: in7, gte: now };
   if (filter === "claimed") where.status = WarrantyStatus.CLAIMED;
+  if (filter === "expired") where.status = WarrantyStatus.EXPIRED;
 
   const warranties = await prisma.warranty.findMany({
     where,
