@@ -37,7 +37,13 @@ export async function GET(req: NextRequest) {
   const expiring30 = await prisma.warranty.count({ where: { status: WarrantyStatus.ACTIVE, expiryDate: { lte: in30, gte: now } } });
   const totalActive = await prisma.warranty.count({ where: { status: WarrantyStatus.ACTIVE } });
 
-  return apiSuccess({ warranties, stats: { totalActive, expiringSoon, expiring30 } });
+  const claimed = await prisma.warranty.count({ where: { status: WarrantyStatus.CLAIMED } });
+  const expired = await prisma.warranty.count({ where: { status: WarrantyStatus.EXPIRED } });
+
+  return apiSuccess({
+    warranties,
+    stats: { active: totalActive, totalActive, expiringSoon, expiring30, claimed, expired },
+  });
 }
 
 export async function POST(req: NextRequest) {
