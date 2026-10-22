@@ -1,0 +1,6 @@
+interface:
+  display_name: "Bv Auto"
+  short_description: "Repo-specific patterns and workflows for bv-auto"
+  default_prompt: "Use the bv-auto repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
