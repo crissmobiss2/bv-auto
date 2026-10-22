@@ -67,6 +67,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
+        token.checkedAt = Date.now();
+        return token;
+      }
+      if (token.id && Date.now() - ((token.checkedAt as number | undefined) ?? 0) > 60_000) {
+        const current = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, isActive: true },
+        });
+        if (!current?.isActive) return null;
+        token.role = current.role;
+        token.checkedAt = Date.now();
       }
       return token;
     },
