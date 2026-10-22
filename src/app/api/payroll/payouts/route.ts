@@ -43,10 +43,14 @@ export async function POST(req: NextRequest) {
 
   const periodStart = periodDate(start);
   const periodEnd = periodDate(end);
-  const existing = await prisma.payrollPayout.findUnique({
-    where: { userId_periodStart_periodEnd: { userId, periodStart, periodEnd } },
+  const overlap = await prisma.payrollPayout.findFirst({
+    where: { userId, periodStart: { lte: periodEnd }, periodEnd: { gte: periodStart } },
+    select: { periodStart: true, periodEnd: true },
   });
-  if (existing) return apiError("This period is already marked paid for this person", 409);
+  if (overlap) {
+    const d = (x: Date) => x.toISOString().slice(0, 10);
+    return apiError(`Already paid for ${d(overlap.periodStart)} to ${d(overlap.periodEnd)}, which overlaps this period`, 409);
+  }
 
   const payout = await prisma.payrollPayout.create({
     data: { userId, periodStart, periodEnd, hours, amount, note, paidById: session!.user.id },

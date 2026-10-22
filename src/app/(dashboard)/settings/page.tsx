@@ -23,7 +23,7 @@ export default async function SettingsPage() {
     <div className="max-w-4xl space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
 
-      <TeamMembers users={users} currentUserId={session.user.id} />
+      <TeamMembers users={users} currentUserId={session.user.id} canManage={session.user.role === "ADMIN"} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Business Information</CardTitle></CardHeader>

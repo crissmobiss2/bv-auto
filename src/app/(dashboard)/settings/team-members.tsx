@@ -19,7 +19,7 @@ function errorMessage(e: unknown, fallback: string) {
   return (axios.isAxiosError(e) && e.response?.data?.error) || fallback;
 }
 
-export function TeamMembers({ users, currentUserId }: { users: Member[]; currentUserId: string }) {
+export function TeamMembers({ users, currentUserId, canManage }: { users: Member[]; currentUserId: string; canManage: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +62,11 @@ export function TeamMembers({ users, currentUserId }: { users: Member[]; current
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Team Members</CardTitle>
-        <Button size="sm" className="gap-1" onClick={() => { setError(null); setInviteOpen(true); }}>
-          <UserPlus className="h-4 w-4" /> Add member
-        </Button>
+        {canManage && (
+          <Button size="sm" className="gap-1" onClick={() => { setError(null); setInviteOpen(true); }}>
+            <UserPlus className="h-4 w-4" /> Add member
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {error && <p className="mb-3 text-sm text-red-600" role="alert">{error}</p>}
@@ -80,7 +82,7 @@ export function TeamMembers({ users, currentUserId }: { users: Member[]; current
                 <div className="flex items-center gap-2">
                   <Select
                     value={u.role}
-                    disabled={isSelf || !u.isActive || busy === u.id}
+                    disabled={!canManage || isSelf || !u.isActive || busy === u.id}
                     onValueChange={(role) => update(u.id, { role })}
                   >
                     <SelectTrigger className="w-44 h-8 text-xs" aria-label={`Role for ${u.email}`}><SelectValue /></SelectTrigger>
@@ -88,7 +90,7 @@ export function TeamMembers({ users, currentUserId }: { users: Member[]; current
                       {ROLES.map((r) => <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  {!isSelf && (
+                  {canManage && !isSelf && (
                     <Button
                       size="sm"
                       variant="outline"

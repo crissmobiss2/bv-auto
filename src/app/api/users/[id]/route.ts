@@ -7,7 +7,7 @@ import { z } from "zod";
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
   phone: z.string().optional(),
-  role: z.nativeEnum(UserRole).optional(),
+  role: z.nativeEnum(UserRole).refine((r) => r !== "CUSTOMER", "Staff can't be converted to customer accounts").optional(),
   isActive: z.boolean().optional(),
 });
 
