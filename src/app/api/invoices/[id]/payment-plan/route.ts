@@ -90,13 +90,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!claimed.count) throw new PlanError("Installment already paid", 409);
 
       // Installments marked paid by older builds have no Payment row; record them once.
-      const notes = new Set(invoice.payments.map((p) => p.notes));
+      const unmatched = new Map<string, number>();
+      for (const p of invoice.payments) if (p.notes) unmatched.set(p.notes, (unmatched.get(p.notes) ?? 0) + 1);
       const legacy = await tx.paymentPlanInstallment.findMany({
         where: { invoiceId: id, status: "PAID", id: { not: installment.id } },
       });
       let priorPaid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
       for (const inst of legacy) {
-        if (notes.has(noteFor(inst.dueDate))) continue;
+        const note = noteFor(inst.dueDate);
+        const left = unmatched.get(note) ?? 0;
+        if (left > 0) {
+          unmatched.set(note, left - 1);
+          continue;
+        }
         const legacyAmount = Number(inst.paidAmount ?? inst.amount);
         await tx.payment.create({
           data: { invoiceId: id, amount: legacyAmount, method: PaymentMethod.OTHER, notes: noteFor(inst.dueDate) },
@@ -104,13 +110,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         priorPaid += legacyAmount;
       }
 
+      const settle = async (totalPaid: number) => {
+        const amountDue = Math.max(0, Math.round((Number(invoice.totalAmount) - totalPaid) * 100) / 100);
+        const status = amountDue <= 0 ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL;
+        const updated = await tx.invoice.update({
+          where: { id },
+          data: {
+            amountPaid: totalPaid,
+            amountDue,
+            status,
+            paidAt: status === InvoiceStatus.PAID ? new Date() : undefined,
+          },
+        });
+        if (status === InvoiceStatus.PAID) {
+          await tx.job.update({ where: { id: invoice.jobId }, data: { status: "PAID" } });
+        }
+        return updated;
+      };
+
       const remaining = Math.round((Number(invoice.totalAmount) - priorPaid) * 100) / 100;
-      if (remaining <= 0) throw new PlanError("Invoice is already paid in full", 409);
+      if (remaining <= 0) {
+        // Legacy payments already cover the invoice: keep the backfill, release this claim.
+        await tx.paymentPlanInstallment.update({
+          where: { id: installment.id },
+          data: { status: installment.status, paidAt: installment.paidAt },
+        });
+        await settle(priorPaid);
+        return { conflict: "Invoice is already paid in full" } as const;
+      }
 
       const amount = Math.min(Number(installment.amount), remaining);
-      const totalPaid = priorPaid + amount;
-      const amountDue = Math.max(0, Math.round((Number(invoice.totalAmount) - totalPaid) * 100) / 100);
-      const status = amountDue <= 0 ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL;
 
       const updatedInstallment = await tx.paymentPlanInstallment.update({
         where: { id: installment.id },
@@ -119,24 +148,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const payment = await tx.payment.create({
         data: { invoiceId: id, amount, method: parsed.data.method, notes: noteFor(installment.dueDate) },
       });
-      const updatedInvoice = await tx.invoice.update({
-        where: { id },
-        data: {
-          amountPaid: totalPaid,
-          amountDue,
-          status,
-          paidAt: status === InvoiceStatus.PAID ? new Date() : undefined,
-        },
-      });
-      if (status === InvoiceStatus.PAID) {
-        await tx.job.update({ where: { id: invoice.jobId }, data: { status: "PAID" } });
-      }
+      const updatedInvoice = await settle(priorPaid + amount);
       return { updatedInstallment, payment, updatedInvoice, amount };
     });
   } catch (e) {
     if (e instanceof PlanError) return apiError(e.message, e.status);
     throw e;
   }
+  if ("conflict" in result) return apiError(String(result.conflict), 409);
   const { updatedInstallment, payment, updatedInvoice, amount } = result;
 
   await logAudit(session!.user.id, AuditAction.PAYMENT, "Invoice", id, null, {
