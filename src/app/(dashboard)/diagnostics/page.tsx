@@ -577,7 +577,14 @@ function DiagnosticsPageInner() {
       const monitors = incompleteMonitors.split(",").map(s => s.trim()).filter(Boolean);
       if (monitors.length) p.set("monitors", monitors.join(","));
       const res = await axios.get(`/api/emissions-readiness?${p}`);
-      setEmissionsResult(res.data);
+      const req = res.data.stateRequirements as { hasTest: boolean; obd2Year: number; testType: string; notes: string } | null;
+      setEmissionsResult({
+        state: emissionsState,
+        requiresObd: !!req?.hasTest,
+        cutoffYear: req?.hasTest && req.obd2Year ? req.obd2Year : undefined,
+        notes: req ? `${req.testType}. ${req.notes}` : `No emissions rules on file for ${emissionsState}. Check the state DMV before testing.`,
+        analysis: res.data.analysis ?? undefined,
+      });
     } catch (e) {
       setEmissionsError(apiErrorMessage(e, "Could not retrieve emissions data."));
     }
