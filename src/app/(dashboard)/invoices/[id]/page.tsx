@@ -151,6 +151,7 @@ export default function InvoiceDetailPage() {
   const textToPayMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/text-to-pay`),
     onSuccess: () => setTextPaySent(true),
+    onError: (e) => alert(axios.isAxiosError(e) ? e.response?.data?.error ?? "Text-to-Pay failed" : "Text-to-Pay failed"),
   });
 
   const paymentMutation = useMutation({

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
-import { sendInvoiceSMS } from "@/lib/sms";
+import { sendInvoiceSMS, smsConfigured } from "@/lib/sms";
 import { createInvoiceCheckoutSession } from "@/lib/stripe";
 import { formatCurrency } from "@/lib/utils";
 import { NotificationType } from "@prisma/client";
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!invoice) return apiError("Invoice not found", 404);
   if (Number(invoice.amountDue) <= 0) return apiError("Invoice already paid");
   if (!invoice.customer.phone) return apiError("Customer has no phone number on file");
+  if (!smsConfigured) return apiError("SMS isn't configured (missing Twilio credentials), so the text was not sent", 503);
 
   let payUrl: string | null = invoice.stripePaymentUrl;
 
@@ -47,13 +48,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  await sendInvoiceSMS({
+  const sms = await sendInvoiceSMS({
     to: invoice.customer.phone,
     customerName: invoice.customer.firstName,
     invoiceNumber: invoice.invoiceNumber,
     amountDue: formatCurrency(Number(invoice.amountDue)),
     paymentUrl: payUrl || undefined,
   });
+
+  if (!sms) return apiError("Text was not sent", 502);
 
   await prisma.communication.create({
     data: {

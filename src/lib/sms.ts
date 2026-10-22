@@ -17,7 +17,7 @@ async function send(to: string, body: string) {
 
   if (!client) {
     console.log(`[SMS STUB] To: ${phone} | Body: ${body}`);
-    return { sid: "stub" };
+    return null;
   }
   return client.messages.create({ from: FROM, to: phone, body });
 }

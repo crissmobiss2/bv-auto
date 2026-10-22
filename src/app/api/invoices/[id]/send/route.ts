@@ -77,12 +77,13 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     }
   }
 
-  await prisma.invoice.update({
-    where: { id },
-    data: { status: "SENT", sentAt: new Date() },
-  });
-
-  await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Invoice", id, null, { emailSent, smsSent });
+  if (emailSent || smsSent) {
+    await prisma.invoice.update({
+      where: { id },
+      data: { status: invoice.status === "DRAFT" ? "SENT" : invoice.status, sentAt: new Date() },
+    });
+    await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Invoice", id, null, { emailSent, smsSent });
+  }
 
   return apiSuccess({
     emailSent,
