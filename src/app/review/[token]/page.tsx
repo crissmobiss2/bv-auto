@@ -1,6 +1,13 @@
-export default async function ReviewPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  const { status } = await searchParams;
-  const invalid = status === "invalid";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+export default async function ReviewPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const review = await prisma.reviewRequest
+    .findUnique({ where: { reviewToken: token }, select: { id: true } })
+    .catch(() => null);
+  const invalid = !review;
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="max-w-sm w-full bg-white rounded-2xl shadow p-8 text-center space-y-3">
