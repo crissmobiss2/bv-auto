@@ -32,9 +32,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cus
 
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
-    select: { phone: true },
+    select: { phone: true, smsOptOut: true },
   });
   if (!customer) return apiError("Customer not found", 404);
+  if (customer.smsOptOut) {
+    return apiError("This customer replied STOP. They must text START before you can message them.", 409);
+  }
 
   const FROM = process.env.TWILIO_PHONE_NUMBER || "";
   let twilioSid: string | null = null;

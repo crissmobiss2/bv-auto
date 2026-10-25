@@ -212,6 +212,10 @@ function FollowUpTab({ customerId, followUps }: {
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const _queryClient = useQueryClient();
+  const consentMutation = useMutation({
+    mutationFn: (data: { marketingOptOut?: boolean; smsOptOut?: true }) => axios.patch(`/api/customers/${id}`, data),
+    onSuccess: () => _queryClient.invalidateQueries({ queryKey: ["customer", id] }),
+  });
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
@@ -325,6 +329,28 @@ export default function CustomerDetailPage() {
                   </a>
                 </div>
               )}
+              <div className="space-y-1 border-t pt-3 text-xs">
+                {customer.smsOptOut ? (
+                  <p className="text-red-600">Texts blocked: customer replied STOP. They must text START to opt back in.</p>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-gray-500 underline"
+                    onClick={() => { if (confirm("Record that this customer asked not to be texted?")) consentMutation.mutate({ smsOptOut: true }); }}
+                  >
+                    Record SMS opt-out
+                  </button>
+                )}
+                <label className="flex items-center gap-2 text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={!!customer.marketingOptOut}
+                    disabled={consentMutation.isPending}
+                    onChange={(e) => consentMutation.mutate({ marketingOptOut: e.target.checked })}
+                  />
+                  Do not market (no campaigns, sequences or review requests)
+                </label>
+              </div>
               {customer.address && (
                 <div className="flex items-start gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />

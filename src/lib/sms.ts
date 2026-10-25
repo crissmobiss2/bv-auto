@@ -1,5 +1,6 @@
 import twilio from "twilio";
 import { getShopPhone } from "@/lib/shop";
+import { assertSmsAllowed } from "@/lib/consent";
 
 const client =
   process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
@@ -24,6 +25,7 @@ async function send(to: string, body: string) {
   if (!client || !FROM) {
     throw new Error("SMS is not configured (missing Twilio credentials or phone number)");
   }
+  await assertSmsAllowed(to);
   return client.messages.create({ from: FROM, to: phone, body });
 }
 
@@ -77,5 +79,13 @@ export async function sendPaymentReceivedSMS(opts: {
   return send(
     opts.to,
     `B&V Auto: Hi ${opts.customerName}, we received your payment of ${opts.amountPaid}. Thank you!`
+  );
+}
+
+export async function sendBookingConfirmationSMS(opts: { to: string; customerName: string; reference: string }) {
+  const phone = await getShopPhone();
+  return send(
+    opts.to,
+    `B&V Auto: Hi ${opts.customerName}, we received your booking request (${opts.reference}). We'll reach out shortly to confirm a time.${phone ? ` Questions? ${phone}` : ""} Reply STOP to opt out.`
   );
 }

@@ -52,6 +52,15 @@ This plan is ordered by risk and dependency, not by section number. Items marked
 | CRM-005 | Remove internal `unitCost` from customer export | `src/app/api/customer/export/route.ts` | Type-check |
 | DATA-008/PLAT-010 | Sign-out clears cache (queue scoping remains OPEN) | `src/lib/sign-out.ts` | Type-check |
 
+## Status updates — communications consent and booking (branch `devin/*-comms-consent`)
+
+Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
+
+- **COMM-008**: the Twilio webhook parses STOP/STOPALL/UNSUBSCRIBE/CANCEL/END/QUIT (opt out), START/UNSTOP/YES (opt back in) and HELP/INFO (TwiML help reply). Consent is stored on every customer sharing that number (`Customer.smsOptOut`, `smsOptOutAt`). `lib/sms.ts send()` and the staff text box refuse to text an opted-out number. Staff can record an opt-out but cannot clear one; only the customer's START does that.
+- **COMM-011**: new `Customer.marketingOptOut` ("Do not market" on the customer page). Campaign audiences (`marketableSms`), SMS sequences, review-request SMS/email and maintenance-reminder SMS all skip opted-out customers.
+- **PORT-011 / FLOW-003**: a public booking now sends a confirmation SMS and/or email (best-effort, so a provider failure never loses the booking), creates an in-app notification plus a push for ADMIN/DISPATCHER/SERVICE_ADVISOR users, and shows the customer a `BR-XXXXXX` reference.
+- Not exercised against live Twilio/Resend (no keys in this environment).
+
 ## Phase 1 — P1 workflow/data integrity (OPEN)
 | ID | Fix | Why now | Effort | Files |
 |---|---|---|---|---|

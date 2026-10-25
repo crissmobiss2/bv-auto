@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     include: {
       vehicle: {
         include: {
-          customer: { select: { id: true, email: true, phone: true, firstName: true, lastName: true } },
+          customer: { select: { id: true, email: true, phone: true, firstName: true, lastName: true, smsOptOut: true, marketingOptOut: true } },
         },
       },
     },
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     // Only notify when the follow-up is newly created; otherwise every weekly
     // cron run would re-text the same customer about the same interval.
-    if (created && customer.phone && smsConfigured) {
+    if (created && customer.phone && smsConfigured && !customer.smsOptOut && !customer.marketingOptOut) {
       try {
         const twilio = (await import("twilio")).default;
         const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
