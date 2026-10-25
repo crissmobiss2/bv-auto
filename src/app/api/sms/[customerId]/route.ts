@@ -39,7 +39,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cus
   const FROM = process.env.TWILIO_PHONE_NUMBER || "";
   let twilioSid: string | null = null;
 
-  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && FROM) {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !FROM) {
+    return apiError("SMS isn't configured (Twilio credentials missing). Message not sent.", 503);
+  }
+  {
     try {
       const twilio = (await import("twilio")).default;
       const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -51,6 +54,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cus
       twilioSid = msg.sid;
     } catch (e) {
       console.error("Twilio send error:", e);
+      return apiError("Text failed to send. Check the phone number and try again.", 502);
     }
   }
 

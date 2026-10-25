@@ -98,4 +98,39 @@ describe("Stripe webhook handler", () => {
     expect(body.received).toBe(true);
     expect(prisma.$transaction).toHaveBeenCalled();
   });
+
+  it("ignores a duplicate delivery of an already-recorded payment", async () => {
+    process.env.STRIPE_WEBHOOK_SECRET = "test-secret";
+
+    const { stripe } = await import("@/lib/stripe");
+    (stripe!.webhooks.constructEvent as ReturnType<typeof vi.fn>).mockReturnValue({
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_test_123",
+          payment_status: "paid",
+          metadata: { invoiceId: "inv-123" },
+          amount_total: 29900,
+          payment_intent: "pi_test",
+        },
+      },
+    });
+    (prisma.payment.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "pay-1" });
+    (prisma.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    (prisma.payment.create as ReturnType<typeof vi.fn>).mockClear();
+
+    const { POST } = await import("@/app/api/stripe/webhook/route");
+    const req = new Request("http://localhost/api/stripe/webhook", {
+      method: "POST",
+      body: "{}",
+      headers: { "stripe-signature": "valid-sig", "Content-Type": "text/plain" },
+    });
+
+    const res = await POST(req as never);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.duplicate).toBe(true);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.payment.create).not.toHaveBeenCalled();
+  });
 });

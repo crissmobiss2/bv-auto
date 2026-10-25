@@ -1,3 +1,4 @@
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
@@ -5,10 +6,7 @@ import { emailConfigured, escapeHtml } from "@/lib/email";
 import { smsConfigured } from "@/lib/sms";
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-    return apiError("Unauthorized", 401);
-  }
+  if (!isCronAuthorized(req)) return apiError("Unauthorized", 401);
 
   if (!emailConfigured && !smsConfigured) {
     return apiError("Neither email nor SMS is configured; review requests were not sent", 503);

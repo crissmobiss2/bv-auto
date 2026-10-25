@@ -42,7 +42,7 @@
 - **Reproduce / verify:** Send the same `checkout.session.completed` twice, or pay a partial amount.
 - **Recommended fix:** Only process `payment_status === "paid"`; dedupe by `payment_intent`/session ID; record inside a serializable transaction; compute `amountDue` and set `PAID`/`PARTIAL` from the actual balance.
 - **Effort:** M
-- **Confidence:** Confirmed — fixed in this pass.
+- **Confidence:** Confirmed — fixed in this pass at application level. The webhook skips unpaid sessions, dedupes on PaymentIntent (or session id) stored in `Payment.reference`, re-checks inside a Serializable transaction, and sets `PAID`/`PARTIAL` from the recomputed balance. There is still no database unique constraint on the external ID (DATA-006). Not exercised against live Stripe.
 
 ### [BILL-002] Manual payment accepted overpayment and arbitrary fields
 - **Severity:** P1
@@ -220,6 +220,6 @@
 - Refund/reporting: `08-reports-payroll-accounting.md` / FIN-004.
 
 ## Verification commands / limitations
-- `npm run type-check`, `npm run lint`, `npm test -- --run` — clean (10 tests, including Stripe webhook).
+- `npm run type-check`, `npm run lint`, `npm test -- --run` — clean on the merged tree (4 files / 14 tests, including the Stripe webhook test).
 - Stripe webhook end-to-end cannot be verified without `STRIPE_SECRET_KEY` and a webhook signing secret.
 - No refund/void runtime test exists because the workflow is not implemented.

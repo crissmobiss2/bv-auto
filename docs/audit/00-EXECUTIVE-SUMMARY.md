@@ -4,11 +4,17 @@
 - **Scope:** B&V Mobile Auto Next.js app at `C:\Users\christopher\Documents\bv-auto`.
 - **Surface:** ~29,900 LOC, 134 API routes, 56 pages, 48 Prisma models, PWA service worker, Capacitor Android shell, Electron desktop shell.
 - **Method:** Static code review of every route/page/lib in the 14 section scopes, authorization-matrix scan, money/communication flow tracing, schema/query review, and local verification. No production data was touched.
-- **Baseline before fixes:** type-check, lint, 10 tests, and production build were clean.
-- **After fixes:** type-check, lint, 10 tests, and production build are clean.
+- **Baseline before fixes:** type-check, lint, 10 tests (3 files), and production build were clean on the original audit base `fb5d22b`.
+- **After fixes:** the audit tree was merged onto current `master` (`5a99eb3`, 76 newer commits). On the merged tree, type-check, lint, 14 tests (4 files), and production build are clean.
 
 ## Overall verdict
 **Ship with fixes for the current single-shop deployment. Do not onboard a second shop until tenant scoping is implemented.** The app’s core workflows are real and usable, and the highest-risk issues — customer account takeover, staff-API exposure to customers/technicians, duplicate Stripe payments, overpayment, fake send success, PDF XSS, and cross-technician job access — are fixed in this pass. The remaining risks are architectural (tenant isolation, durable rate limits, migrations), workflow completeness (refunds, deposits, inventory receiving, booking notifications), and mobile input/feedback quality.
+
+## Integration with master (2026-10-25)
+The audit was run on `fb5d22b`. Before committing, it was merged onto `master`, which already had ~40 later fix PRs. 20 files conflicted. They were resolved so both sides are kept:
+- **Kept from master:** the shared `isCronAuthorized` helper (`src/lib/cron-auth.ts`), the transactional payment-plan "mark paid" flow (row lock, `Payment` rows, invoice reconciliation, legacy backfill), portal photo token links (`/api/photos/*?t=`), the `/reset` page, the review-link redirect page, and the quote delivery statuses (`emailStatus`/`smsStatus`).
+- **Kept from the audit:** proxy default-deny role rules, fail-closed email/SMS (no fake send success, no fake Twilio number), Twilio webhook signature required, Stripe webhook dedupe and balance-based `PAID`/`PARTIAL`, HTML escaping, payroll CSV formula neutralization, collected-cash reporting, and the other route fixes listed in each section.
+- **Code state:** every "fixed" claim below refers to code in this commit on `master`, not to an uncommitted tree.
 
 ## Finding counts
 | Severity | Count | Fixed in this pass | Open |
@@ -36,7 +42,7 @@ Counts are derived from the 14 reports; “fixed” means code changed and type-
 | 10 | Database & data | D+ | Do not multi-tenant yet | No `shopId`, no migrations |
 | 11 | Platform & infra | B- | Ship with fixes | CI branch mismatch, APK signing |
 | 12 | UX & accessibility | C+ | Ship with fixes | Input modes, error feedback |
-| 13 | Quality & testing | C+ | Ship with fixes | Only 10 tests for 134 routes |
+| 13 | Quality & testing | C+ | Ship with fixes | Only 14 tests for 134 routes |
 | 14 | End-to-end workflow | B- | Ship with fixes | Deposits, refunds, cancellations |
 
 ## Top risks fixed in this pass
@@ -65,13 +71,13 @@ Counts are derived from the 14 reports; “fixed” means code changed and type-
 6. **CI does not run on `master`; production uses `migrate deploy` with no migrations** — release/schema risk (`PLAT-003`, `PLAT-004`).
 7. **Booking has no customer confirmation or staff alert** — leads can go stale (`PORT-011`, `FLOW-003`).
 8. **No deposits** — deposit fields are decorative (`BILL-013`, `FLOW-006`).
-9. **Only 10 tests for 134 routes** — authz/money regressions are unprotected (`QUAL-001`–`QUAL-003`).
+9. **Only 14 tests for 134 routes** — authz/money regressions are unprotected (`QUAL-001`–`QUAL-003`).
 10. **Mobile input ergonomics** — 39 number inputs, 0 `inputMode="decimal"`; inconsistent autocaps/autocorrect (`UX-002`, `UX-003`).
 11. **APK is debug-signed** — in-place updates fail; requires release keystore (`PLAT-007`).
 12. **Stripe session reuse can return an expired checkout** (`BILL-008`).
 
 ## Runtime blockers / what could not be proven
-- **Production `db:push`** is blocked: `.env` points at local Docker Postgres (`bvauto-pg`, port 5433); no Neon `DATABASE_URL`.
+- **Production schema:** the audit adds no Prisma schema changes. On 2026-10-25, `prisma migrate diff` against Neon was empty and `npx prisma db push` reported "already in sync", so no tables or columns were created.
 - **Email/SMS/Stripe/AI/parts integrations** are unset in this environment: `RESEND_API_KEY`, `TWILIO_*`, `STRIPE_*`, `ANTHROPIC_API_KEY`, `PARTSTECH_*`. All such findings are marked `Unverified — needs runtime` where behavior depends on them.
 - **Subagent workspaces** could not be launched because the configured OpenRouter key is exhausted (`$10.00 of $10.00 used; does not reset`). The audit and fixes were performed directly in the parent session; the section reports and fix plan are still structured as independent lanes so they can be handed to subagents later.
 - **APK** cannot silently overwrite the installed app because the signing key differs; one-time uninstall/reinstall is required.
@@ -83,10 +89,10 @@ Counts are derived from the 14 reports; “fixed” means code changed and type-
 | Prisma schema | `npx prisma validate` | Pass |
 | TypeScript | `npm run type-check` | Pass |
 | ESLint | `npm run lint` | Pass |
-| Unit tests | `npm test -- --run` | 3 files / 10 tests pass |
+| Unit tests | `npm test -- --run` | 4 files / 14 tests pass (merged tree) |
 | Production build | `npm run build` | Pass, 130 static pages |
 | Local DB | Docker `bvauto-pg`, port 5433 | Running during audit |
-| Production DB | Neon | Not configured |
+| Production DB | Neon `prisma db push` | Already in sync; no changes |
 
 ## Mobile verification (390×844)
 | Page | Result | Evidence |

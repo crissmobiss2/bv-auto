@@ -23,8 +23,6 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
 
   const reviewUrl = `${BASE_URL}/api/review/${request.reviewToken}`;
 
-  const defaultReviewUrl = process.env.GOOGLE_REVIEW_URL || reviewUrl;
-
   if (!job.customer.phone) {
     return apiError("Customer has no phone number on file", 400);
   }
@@ -32,10 +30,11 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     return apiError("SMS is not configured (missing Twilio credentials or phone number)", 503);
   }
 
+  let smsSent = false;
   try {
     const twilio = (await import("twilio")).default;
     const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
-    const body = `Hi ${job.customer.firstName}, thank you for choosing B&V Auto! If you had a great experience, a quick Google review means the world to us: ${defaultReviewUrl}`;
+    const body = `Hi ${job.customer.firstName}, thank you for choosing B&V Auto! If you had a great experience, a quick Google review means the world to us: ${reviewUrl}`;
     await client.messages.create({
       body,
       from: process.env.TWILIO_PHONE_NUMBER!,
@@ -50,14 +49,17 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
         toNumber: job.customer.phone,
       },
     });
+    smsSent = true;
   } catch (e) {
     return apiError(e instanceof Error ? e.message : "Review SMS failed to send", 502);
   }
 
-  await prisma.reviewRequest.update({
-    where: { id: request.id },
-    data: { sentAt: new Date() },
-  });
+  if (smsSent) {
+    await prisma.reviewRequest.update({
+      where: { id: request.id },
+      data: { sentAt: new Date() },
+    });
+  }
 
-  return apiSuccess({ sent: true, smsSent: true, reviewUrl });
+  return apiSuccess({ sent: smsSent, smsSent, reviewUrl });
 }

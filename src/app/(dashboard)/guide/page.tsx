@@ -288,7 +288,7 @@ export default function GuidePage() {
             {FIRST_WEEK.map((item, i) => (
               <li key={i} className="flex items-start gap-3 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-700"><Badge variant="secondary" className="mr-2 text-xs">{item.day}</Badge>{item.text}</span>
+                <div className="text-gray-700"><Badge variant="secondary" className="mr-2 text-xs">{item.day}</Badge>{item.text}</div>
               </li>
             ))}
           </ol>
@@ -327,10 +327,10 @@ export default function GuidePage() {
       <Card>
         <CardHeader><CardTitle className="text-base">Customer-facing links</CardTitle></CardHeader>
         <CardContent className="text-sm text-gray-600 space-y-2">
-          <p><Badge variant="secondary">/book</Badge> — public booking form. Share it anywhere; requests land in Service Requests.</p>
-          <p><Badge variant="secondary">/portal/[token]</Badge> — customer portal link per customer: history, invoices, approvals, messaging.</p>
-          <p><Badge variant="secondary">/track/[jobId]</Badge> — live job tracking the customer can watch.</p>
-          <p><Badge variant="secondary">/approve/[token]</Badge> — quote approval page sent with estimates.</p>
+          <div><Badge variant="secondary">/book</Badge> — public booking form. Share it anywhere; requests land in Service Requests.</div>
+          <div><Badge variant="secondary">/portal/[token]</Badge> — customer portal link per customer: history, invoices, approvals, messaging.</div>
+          <div><Badge variant="secondary">/track/[jobId]</Badge> — live job tracking the customer can watch.</div>
+          <div><Badge variant="secondary">/approve/[token]</Badge> — quote approval page sent with estimates.</div>
         </CardContent>
       </Card>
     </div>

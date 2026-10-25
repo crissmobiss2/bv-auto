@@ -82,11 +82,18 @@ export async function GET(req: Request) {
         },
       },
     }),
-    // For gross profit calculation — get paid invoices with parts cost
+    // Gross profit uses collected cash: any invoice with money received,
+    // including partially paid and overdue-with-partial-payment invoices.
     prisma.invoice.findMany({
-      where: { status: { in: ["PAID", "PARTIAL"] }, updatedAt: { gte: start30 }, ...invScope },
+      where: {
+        status: { in: ["PAID", "PARTIAL", "OVERDUE"] },
+        amountPaid: { gt: 0 },
+        updatedAt: { gte: start30 },
+        ...invScope,
+      },
       select: {
         amountPaid: true,
+        totalAmount: true,
         job: { select: { parts: { select: { totalCost: true } } } },
       },
     }),
@@ -147,8 +154,12 @@ export async function GET(req: Request) {
     (acc, inv) => {
       // Collected revenue, not invoiced total: a partial payment must not be
       // reported as if the whole invoice was paid.
+      // Parts cost is matched to the collected share so a 50% payment carries 50% of COGS.
       const revenue = Number(inv.amountPaid);
-      const cogs = (inv.job?.parts || []).reduce((s, p) => s + (p.totalCost ? Number(p.totalCost) : 0), 0);
+      const total = Number(inv.totalAmount);
+      const collectedShare = total > 0 ? Math.min(revenue / total, 1) : 1;
+      const partsCost = (inv.job?.parts || []).reduce((s, p) => s + (p.totalCost ? Number(p.totalCost) : 0), 0);
+      const cogs = partsCost * collectedShare;
       acc.revenue += revenue;
       acc.cogs += cogs;
       return acc;
@@ -174,7 +185,10 @@ export async function GET(req: Request) {
     count: li._count.id,
   })).sort((a, b) => b.revenue - a.revenue);
 
+  const range = await customRange(new URL(req.url).searchParams, payScope, jobScope, invScope);
+
   return apiSuccess({
+    range,
     revenueByMonth,
     summary: {
       revenue30: Number(revenue30._sum.amount ?? 0),
@@ -197,4 +211,44 @@ export async function GET(req: Request) {
     techScores,
     gpByType,
   });
+}
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+// Optional ?from=YYYY-MM-DD&to=YYYY-MM-DD totals (local days, inclusive).
+async function customRange(
+  params: URLSearchParams,
+  payScope: object,
+  jobScope: object,
+  invScope: object,
+) {
+  const fromParam = params.get("from");
+  const toParam = params.get("to");
+  if (!fromParam || !toParam || !DATE_ONLY.test(fromParam) || !DATE_ONLY.test(toParam)) return null;
+  const from = new Date(`${fromParam}T00:00:00`);
+  const to = new Date(`${toParam}T23:59:59.999`);
+  if (from > to) return null;
+
+  const [revenue, paymentCount, jobsCompleted, invoices, newCustomers] = await Promise.all([
+    prisma.payment.aggregate({ where: { receivedAt: { gte: from, lte: to }, ...payScope }, _sum: { amount: true } }),
+    prisma.payment.count({ where: { receivedAt: { gte: from, lte: to }, ...payScope } }),
+    prisma.job.count({ where: { status: { in: ["COMPLETED", "PAID"] }, completedAt: { gte: from, lte: to }, ...jobScope } }),
+    prisma.invoice.aggregate({
+      where: { createdAt: { gte: from, lte: to }, status: { not: "VOID" }, ...invScope },
+      _sum: { totalAmount: true },
+      _count: { id: true },
+    }),
+    prisma.customer.count({ where: { createdAt: { gte: from, lte: to } } }),
+  ]);
+
+  return {
+    from: fromParam,
+    to: toParam,
+    revenue: Number(revenue._sum.amount ?? 0),
+    paymentCount,
+    jobsCompleted,
+    invoicesIssued: invoices._count.id,
+    invoicedTotal: Number(invoices._sum.totalAmount ?? 0),
+    newCustomers,
+  };
 }

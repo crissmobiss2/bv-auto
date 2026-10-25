@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Download, Send, DollarSign, Phone, Smartphone, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS, lineItemSalePrice } from "@/lib/utils";
 import { useState } from "react";
 import { CollectPaymentButton } from "@/components/collect-payment-button";
 
@@ -45,9 +45,13 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
   });
 
   const markPaidMutation = useMutation({
-    mutationFn: ({ installmentId, paidAmount }: { installmentId: string; paidAmount: number }) =>
-      axios.patch(`/api/invoices/${invoiceId}/payment-plan`, { installmentId, paidAmount }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payment-plan", invoiceId] }),
+    mutationFn: ({ installmentId }: { installmentId: string }) =>
+      axios.patch(`/api/invoices/${invoiceId}/payment-plan`, { installmentId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payment-plan", invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+    },
+    onError: (e) => alert((axios.isAxiosError(e) && e.response?.data?.error) || "Could not record installment payment"),
   });
 
   if (!show && (!plan || plan.length === 0)) {
@@ -109,7 +113,8 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
             </div>
             {inst.status !== "PAID" && (
               <Button size="sm" variant="outline" className="h-7 text-xs"
-                onClick={() => markPaidMutation.mutate({ installmentId: inst.id, paidAmount: inst.amount })}>
+                disabled={markPaidMutation.isPending}
+                onClick={() => markPaidMutation.mutate({ installmentId: inst.id })}>
                 Mark Paid
               </Button>
             )}
@@ -151,12 +156,7 @@ export default function InvoiceDetailPage() {
   const textToPayMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/text-to-pay`),
     onSuccess: () => setTextPaySent(true),
-    onError: (err: unknown) => {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        "Text-to-pay was not sent. Check Stripe and Twilio configuration.";
-      alert(message);
-    },
+    onError: (e) => alert(axios.isAxiosError(e) ? e.response?.data?.error ?? "Text-to-Pay failed" : "Text-to-Pay failed"),
   });
 
   const paymentMutation = useMutation({
@@ -296,7 +296,7 @@ export default function InvoiceDetailPage() {
         <CardContent>
           <div className="space-y-2">
             {invoice.lineItems?.map((li: {
-              id: string; type: string; description: string; quantity: number; unitPrice: number; total: number; taxable: boolean;
+              id: string; type: string; description: string; quantity: number; unitPrice: number; markup?: number | null; total: number; taxable: boolean;
             }) => (
               <div key={li.id} className="flex items-center justify-between py-2 border-b last:border-0 text-sm">
                 <div>
@@ -305,7 +305,7 @@ export default function InvoiceDetailPage() {
                   {!li.taxable && <span className="text-xs text-gray-400 ml-1">(non-taxable)</span>}
                 </div>
                 <div className="text-right">
-                  <p className="text-gray-500 text-xs">{li.quantity} × {formatCurrency(li.unitPrice)}</p>
+                  <p className="text-gray-500 text-xs">{li.quantity} × {formatCurrency(lineItemSalePrice(Number(li.unitPrice), Number(li.markup)))}</p>
                   <p className="font-medium">{formatCurrency(li.total)}</p>
                 </div>
               </div>

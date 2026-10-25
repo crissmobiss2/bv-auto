@@ -188,6 +188,14 @@ interface AdasResult {
   vehicle: string; systems: string[]; event: string;
   calibrations: { system: string; type: string; requirements: string[]; procedure: string; notes: string }[];
 }
+interface AdasApiResponse {
+  vehicle: string;
+  fromDatabase?: { features?: string[] };
+  detailed?: {
+    systems?: { name: string; sensor?: string; calibrationType?: string; requiredAfter?: string[]; procedure?: string; specialEquipment?: string[]; estimatedTime?: string; notes?: string }[];
+  } | null;
+  error?: string;
+}
 interface EmissionsResult {
   state: string; requiresObd: boolean; cutoffYear?: number; exemptMileage?: number;
   notes?: string; analysisRequired?: boolean;
@@ -446,7 +454,7 @@ function DiagnosticsPageInner() {
 
   const freezeMutation = useMutation({
     mutationFn: () => axios.post("/api/freeze-frame", {
-      data: freezeData,
+      freezeFrameData: freezeData,
       year: freezeVehicle.year, make: freezeVehicle.make, model: freezeVehicle.model,
     }).then(r => r.data),
     onSuccess: d => setFreezeResult(d),
@@ -533,9 +541,27 @@ function DiagnosticsPageInner() {
       if (adasVehicle.model) p.set("model", adasVehicle.model);
       if (adasVehicle.year) p.set("year", adasVehicle.year);
       const res = await axios.get(`/api/adas-calibration?${p}`);
-      setAdasResult(res.data);
-    } catch {
-      setAdasError("Could not load ADAS calibration data. Check API key and vehicle info.");
+      const d = res.data as AdasApiResponse;
+      const systems = d.detailed?.systems ?? [];
+      setAdasResult({
+        vehicle: d.vehicle,
+        event: adasEvent,
+        systems: systems.length ? systems.map(s => s.name) : d.fromDatabase?.features ?? [],
+        calibrations: systems.map(s => ({
+          system: s.name,
+          type: s.calibrationType ?? "",
+          requirements: [
+            ...(s.requiredAfter ?? []).map(r => `Required after ${r}`),
+            ...(s.specialEquipment ?? []).map(x => `Equipment: ${x}`),
+            ...(s.estimatedTime ? [`Estimated time: ${s.estimatedTime}`] : []),
+          ],
+          procedure: s.procedure ?? "",
+          notes: [s.sensor && `Sensor: ${s.sensor}`, s.notes].filter(Boolean).join(" · "),
+        })),
+      });
+      if (!d.detailed) setAdasError(`${d.error ?? "AI detail unavailable"}. Showing saved vehicle data only.`);
+    } catch (e) {
+      setAdasError(apiErrorMessage(e, "Could not load ADAS calibration data."));
     }
     setAdasLoading(false);
   }
@@ -544,15 +570,23 @@ function DiagnosticsPageInner() {
     if (!emissionsState) return;
     setEmissionsLoading(true); setEmissionsError(""); setEmissionsResult(null);
     try {
-      const body: Record<string, unknown> = { state: emissionsState };
-      if (emissionsVehicle.year) body.year = Number(emissionsVehicle.year);
-      if (emissionsVehicle.make) body.make = emissionsVehicle.make;
-      if (emissionsVehicle.model) body.model = emissionsVehicle.model;
-      if (incompleteMonitors.trim()) body.incompleteMonitors = incompleteMonitors.split(",").map(s => s.trim()).filter(Boolean);
-      const res = await axios.post("/api/emissions-readiness", body);
-      setEmissionsResult(res.data);
-    } catch {
-      setEmissionsError("Could not retrieve emissions data.");
+      const p = new URLSearchParams({ state: emissionsState });
+      if (emissionsVehicle.year) p.set("year", emissionsVehicle.year);
+      if (emissionsVehicle.make) p.set("make", emissionsVehicle.make);
+      if (emissionsVehicle.model) p.set("model", emissionsVehicle.model);
+      const monitors = incompleteMonitors.split(",").map(s => s.trim()).filter(Boolean);
+      if (monitors.length) p.set("monitors", monitors.join(","));
+      const res = await axios.get(`/api/emissions-readiness?${p}`);
+      const req = res.data.stateRequirements as { hasTest: boolean; obd2Year: number; testType: string; notes: string } | null;
+      setEmissionsResult({
+        state: emissionsState,
+        requiresObd: !!req?.hasTest,
+        cutoffYear: req?.hasTest && req.obd2Year ? req.obd2Year : undefined,
+        notes: req ? `${req.testType}. ${req.notes}` : `No emissions rules on file for ${emissionsState}. Check the state DMV before testing.`,
+        analysis: res.data.analysis ?? undefined,
+      });
+    } catch (e) {
+      setEmissionsError(apiErrorMessage(e, "Could not retrieve emissions data."));
     }
     setEmissionsLoading(false);
   }
@@ -1058,7 +1092,7 @@ function DiagnosticsPageInner() {
                 <Button className="w-full" onClick={() => freezeMutation.mutate()} disabled={!freezeData.trim() || freezeMutation.isPending}>
                   {freezeMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Interpreting...</> : <><Brain className="h-4 w-4 mr-2" /> Interpret Freeze Frame</>}
                 </Button>
-                {freezeMutation.isError && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">Failed to interpret. Check API key.</p>}
+                {freezeMutation.isError && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{apiErrorMessage(freezeMutation.error, "Failed to interpret freeze frame.")}</p>}
               </CardContent>
             </Card>
           </div>
@@ -1461,6 +1495,9 @@ function DiagnosticsPageInner() {
             </CardContent>
           </Card>
 
+          {maintQuery.isError && !maintQuery.isFetching && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{apiErrorMessage(maintQuery.error, "Could not generate maintenance schedule.")}</p>
+          )}
           {maintQuery.isFetching && (
             <div className="p-8 text-center text-purple-600"><Loader2 className="h-8 w-8 mx-auto animate-spin mb-2" /><p>Building maintenance schedule...</p></div>
           )}
@@ -1790,6 +1827,10 @@ function DiagnosticsPageInner() {
       )}
     </div>
   );
+}
+
+function apiErrorMessage(e: unknown, fallback: string): string {
+  return (axios.isAxiosError(e) && e.response?.data?.error) || fallback;
 }
 
 export default function DiagnosticsPage() {

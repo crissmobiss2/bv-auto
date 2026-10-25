@@ -71,7 +71,7 @@
 - **Reproduce / verify:** Create a $1,000 invoice with a $100 payment and compare `/dashboard` to `/reports`.
 - **Recommended fix:** Define one revenue source of truth (payments received, minus refunds) and use it everywhere; show invoiced vs collected separately.
 - **Effort:** M
-- **Confidence:** Confirmed — fixed in this pass for summary, top-customer, technician, and gross-profit totals (collected `amountPaid`). Refund-aware reporting remains open under FIN-009.
+- **Confidence:** Confirmed — fixed in this pass for top-customer, technician, and gross-profit totals. These now use collected `amountPaid`. Gross profit covers any invoice with money received in the window (`PAID`, `PARTIAL`, or `OVERDUE` with `amountPaid > 0`), and parts cost is prorated to the collected share. Deliberately unchanged: `avgJobValue` stays the average total of fully `PAID` invoices, and the labor/parts revenue mix still uses `PAID` invoices only. Refund-aware reporting remains open under FIN-009.
 
 ### [FIN-005] Report `shopId` is client-controlled
 - **Severity:** P2

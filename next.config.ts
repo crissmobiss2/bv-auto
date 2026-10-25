@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "recharts", "@radix-ui/react-dialog"],
   },
 
+  async rewrites() {
+    return [{ source: "/offline", destination: "/offline.html" }];
+  },
+
   async headers() {
     return [
       {

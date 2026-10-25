@@ -1,11 +1,11 @@
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { smsConfigured } from "@/lib/sms";
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(req)) {
     return new Response("Unauthorized", { status: 401 });
   }
   if (!smsConfigured) {

@@ -113,7 +113,7 @@
 - **Impact:** Production may be running an older schema.
 - **Recommended fix:** Add the Neon pooled/unpooled URLs, run a reviewed migration, and verify the schema.
 - **Effort:** S
-- **Confidence:** Confirmed.
+- **Confidence:** Resolved 2026-10-25. Production Neon was checked with the direct (unpooled) URL: `migrate diff` was empty and `prisma db push` reported "already in sync". The local `.env` was not committed. The migration-history gap (PLAT-004) remains.
 
 ### [PLAT-009] Sentry is configured but runtime DSN is unverified
 - **Severity:** P2
@@ -181,5 +181,5 @@
 ## Verification commands / limitations
 - `npm run build` — clean (130 static pages generated).
 - `npm run type-check`, `npm run lint`, `npm test -- --run` — clean.
-- APK signing and production `db:push` are blocked by missing credentials/keystore.
+- APK signing is blocked by the missing release keystore. Production schema is verified in sync (PLAT-008).
 - Sentry and CI runtime status are `Unverified — needs runtime`.

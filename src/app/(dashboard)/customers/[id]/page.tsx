@@ -40,6 +40,8 @@ function SmsThread({ customerId, customerName }: { customerId: string; customerN
       queryClient.invalidateQueries({ queryKey: ["sms", customerId] });
       setMessage("");
     },
+    onError: (e) =>
+      alert(axios.isAxiosError(e) ? e.response?.data?.error ?? "Text failed to send" : "Text failed to send"),
   });
 
   const draftWithAi = async () => {

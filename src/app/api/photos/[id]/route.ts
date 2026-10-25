@@ -14,10 +14,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
   if (!photo?.data) return new NextResponse("Not found", { status: 404 });
 
-  const { error } = await requireAuth();
-  if (error) {
+  const { session } = await requireAuth();
+  const isStaff = !!session && session.user.role !== "CUSTOMER";
+  if (!isStaff) {
     const token = req.nextUrl.searchParams.get("t");
-    if (!token || token !== photo.job?.customer?.portalToken) return error;
+    if (!token || token !== photo.job?.customer?.portalToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   // Defend against legacy rows written before upload validation: only serve

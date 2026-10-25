@@ -15,12 +15,19 @@ export async function GET(req: NextRequest) {
   const in7 = new Date(now.getTime() + 7 * 86400000);
   const in30 = new Date(now.getTime() + 30 * 86400000);
 
+  // Warranties lapse by date; flip them so filters and counts agree.
+  await prisma.warranty.updateMany({
+    where: { status: WarrantyStatus.ACTIVE, expiryDate: { lt: now } },
+    data: { status: WarrantyStatus.EXPIRED },
+  });
+
   const where: Record<string, unknown> = {};
   if (customerId) where.customerId = customerId;
   if (filter === "active") where.status = WarrantyStatus.ACTIVE;
   if (filter === "expiring") where.expiryDate = { lte: in30, gte: now };
   if (filter === "expiring_soon") where.expiryDate = { lte: in7, gte: now };
   if (filter === "claimed") where.status = WarrantyStatus.CLAIMED;
+  if (filter === "expired") where.status = WarrantyStatus.EXPIRED;
 
   const warranties = await prisma.warranty.findMany({
     where,
@@ -37,7 +44,13 @@ export async function GET(req: NextRequest) {
   const expiring30 = await prisma.warranty.count({ where: { status: WarrantyStatus.ACTIVE, expiryDate: { lte: in30, gte: now } } });
   const totalActive = await prisma.warranty.count({ where: { status: WarrantyStatus.ACTIVE } });
 
-  return apiSuccess({ warranties, stats: { totalActive, expiringSoon, expiring30 } });
+  const claimed = await prisma.warranty.count({ where: { status: WarrantyStatus.CLAIMED } });
+  const expired = await prisma.warranty.count({ where: { status: WarrantyStatus.EXPIRED } });
+
+  return apiSuccess({
+    warranties,
+    stats: { active: totalActive, totalActive, expiringSoon, expiring30, claimed, expired },
+  });
 }
 
 export async function POST(req: NextRequest) {

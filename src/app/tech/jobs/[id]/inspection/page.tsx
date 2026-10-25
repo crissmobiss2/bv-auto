@@ -133,7 +133,7 @@ export default function TechInspectionPage() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: () => apiWrite(`/api/jobs/${id}/inspection/send`, "post"),
+    mutationFn: () => axios.post(`/api/jobs/${id}/inspection/send`),
     onSuccess: () => setSendSent(true),
   });
 
@@ -245,9 +245,9 @@ export default function TechInspectionPage() {
         {/* Sticky bottom bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 space-y-2 shadow-lg">
           {sendMutation.isError && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-              {(sendMutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-                "The report was not sent. Ask the shop to verify the customer's email and RESEND_API_KEY."}
+            <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-2">
+              {(axios.isAxiosError(sendMutation.error) && sendMutation.error.response?.data?.error) ||
+                "Could not send the report. Check your connection and try again."}
             </p>
           )}
           {sendSent ? (

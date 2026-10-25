@@ -191,7 +191,18 @@ export function QuoteBuilder({ job }: { job: Job }) {
       queryClient.invalidateQueries({ queryKey: ["job", job.id] });
       if (res.data.approvalUrl) {
         navigator.clipboard?.writeText(res.data.approvalUrl).catch(() => null);
-        alert(`Quote sent! Approval link copied to clipboard:\n${res.data.approvalUrl}`);
+        const via = [res.data.emailSent && "email", res.data.smsSent && "text"].filter(Boolean).join(" and ");
+        const reason = (channel: string, status?: string) =>
+          status === "failed" ? `${channel} failed to send (provider error)`
+          : status === "not_configured" ? `${channel} isn't set up`
+          : status === "no_contact" ? `customer has no ${channel === "Email" ? "email" : "phone"} on file`
+          : null;
+        const reasons = [reason("Email", res.data.emailStatus), reason("Text", res.data.smsStatus)].filter(Boolean).join("; ");
+        alert(
+          via
+            ? `Quote sent by ${via}. Approval link copied to clipboard:\n${res.data.approvalUrl}`
+            : `Quote NOT delivered: ${reasons || "no delivery method succeeded"}.\nThe approval link was copied to your clipboard. Send it to the customer yourself:\n${res.data.approvalUrl}`
+        );
       }
     },
   });

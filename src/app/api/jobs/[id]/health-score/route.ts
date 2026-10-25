@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
 
 // Compute vehicle health score (0-100) from inspection checklist data
-export function computeHealthScore(checklist: {
+function computeHealthScore(checklist: {
   items?: Array<{ grade?: string; category?: string }>;
 }): { score: number; summary: string; breakdown: Record<string, number> } {
   const items = checklist?.items || [];

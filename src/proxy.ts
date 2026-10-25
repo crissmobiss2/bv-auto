@@ -15,7 +15,6 @@ const PUBLIC_API_PREFIXES = [
   "/api/sms/webhook",
   "/api/review",
   "/api/portal",
-  "/api/photos",
   "/api/tracking/job",
 ];
 
@@ -27,6 +26,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/book",
   "/review",
   "/register",
+  "/reset",
   "/offline",
   "/track",
   "/icons",
@@ -119,6 +119,8 @@ export default async function proxy(req: NextRequest) {
   // Public API routes. Booking GET is intentionally excluded and requires staff.
   if (
     matchesPrefix(pathname, PUBLIC_API_PREFIXES) ||
+    // portal photo thumbnails; the route validates ?t= against the customer's portal token
+    (pathname.startsWith("/api/photos/") && req.nextUrl.searchParams.has("t")) ||
     (pathname === "/api/booking" && req.method === "POST") ||
     (pathname.startsWith("/api/booking/") && req.method === "POST")
   ) {

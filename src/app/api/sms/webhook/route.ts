@@ -5,6 +5,7 @@ import twilio from "twilio";
 // Twilio sends form-encoded POST to this webhook for inbound SMS
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
+
   const body = formData.get("Body") as string;
   const from = formData.get("From") as string;
   const to = formData.get("To") as string;
@@ -19,11 +20,11 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-twilio-signature");
   const proto = req.headers.get("x-forwarded-proto")?.split(",")[0] || "https";
   const host = req.headers.get("x-forwarded-host")?.split(",")[0] || req.headers.get("host");
-  const baseUrl = process.env.NEXTAUTH_URL || (host ? `${proto}://${host}` : "");
+  const url = host ? `${proto}://${host}${req.nextUrl.pathname}${req.nextUrl.search}` : req.url;
   const params = Object.fromEntries(
     Array.from(formData.entries()).map(([key, value]) => [key, String(value)]),
   );
-  if (!signature || !baseUrl || !twilio.validateRequest(authToken, signature, `${baseUrl.replace(/\/$/, "")}/api/sms/webhook`, params)) {
+  if (!signature || !twilio.validateRequest(authToken, signature, url, params)) {
     return new NextResponse("Invalid Twilio signature", { status: 403 });
   }
 

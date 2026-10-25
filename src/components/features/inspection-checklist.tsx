@@ -86,6 +86,10 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
   const sendReportMutation = useMutation({
     mutationFn: () => axios.post(`/api/jobs/${job.id}/inspection/send`),
     onSuccess: () => alert("Inspection report sent to customer."),
+    onError: (e) =>
+      alert(
+        (axios.isAxiosError(e) && e.response?.data?.error) || "Could not send the inspection report.",
+      ),
   });
 
   const updateItem = (id: string, field: "condition" | "notes", value: string) => {

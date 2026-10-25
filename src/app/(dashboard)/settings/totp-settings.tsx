@@ -30,7 +30,7 @@ export function TotpSettings() {
     setLoading(true); setMsg(null);
     try {
       const { data } = await axios.post("/api/auth/totp/setup");
-      setQrCode(data.qrCode);
+      setQrCode(data.qrDataUrl);
       setStep("setup");
     } catch {
       setMsg({ ok: false, text: "Failed to generate QR code." });

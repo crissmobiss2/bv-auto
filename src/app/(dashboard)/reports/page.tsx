@@ -17,10 +17,22 @@ const COLORS = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2"
 
 export default function ReportsPage() {
   const [shopId, setShopId] = useState<string>("ALL");
-  const { data, isLoading } = useQuery({
-    queryKey: ["reports", shopId],
-    queryFn: () => axios.get(`/api/reports${shopId !== "ALL" ? `?shopId=${shopId}` : ""}`).then((r) => r.data),
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const rangeValid = !!from && !!to && from <= to;
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["reports", shopId, rangeValid ? from : "", rangeValid ? to : ""],
+    queryFn: () => {
+      const qs = new URLSearchParams();
+      if (shopId !== "ALL") qs.set("shopId", shopId);
+      if (rangeValid) { qs.set("from", from); qs.set("to", to); }
+      const q = qs.toString();
+      return axios.get(`/api/reports${q ? `?${q}` : ""}`).then((r) => r.data);
+    },
+    placeholderData: (prev) => prev,
+    retry: (n, e) => !(axios.isAxiosError(e) && e.response?.status === 403) && n < 3,
   });
+  const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
 
   const { data: shops } = useQuery<{ id: string; name: string }[]>({
     queryKey: ["shops"],
@@ -32,6 +44,7 @@ export default function ReportsPage() {
     queryFn: () => axios.get("/api/quotes/conversions").then((r) => r.data),
   });
 
+  if (forbidden) return <div role="alert" className="p-8 text-center text-gray-600">You don&apos;t have access to Reports. Ask an admin if you need it.</div>;
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading reports...</div>;
 
   const d = data || {};
@@ -67,11 +80,37 @@ export default function ReportsPage() {
             </SelectContent>
           </Select>
         )}
+        <div className="flex items-center gap-1 text-xs">
+          <label htmlFor="rep-from" className="sr-only">From</label>
+          <input id="rep-from" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className="h-8 rounded-md border px-2" />
+          <span className="text-gray-400">to</span>
+          <label htmlFor="rep-to" className="sr-only">To</label>
+          <input id="rep-to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="h-8 rounded-md border px-2" />
+          {(from || to) && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setFrom(""); setTo(""); }}>Clear</Button>
+          )}
+        </div>
         <a href="/api/invoices/export" download>
           <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export CSV (QuickBooks)</Button>
         </a>
         </div>
       </div>
+
+      {from && to && !rangeValid && (
+        <p className="text-sm text-red-600">The start date must be on or before the end date.</p>
+      )}
+      {rangeValid && d.range && (
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Selected range: {d.range.from} to {d.range.to}</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div><p className="text-xs text-gray-500">Revenue collected</p><p className="text-lg font-bold">{formatCurrency(d.range.revenue)}</p><p className="text-xs text-gray-400">{d.range.paymentCount} payments</p></div>
+            <div><p className="text-xs text-gray-500">Invoiced</p><p className="text-lg font-bold">{formatCurrency(d.range.invoicedTotal)}</p><p className="text-xs text-gray-400">{d.range.invoicesIssued} invoices</p></div>
+            <div><p className="text-xs text-gray-500">Jobs completed</p><p className="text-lg font-bold">{d.range.jobsCompleted}</p></div>
+            <div><p className="text-xs text-gray-500">New customers</p><p className="text-lg font-bold">{d.range.newCustomers}</p></div>
+            <div><p className="text-xs text-gray-500">Avg per payment</p><p className="text-lg font-bold">{formatCurrency(d.range.paymentCount ? d.range.revenue / d.range.paymentCount : 0)}</p></div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

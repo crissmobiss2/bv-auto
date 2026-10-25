@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,8 @@ const emptyForm = {
 
 export default function ShopsPage() {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const canManage = session?.user?.role === "ADMIN";
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Shop | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -78,7 +81,7 @@ export default function ShopsPage() {
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Building2 className="h-6 w-6 text-indigo-600" /> Shops & Locations</h1>
           <p className="text-sm text-gray-500">Manage your shop locations, labor rates, and tax rates</p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="bg-indigo-600 hover:bg-indigo-700"><Plus className="h-4 w-4 mr-2" /> Add Shop</Button>
+        {canManage && <Button onClick={() => setShowAdd(true)} className="bg-indigo-600 hover:bg-indigo-700"><Plus className="h-4 w-4 mr-2" /> Add Shop</Button>}
       </div>
 
       {isLoading ? <div className="text-center py-8 text-gray-500">Loading...</div> : (
@@ -91,7 +94,7 @@ export default function ShopsPage() {
                     {shop.name}
                     {shop.isDefault && <Badge className="bg-indigo-100 text-indigo-700 text-xs">Default</Badge>}
                   </span>
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(shop)}><Edit className="h-4 w-4" /></Button>
+                  {canManage && <Button size="sm" variant="ghost" onClick={() => openEdit(shop)}><Edit className="h-4 w-4" /></Button>}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -123,7 +126,7 @@ export default function ShopsPage() {
                     <Star className="h-3 w-3" /> Google Review Link
                   </a>
                 )}
-                {!shop.isDefault && (
+                {canManage && !shop.isDefault && (
                   <div className="flex gap-2 pt-2">
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => setDefaultMutation.mutate(shop.id)}>Set Default</Button>
                     <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-50" onClick={() => deleteMutation.mutate(shop.id)}>Remove</Button>

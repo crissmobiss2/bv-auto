@@ -158,5 +158,5 @@
 
 ## Verification commands / limitations
 - `npx prisma validate` — passes.
-- Local PostgreSQL is on Docker (`bvauto-pg`, port 5433); production `db:push` is blocked pending a Neon `DATABASE_URL`.
+- Local PostgreSQL is on Docker (`bvauto-pg`, port 5433); production Neon was verified in sync with `prisma/schema.prisma` on 2026-10-25 (`db push`: no changes).
 - No production data was touched during this audit.

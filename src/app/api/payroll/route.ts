@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
     // when an accountant opens the export in Excel/Sheets.
     const csvCell = (value: unknown) => {
       const text = String(value ?? "");
-      const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+      const safe = typeof value === "string" && /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
       return `"${safe.replace(/"/g, '""')}"`;
     };
     const rows = ["Name,Role,Rate Type,Rate,Total Hours,Gross Pay,Job Count"];

@@ -19,7 +19,7 @@
 |---|---|---|---|
 | `npm run type-check` | check | PASS | Clean. |
 | `npm run lint` | check | PASS | Clean. |
-| `npm test -- --run` | tests | PASS | 3 files / 10 tests. |
+| `npm test -- --run` | tests | PASS | 4 files / 14 tests (merged tree). |
 | `npm run build` | build | PASS | 130 pages generated. |
 | Auth/RBAC tests | tests | FAIL | None. |
 | Stripe/payment tests | tests | PARTIAL | Webhook happy path. |
@@ -33,7 +33,7 @@
 ### [QUAL-001] Test coverage is very thin for the surface area
 - **Severity:** P2
 - **Area:** Regression risk
-- **Evidence:** `src/__tests__/` (3 files, 10 tests); ~134 API routes / 56 pages
+- **Evidence:** `src/__tests__/` (4 files, 14 tests); ~134 API routes / 56 pages
 - **Problem:** Only a handful of units are tested. Critical flows (authz, payments, quote approval, invoice send, payroll, portal tokens) have no tests.
 - **Impact:** Regressions ship silently; the audit fixes are protected only by types.
 - **Reproduce / verify:** `npm test -- --run --coverage` (no meaningful coverage).
@@ -145,7 +145,7 @@
 - Strict TypeScript across the app; no `any`-driven compile failures.
 - ESLint is clean.
 - Zod is used for most complex inputs.
-- Stripe webhook test exists and now covers idempotent/paid behavior.
+- Stripe webhook tests cover the paid path and a duplicate delivery (no second payment).
 - Production build completes with 130 static pages.
 - Prisma schema validates.
 
@@ -157,6 +157,6 @@
 ## Verification commands / limitations
 - `npm run type-check` — clean.
 - `npm run lint` — clean.
-- `npm test -- --run` — 3 files / 10 tests passing.
+- `npm test -- --run` — 4 files / 14 tests passing (merged tree).
 - `npm run build` — clean.
 - No coverage tool configured; coverage percentages are not available.

@@ -101,13 +101,21 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     },
   });
 
-  await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Quote", id, null, { token, emailSent, smsSent });
+  type Delivery = "sent" | "no_contact" | "not_configured" | "failed";
+  const statusOf = (hasContact: boolean, configured: boolean, sent: boolean): Delivery =>
+    !hasContact ? "no_contact" : !configured ? "not_configured" : sent ? "sent" : "failed";
+  const emailStatus = statusOf(!!quote.customer.email, emailConfigured, emailSent);
+  const smsStatus = statusOf(!!quote.customer.phone, smsConfigured, smsSent);
+
+  await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Quote", id, null, { token, emailStatus, smsStatus, emailError, smsError });
 
   const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
   return apiSuccess({
     approvalUrl: `${BASE_URL}/approve/${token}`,
     emailSent,
     smsSent,
+    emailStatus,
+    smsStatus,
     emailError,
     smsError,
   });
