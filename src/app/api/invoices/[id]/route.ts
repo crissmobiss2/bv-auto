@@ -78,6 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (key) {
       const replay = await prisma.payment.findUnique({ where: { idempotencyKey: key } });
       if (replay) {
+        if (replay.invoiceId !== id) return apiError("Idempotency key already used for another payment", 409);
         const invoice = await prisma.invoice.findUnique({ where: { id } });
         return apiSuccess({ invoice, payment: replay, duplicate: true });
       }

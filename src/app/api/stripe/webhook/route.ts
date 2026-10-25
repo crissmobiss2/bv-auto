@@ -170,7 +170,7 @@ async function handleDeposit(quoteId: string, externalRef: string, amount: numbe
 // Refunds issued from the Stripe dashboard (or by our refund route) arrive here.
 // The ledger is brought up to Stripe's cumulative refunded amount, so the
 // event is idempotent whether or not our route already recorded the refund.
-async function handleChargeRefunded(charge: { id: string; amount_refunded: number; payment_intent: string | { id: string } | null }) {
+async function handleChargeRefunded(charge: { id: string; amount: number; amount_refunded: number; payment_intent: string | { id: string } | null }) {
   const paymentIntent = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
   if (!paymentIntent) return NextResponse.json({ received: true });
 
@@ -178,7 +178,19 @@ async function handleChargeRefunded(charge: { id: string; amount_refunded: numbe
     where: { OR: [{ externalId: paymentIntent }, { reference: paymentIntent }], type: { not: "REFUND" } },
     include: { refunds: { select: { amount: true } } },
   });
-  if (!original) return NextResponse.json({ received: true, unmatched: true });
+  if (!original) {
+    // Deposit refunded before the quote became an invoice: shrink the credit
+    // so invoice creation does not apply money that was returned.
+    const quote = await prisma.quote.findUnique({ where: { depositExternalId: paymentIntent }, select: { id: true } });
+    if (quote) {
+      await prisma.quote.update({
+        where: { id: quote.id },
+        data: { depositPaid: Math.max(0, roundMoney((charge.amount - charge.amount_refunded) / 100)) },
+      });
+      return NextResponse.json({ received: true, depositAdjusted: true });
+    }
+    return NextResponse.json({ received: true, unmatched: true });
+  }
 
   const stripeRefunded = roundMoney(charge.amount_refunded / 100);
   const recorded = roundMoney(-original.refunds.reduce((s, r) => s + Number(r.amount), 0));

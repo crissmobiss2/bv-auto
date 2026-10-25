@@ -100,6 +100,9 @@ export async function POST(req: NextRequest) {
 
   const taxAmount = Math.round(taxableAmount * (parsed.data.taxRate / 100) * 100) / 100;
   const totalAmount = Math.round((subtotal + taxAmount) * 100) / 100;
+  if ((parsed.data.depositRequired ?? 0) > totalAmount) {
+    return apiError("Deposit must be between 0 and the quote total", 400);
+  }
 
   const quote = await prisma.quote.create({
     data: {

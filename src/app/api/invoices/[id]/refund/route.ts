@@ -36,7 +36,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const amount = roundMoney(parsed.data.amount);
 
   const replay = await prisma.payment.findUnique({ where: { idempotencyKey } });
-  if (replay) return apiSuccess({ refund: replay, duplicate: true });
+  if (replay) {
+    if (replay.invoiceId !== id || replay.refundOfId !== paymentId) {
+      return apiError("Idempotency key already used for another refund", 409);
+    }
+    return apiSuccess({ refund: replay, duplicate: true });
+  }
 
   const { payment, refundable } = await refundableAmount(paymentId);
   if (!payment || payment.invoiceId !== id) return apiError("Payment not found on this invoice", 404);

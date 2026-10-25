@@ -71,6 +71,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     updateData.taxRate = taxRate;
 
     // Replace line items
+    if (body.depositRequired != null) {
+      const d = Number(body.depositRequired);
+      if (!Number.isFinite(d) || d < 0 || d > totalAmount) {
+        return apiError("Deposit must be between 0 and the quote total", 400);
+      }
+    }
     await prisma.lineItem.deleteMany({ where: { quoteId: id } });
     await prisma.lineItem.createMany({
       data: lineItemsWithTotals.map((li: Record<string, unknown>) => ({ ...li, quoteId: id })),

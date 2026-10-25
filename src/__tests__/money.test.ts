@@ -77,11 +77,19 @@ describe("refund route", () => {
 
   it("replays an already-processed idempotency key without a second refund", async () => {
     const { POST } = await import("@/app/api/invoices/[id]/refund/route");
-    m(prisma.payment.findUnique).mockResolvedValueOnce({ id: "r1", amount: -10 });
+    m(prisma.payment.findUnique).mockResolvedValueOnce({ id: "r1", amount: -10, invoiceId: "inv", refundOfId: "p1" });
     const res = await POST(req({ paymentId: "p1", amount: 10, idempotencyKey: "key-12345" }) as never, params);
     expect(res.status).toBe(200);
     expect((await res.json()).duplicate).toBe(true);
     expect(prisma.payment.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an idempotency key that belongs to another invoice's refund", async () => {
+    const { POST } = await import("@/app/api/invoices/[id]/refund/route");
+    m(prisma.payment.findUnique).mockResolvedValueOnce({ id: "r9", amount: -10, invoiceId: "other", refundOfId: "p9" });
+    const res = await POST(req({ paymentId: "p1", amount: 10, idempotencyKey: "key-12345" }) as never, params);
+    expect(res.status).toBe(409);
+    expect(JSON.stringify(await res.json())).not.toContain("r9");
   });
 
   it("records a cash refund as a negative REFUND row", async () => {
@@ -109,10 +117,19 @@ describe("manual payment", () => {
   it("returns the existing payment for a replayed idempotency key", async () => {
     const { PATCH } = await import("@/app/api/invoices/[id]/route");
     m(prisma.invoice.findUnique).mockResolvedValue({ id: "inv", status: "SENT", amountDue: 100, totalAmount: 100, payments: [] });
-    m(prisma.payment.findUnique).mockResolvedValueOnce({ id: "p1", amount: 100 });
+    m(prisma.payment.findUnique).mockResolvedValueOnce({ id: "p1", amount: 100, invoiceId: "inv" });
     const res = await PATCH(patch({ action: "payment", amount: 100, method: "CASH", idempotencyKey: "key-12345" }) as never, params);
     expect(res.status).toBe(200);
     expect((await res.json()).duplicate).toBe(true);
+    expect(prisma.payment.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an idempotency key that belongs to another invoice's payment", async () => {
+    const { PATCH } = await import("@/app/api/invoices/[id]/route");
+    m(prisma.invoice.findUnique).mockResolvedValue({ id: "inv", status: "SENT", amountDue: 100, totalAmount: 100, payments: [] });
+    m(prisma.payment.findUnique).mockResolvedValueOnce({ id: "p9", amount: 100, invoiceId: "other" });
+    const res = await PATCH(patch({ action: "payment", amount: 100, method: "CASH", idempotencyKey: "key-12345" }) as never, params);
+    expect(res.status).toBe(409);
     expect(prisma.payment.create).not.toHaveBeenCalled();
   });
 
