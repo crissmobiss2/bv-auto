@@ -52,6 +52,15 @@ This plan is ordered by risk and dependency, not by section number. Items marked
 | CRM-005 | Remove internal `unitCost` from customer export | `src/app/api/customer/export/route.ts` | Type-check |
 | DATA-008/PLAT-010 | Sign-out clears cache (queue scoping remains OPEN) | `src/lib/sign-out.ts` | Type-check |
 
+## Status updates — inventory (branch `devin/*-inventory-ledger`)
+
+Fixed in code, with unit tests in `src/__tests__/inventory.test.ts`:
+
+- **PART-004 / FLOW-005**: append-only `InventoryMovement` ledger (`INITIAL/RECEIVE/ISSUE/RETURN/ADJUST`, signed quantity, `balanceAfter`, user, job/part/PO links). `quantityOnHand` can no longer be set directly; stock changes go through `moveStock()` in `src/lib/inventory.ts` (adjustment or physical count, with reason). Existing prod stock was given an `INITIAL` opening-balance row. Inventory items show a stock history.
+- **PART-005**: stock can never go negative (conditional decrement; 409 on shortfall). A part linked to an inventory item (`JobPart.inventoryItemId`) is issued from stock once when INSTALLED and returned when RETURNED/CANCELLED/deleted.
+- **PO receiving**: `POST /api/purchase-orders/[id]/receive` records partial receipts per line (`JobPart.quantityReceived`). The PO becomes RECEIVED only when every line is in, and PO status changes follow a transition table (no receiving a cancelled PO, no reopening a received one).
+- **PART-002 / PART-006 (partial)**: vendors must exist and be active, markup is bounded to 0–500%, and costs, prices and quantities are non-negative and bounded.
+
 ## Phase 1 — P1 workflow/data integrity (OPEN)
 | ID | Fix | Why now | Effort | Files |
 |---|---|---|---|---|
@@ -143,12 +152,3 @@ For mobile/UI changes, verify at a 390×844 viewport and one physical device.
 | Parts availability/ordering | No `PARTSTECH_*` | Add provider credentials |
 | APK in-place update | Debug signing key mismatch | Create release keystore; one-time uninstall/reinstall |
 | Subagent fix workspaces | OpenRouter key exhausted | Restore key or run lanes sequentially |
-
-## Status updates — inventory (branch `devin/*-inventory-ledger`)
-
-Fixed in code, with unit tests in `src/__tests__/inventory.test.ts`:
-
-- **PART-004 / FLOW-005**: append-only `InventoryMovement` ledger (`INITIAL/RECEIVE/ISSUE/RETURN/ADJUST`, signed quantity, `balanceAfter`, user, job/part/PO links). `quantityOnHand` can no longer be set directly; stock changes go through `moveStock()` in `src/lib/inventory.ts` (adjustment or physical count, with reason). Existing prod stock was given an `INITIAL` opening-balance row. Inventory items show a stock history.
-- **PART-005**: stock can never go negative (conditional decrement; 409 on shortfall). A part linked to an inventory item (`JobPart.inventoryItemId`) is issued from stock once when INSTALLED and returned when RETURNED/CANCELLED/deleted.
-- **PO receiving**: `POST /api/purchase-orders/[id]/receive` records partial receipts per line (`JobPart.quantityReceived`). The PO becomes RECEIVED only when every line is in, and PO status changes follow a transition table (no receiving a cancelled PO, no reopening a received one).
-- **PART-002 / PART-006 (partial)**: vendors must exist and be active, markup is bounded to 0–500%, and costs, prices and quantities are non-negative and bounded.
