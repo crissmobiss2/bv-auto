@@ -86,7 +86,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     updateData.sentAt = new Date();
   }
 
-  const simpleFields = ["status", "notes", "internalNotes", "validUntil", "approvedBy", "approvalMethod", "declineReason", "depositPaid"];
+  // depositPaid is only written by the Stripe webhook, never by clients.
+  if (body.depositRequired !== undefined) {
+    const deposit = body.depositRequired === null ? null : Number(body.depositRequired);
+    const total = Number(updateData.totalAmount ?? existing.totalAmount);
+    if (deposit !== null && (!Number.isFinite(deposit) || deposit < 0 || deposit > total)) {
+      return apiError("Deposit must be between 0 and the quote total", 400);
+    }
+    updateData.depositRequired = deposit && deposit > 0 ? Math.round(deposit * 100) / 100 : null;
+  }
+
+  const simpleFields = ["status", "notes", "internalNotes", "validUntil", "approvedBy", "approvalMethod", "declineReason"];
   for (const field of simpleFields) {
     if (body[field] !== undefined) updateData[field] = body[field];
   }

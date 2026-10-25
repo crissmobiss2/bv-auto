@@ -26,7 +26,7 @@ const createSchema = z.object({
   internalNotes: z.string().optional(),
   validUntil: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid validUntil").optional(),
   taxRate: z.number().min(0).max(30).default(0),
-  depositRequired: z.number().optional(),
+  depositRequired: z.number().min(0).optional(),
   lineItems: z.array(lineItemSchema).default([]),
 });
 
