@@ -18,6 +18,8 @@ const db = {
   },
   customer: {
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    updateMany: vi.fn(),
     create: vi.fn(),
     count: vi.fn(),
   },

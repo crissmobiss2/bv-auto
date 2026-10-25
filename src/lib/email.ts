@@ -109,6 +109,23 @@ export async function sendInspectionEmail(opts: {
   return send(opts.to, `Vehicle Inspection Report — ${opts.vehicleDescription}`, html);
 }
 
+export async function sendBookingConfirmationEmail(opts: {
+  to: string;
+  customerName: string;
+  reference: string;
+  serviceType: string;
+  preferredDate?: string | null;
+}) {
+  const phone = await getShopPhone();
+  const html = baseTemplate(`
+    <h2 style="margin:0 0 8px;">We got your request</h2>
+    <p>Hi ${escapeHtml(opts.customerName)},</p>
+    <p>Thanks for booking <strong>${escapeHtml(opts.serviceType)}</strong>${opts.preferredDate ? ` for ${escapeHtml(opts.preferredDate)}` : ""}. We'll contact you shortly to confirm a time.</p>
+    <p style="font-size:13px;color:#6b7280;">Reference: ${escapeHtml(opts.reference)}${phone ? ` · Questions? Call ${escapeHtml(phone)}` : ""}</p>
+  `);
+  return send(opts.to, `Booking request received — ${opts.reference}`, html);
+}
+
 export async function sendPaymentReceiptEmail(opts: {
   to: string;
   customerName: string;

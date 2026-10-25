@@ -23,6 +23,9 @@ const updateSchema = z.object({
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
+  marketingOptOut: z.boolean().optional(),
+  // Staff may record an opt-out; only the customer's START reply re-enables SMS.
+  smsOptOut: z.literal(true).optional(),
 }).partial();
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -82,7 +85,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { email, ...rest } = parsed.data;
   const updated = await prisma.customer.update({
     where: { id },
-    data: { ...rest, ...(email !== undefined && { email: email || null }) },
+    data: {
+      ...rest,
+      ...(email !== undefined && { email: email || null }),
+      ...(rest.smsOptOut && !existing.smsOptOut && { smsOptOutAt: new Date() }),
+    },
   });
 
   await logAudit(session!.user.id, AuditAction.UPDATE, "Customer", id, existing, updated);

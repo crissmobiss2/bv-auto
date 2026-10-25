@@ -61,6 +61,15 @@ Fixed in code, with unit tests in `src/__tests__/inventory.test.ts`:
 - **PO receiving**: `POST /api/purchase-orders/[id]/receive` records partial receipts per line (`JobPart.quantityReceived`). The PO becomes RECEIVED only when every line is in, and PO status changes follow a transition table (no receiving a cancelled PO, no reopening a received one).
 - **PART-002 / PART-006 (partial)**: vendors must exist and be active, markup is bounded to 0–500%, and costs, prices and quantities are non-negative and bounded.
 
+## Status updates — communications consent and booking (branch `devin/*-comms-consent`)
+
+Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
+
+- **COMM-008**: the Twilio webhook parses STOP/STOPALL/UNSUBSCRIBE/CANCEL/END/QUIT (opt out), START/UNSTOP/YES (opt back in) and HELP/INFO (TwiML help reply). Consent is stored on every customer sharing that number (`Customer.smsOptOut`, `smsOptOutAt`). `lib/sms.ts send()` and the staff text box refuse to text an opted-out number. Staff can record an opt-out but cannot clear one; only the customer's START does that.
+- **COMM-011**: new `Customer.marketingOptOut` ("Do not market" on the customer page). Campaign audiences (`marketableSms`), SMS sequences, review-request SMS/email and maintenance-reminder SMS all skip opted-out customers.
+- **PORT-011 / FLOW-003**: a public booking now sends a confirmation SMS and/or email (best-effort, so a provider failure never loses the booking), creates an in-app notification plus a push for ADMIN/DISPATCHER/SERVICE_ADVISOR users, and shows the customer a `BR-XXXXXX` reference.
+- Not exercised against live Twilio/Resend (no keys in this environment).
+
 ## Phase 1 — P1 workflow/data integrity (OPEN)
 | ID | Fix | Why now | Effort | Files |
 |---|---|---|---|---|

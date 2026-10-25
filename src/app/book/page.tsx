@@ -33,6 +33,7 @@ export default function BookPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [reference, setReference] = useState("");
   const [error, setError] = useState("");
   const [shopPhone, setShopPhone] = useState<string | null>(null);
   useEffect(() => {
@@ -47,10 +48,11 @@ export default function BookPage() {
     setError("");
     setSubmitting(true);
     try {
-      await axios.post("/api/booking", {
+      const res = await axios.post("/api/booking", {
         ...form,
         vehicleYear: form.vehicleYear ? parseInt(form.vehicleYear) : undefined,
       });
+      setReference(res.data?.reference ?? "");
       setSubmitted(true);
     } catch {
       setError("Something went wrong. Please try again or call us.");
@@ -66,6 +68,7 @@ export default function BookPage() {
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900">Request Received!</h2>
           <p className="text-gray-500 mt-2">We&apos;ll review your request and contact you within a few hours to confirm your appointment.</p>
+          {reference && <p className="mt-3 text-sm text-gray-700">Your reference: <span className="font-mono font-semibold">{reference}</span></p>}
           {shopPhone && <p className="text-sm text-gray-400 mt-4">Questions? Call <a href={`tel:${shopPhone}`} className="text-blue-600">{shopPhone}</a></p>}
         </CardContent>
       </Card>

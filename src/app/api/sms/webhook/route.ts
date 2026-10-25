@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import twilio from "twilio";
+import { parseSmsKeyword, setSmsOptOut } from "@/lib/consent";
+import { getShopPhone } from "@/lib/shop";
 
 // Twilio sends form-encoded POST to this webhook for inbound SMS
 export async function POST(req: NextRequest) {
@@ -43,6 +45,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Carrier opt-out keywords. Twilio's Advanced Opt-Out sends the STOP/START
+  // reply itself; we only have to record consent so our own sends honour it.
+  const keyword = parseSmsKeyword(body);
+  if (keyword === "STOP" || keyword === "START") {
+    await setSmsOptOut(from, keyword === "STOP");
+  }
+
   // Normalize phone: strip everything except digits, keep leading +
   const normalized = from.replace(/[^\d+]/g, "");
 
@@ -70,6 +79,14 @@ export async function POST(req: NextRequest) {
         toNumber: to,
         twilioSid: sid,
       },
+    });
+  }
+
+  if (keyword === "HELP") {
+    const phone = await getShopPhone();
+    const help = `B&V Mobile Auto: ${phone ? `call ${phone} for help. ` : ""}Reply STOP to opt out, START to opt back in. Msg&data rates may apply.`;
+    return new NextResponse(`<Response><Message>${help.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</Message></Response>`, {
+      headers: { "Content-Type": "text/xml" },
     });
   }
 

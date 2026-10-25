@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     where: { status: "ACTIVE", nextStepAt: { lte: now } },
     include: {
       sequence: { include: { steps: { orderBy: { stepNumber: "asc" } } } },
-      customer: { select: { firstName: true, lastName: true, phone: true } },
+      customer: { select: { firstName: true, lastName: true, phone: true, smsOptOut: true, marketingOptOut: true } },
     },
     take: 50,
   });
@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    if (!enrollment.customer.phone) {
-      // Keep the enrollment but stop retrying a customer we cannot reach.
+    if (!enrollment.customer.phone || enrollment.customer.smsOptOut || enrollment.customer.marketingOptOut) {
+      // Keep the enrollment but stop retrying a customer we cannot reach or who opted out.
       await prisma.commEnrollment.update({
         where: { id: enrollment.id },
         data: { status: "PAUSED" },

@@ -247,6 +247,11 @@ model Customer {
   notes        String?
   tags         String[]
   isActive     Boolean      @default(true)
+  // Set by an inbound STOP (cleared by START); blocks every SMS to this customer.
+  smsOptOut       Boolean   @default(false)
+  smsOptOutAt     DateTime?
+  // "Do not market": excluded from campaigns, sequences, review and maintenance nudges.
+  marketingOptOut Boolean   @default(false)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

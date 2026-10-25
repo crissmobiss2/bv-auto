@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 import twilio from "twilio";
 import { NotificationType } from "@prisma/client";
+import { marketableSms } from "@/lib/consent";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireRole(["ADMIN", "DISPATCHER"]);
@@ -27,7 +28,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     const cutoff = new Date(now.getTime() - days * 86400000);
     const rawCustomers = await prisma.customer.findMany({
       where: {
-        isActive: true,
+        ...marketableSms,
         jobs: { none: { createdAt: { gte: cutoff } } },
       },
       select: { id: true, firstName: true, lastName: true, phone: true },
@@ -36,7 +37,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
   } else if (campaign.triggerType === "SERVICE_REMINDER") {
     const rawCustomers = await prisma.customer.findMany({
       where: {
-        isActive: true,
+        ...marketableSms,
         vehicles: {
           some: {
             maintenanceIntervals: {
@@ -55,7 +56,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     customers = rawCustomers;
   } else if (campaign.triggerType === "ALL_ACTIVE") {
     const rawCustomers = await prisma.customer.findMany({
-      where: { isActive: true },
+      where: { ...marketableSms },
       select: { id: true, firstName: true, lastName: true, phone: true },
       take: 500,
     });
