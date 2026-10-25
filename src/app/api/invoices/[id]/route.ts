@@ -5,6 +5,7 @@ import { AuditAction, InvoiceStatus, PaymentMethod } from "@prisma/client";
 import { z } from "zod";
 import { sendPushToRole } from "@/lib/push";
 import { formatCurrency } from "@/lib/utils";
+import { isUniqueViolation, lockInvoice, reconcileInvoice } from "@/lib/payments";
 
 const paymentSchema = z.object({
   action: z.literal("payment"),
@@ -13,13 +14,14 @@ const paymentSchema = z.object({
   reference: z.string().optional(),
   notes: z.string().optional(),
   receivedAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid receivedAt").optional(),
+  idempotencyKey: z.string().min(8).max(100).optional(),
 });
 
 const updateInvoiceSchema = z.object({
   notes: z.string().nullable().optional(),
   internalNotes: z.string().nullable().optional(),
   dueDate: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid dueDate").nullable().optional(),
-  status: z.enum(["VOID", "REFUNDED"]).optional(),
+  status: z.literal("VOID").optional(),
   voidReason: z.string().optional(),
 }).partial();
 
@@ -72,12 +74,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return apiError("Cannot record a payment on a void or refunded invoice", 400);
     }
 
+    const key = parsed.data.idempotencyKey;
+    if (key) {
+      const replay = await prisma.payment.findUnique({ where: { idempotencyKey: key } });
+      if (replay) {
+        const invoice = await prisma.invoice.findUnique({ where: { id } });
+        return apiSuccess({ invoice, payment: replay, duplicate: true });
+      }
+    }
+
     const balance = Number(existing.amountDue);
     if (parsed.data.amount > balance + 0.005) {
       return apiError(`Payment exceeds the balance due (${formatCurrency(balance)})`, 400);
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      await lockInvoice(tx, id);
       const payment = await tx.payment.create({
         data: {
           invoiceId: id,
@@ -85,48 +97,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           method: parsed.data.method,
           reference: parsed.data.reference,
           notes: parsed.data.notes,
+          idempotencyKey: key,
+          createdById: session!.user.id,
           receivedAt: parsed.data.receivedAt ? new Date(parsed.data.receivedAt) : new Date(),
         },
       });
 
-      // Re-read every payment inside the transaction so two concurrent desk
-      // payments cannot both compute the same balance from a stale snapshot.
-      const payments = await tx.payment.findMany({
-        where: { invoiceId: id },
-        select: { amount: true },
-      });
-      const totalPaid = Math.round(
-        payments.reduce((sum, p) => sum + Number(p.amount), 0) * 100,
-      ) / 100;
-      const totalAmount = Math.round(Number(existing.totalAmount) * 100) / 100;
-      if (totalPaid > totalAmount + 0.005) {
-        // Rolls back the inserted payment. The caller gets a 409 and can
-        // refresh; never leave an overpaid invoice behind.
+      // Totals are recomputed from every payment row under the row lock, so
+      // two concurrent desk payments cannot both use a stale balance.
+      const paidSoFar = await tx.payment.aggregate({ where: { invoiceId: id }, _sum: { amount: true } });
+      if (Number(paidSoFar._sum.amount ?? 0) > Number(existing.totalAmount) + 0.005) {
+        // Rolls back the inserted payment; never leave an overpaid invoice.
         throw new OverpaymentError();
       }
-      const amountDue = Math.max(0, Math.round((totalAmount - totalPaid) * 100) / 100);
-      const newStatus: InvoiceStatus = amountDue <= 0 ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL;
-
-      const updated = await tx.invoice.update({
-        where: { id },
-        data: {
-          amountPaid: totalPaid,
-          amountDue,
-          status: newStatus,
-          paidAt: newStatus === InvoiceStatus.PAID ? new Date() : undefined,
-        },
-      });
-
-      if (newStatus === InvoiceStatus.PAID) {
-        await tx.job.update({ where: { id: existing.jobId }, data: { status: "PAID" } });
-      }
-
-      return { payment, updated, newStatus };
-    }, { isolationLevel: "Serializable" }).catch((error: unknown) => {
+      const reconciled = await reconcileInvoice(tx, id);
+      return { payment, updated: reconciled.invoice, newStatus: reconciled.status };
+    }, { isolationLevel: "Serializable" }).catch(async (error: unknown) => {
       if (error instanceof OverpaymentError) return null;
-      // PostgreSQL serialization failure: another payment changed the balance
-      // at the same time. Ask the user to refresh instead of showing a 500.
       if ((error as { code?: string })?.code === "P2034") return null;
+      if (key && isUniqueViolation(error)) {
+        const payment = await prisma.payment.findUnique({ where: { idempotencyKey: key } });
+        const updated = await prisma.invoice.findUnique({ where: { id } });
+        if (payment && updated) return { payment, updated, newStatus: updated.status };
+      }
       throw error;
     });
 
@@ -159,7 +152,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const parsed = updateInvoiceSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message, 400);
   if (parsed.data.status && !["ADMIN", "ACCOUNTANT"].includes(session!.user.role)) {
-    return apiError("Only admin or accounting can void or refund an invoice", 403);
+    return apiError("Only admin or accounting can void an invoice", 403);
+  }
+  if (body.status === "REFUNDED") {
+    return apiError("Use Refund on a payment; the invoice status updates automatically", 400);
+  }
+  if (parsed.data.status === "VOID" && Number(existing.amountPaid) > 0.005) {
+    return apiError("Refund the payments on this invoice before voiding it", 400);
   }
 
   const { dueDate, status, voidReason, ...rest } = parsed.data;

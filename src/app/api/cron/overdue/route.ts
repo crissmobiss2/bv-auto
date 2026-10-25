@@ -45,6 +45,8 @@ export async function GET(req: NextRequest) {
 
     const daysOverdue = Math.floor((now.getTime() - invoice.dueDate.getTime()) / 86400000);
     if (![1, 7, 14].includes(daysOverdue)) continue;
+    // Cron can be retried or run twice in a day; one reminder per invoice per day.
+    if (invoice.lastReminderAt && now.getTime() - invoice.lastReminderAt.getTime() < 20 * 3600_000) continue;
 
     const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
     // Customers cannot open staff dashboard pages. Create a portal token on
@@ -68,7 +70,12 @@ export async function GET(req: NextRequest) {
         totalAmount: formatCurrency(Number(invoice.totalAmount)),
         amountDue: formatCurrency(Number(invoice.amountDue)),
         invoiceUrl,
-        paymentUrl: invoice.stripePaymentUrl || undefined,
+        // Stored checkout links expire after 24h; the portal creates a fresh one.
+        paymentUrl: undefined,
+      });
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: { lastReminderAt: now, reminderCount: { increment: 1 } },
       });
       remindersSent++;
     } catch (e) {

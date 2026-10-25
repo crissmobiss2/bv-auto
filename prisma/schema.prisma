@@ -70,6 +70,12 @@ enum InvoiceStatus {
   REFUNDED
 }
 
+enum PaymentType {
+  PAYMENT
+  DEPOSIT
+  REFUND
+}
+
 enum PaymentMethod {
   CASH
   CHECK
@@ -413,6 +419,8 @@ model Quote {
   totalAmount    Decimal     @default(0)
   depositRequired Decimal?
   depositPaid    Decimal?
+  depositExternalId String?  @unique
+  depositPaidAt  DateTime?
   approvalToken  String?     @unique
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -446,6 +454,8 @@ model Invoice {
   voidReason        String?
   stripeSessionId   String?
   stripePaymentUrl  String?
+  lastReminderAt    DateTime?
+  reminderCount     Int           @default(0)
   subtotal          Decimal       @default(0)
   taxRate        Decimal       @default(0)
   taxAmount      Decimal       @default(0)
@@ -501,18 +511,29 @@ model LineItem {
 // ─── PAYMENTS ─────────────────────────────────────────────────────────────────
 
 model Payment {
-  id         String        @id @default(cuid())
-  invoiceId  String
-  amount     Decimal
-  method     PaymentMethod
-  reference  String?
-  notes      String?
-  receivedAt DateTime      @default(now())
-  createdAt  DateTime      @default(now())
+  id             String        @id @default(cuid())
+  invoiceId      String
+  // Negative for refunds; invoice amountPaid is always the sum of these rows.
+  amount         Decimal
+  type           PaymentType   @default(PAYMENT)
+  method         PaymentMethod
+  reference      String?
+  notes          String?
+  // Provider id (Stripe PaymentIntent/refund id); unique so retries cannot double-record.
+  externalId     String?       @unique
+  // Client-supplied key so a double-submitted desk payment is recorded once.
+  idempotencyKey String?       @unique
+  refundOfId     String?
+  createdById    String?
+  receivedAt     DateTime      @default(now())
+  createdAt      DateTime      @default(now())
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  invoice  Invoice   @relation(fields: [invoiceId], references: [id])
+  refundOf Payment?  @relation("PaymentRefunds", fields: [refundOfId], references: [id])
+  refunds  Payment[] @relation("PaymentRefunds")
 
   @@index([invoiceId])
+  @@index([receivedAt])
 }
 
 // ─── PARTS ────────────────────────────────────────────────────────────────────

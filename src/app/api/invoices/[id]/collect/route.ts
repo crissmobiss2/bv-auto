@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
-import { createInvoiceCheckoutSession } from "@/lib/stripe";
+import { createInvoiceCheckoutSession, getReusableCheckoutUrl } from "@/lib/stripe";
 
 export async function POST(
   _req: NextRequest,
@@ -23,10 +23,10 @@ export async function POST(
   if (!invoice) return apiError("Invoice not found", 404);
   if (Number(invoice.amountDue) <= 0) return apiError("Invoice already paid");
 
-  // Reuse existing session if still valid
-  if (invoice.stripePaymentUrl && invoice.stripeSessionId) {
-    return apiSuccess({ url: invoice.stripePaymentUrl, sessionId: invoice.stripeSessionId });
-  }
+  if (invoice.status === "VOID" || invoice.status === "REFUNDED") return apiError("Invoice is void or refunded");
+
+  const reusable = await getReusableCheckoutUrl(invoice.stripeSessionId, Number(invoice.amountDue));
+  if (reusable) return apiSuccess({ url: reusable, sessionId: invoice.stripeSessionId });
 
   let session;
   try {

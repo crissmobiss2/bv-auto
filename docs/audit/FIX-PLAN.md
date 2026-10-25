@@ -143,3 +143,18 @@ For mobile/UI changes, verify at a 390×844 viewport and one physical device.
 | Parts availability/ordering | No `PARTSTECH_*` | Add provider credentials |
 | APK in-place update | Debug signing key mismatch | Create release keystore; one-time uninstall/reinstall |
 | Subagent fix workspaces | OpenRouter key exhausted | Restore key or run lanes sequentially |
+
+
+## Status updates
+
+### Money integrity (branch `devin/*-money-integrity`)
+
+Fixed in code, with unit tests in `src/__tests__/money.test.ts` (Stripe, card refunds and deposits not exercised against live Stripe):
+
+- **DATA-006 / BILL-010**: `Payment.externalId` and `Payment.idempotencyKey` are unique in the DB. The Stripe webhook writes `externalId`; desk payments and refunds send a per-dialog idempotency key, and replays return the original row.
+- **BILL-009 / FIN-009 (refunds)**: `POST /api/invoices/[id]/refund` (ADMIN/ACCOUNTANT) records a negative `REFUND` payment linked to the original, refunds card payments through Stripe first, and `src/lib/payments.ts#reconcileInvoice` recomputes paid/due/status (PAID → PARTIAL/REFUNDED, job PAID → INVOICED). Stripe `charge.refunded` webhooks are reconciled to Stripe's cumulative refunded amount. Revenue that sums `Payment.amount` is now net of refunds. VOID is blocked while money is still held; REFUNDED can no longer be set by hand.
+- **BILL-013 / FLOW-006**: quote deposits are paid through the portal (`POST /api/portal/[token]/pay` with `quoteId`), recorded on the quote by the webhook, and carried onto the invoice as a `DEPOSIT` payment when the invoice is created (or applied right away if the invoice already exists).
+- **BILL-008**: stored Checkout sessions are reused only while open, more than 10 minutes from expiry and priced at the current balance (`getReusableCheckoutUrl`).
+- **UX-007 / FLOW-010**: invoice payment history shows payment type, balance after each row, and a Refund action.
+- **UX-012 / FLOW-011**: portal "Pay Now" shows on every payable invoice and always opens a fresh, valid Checkout session.
+- **FLOW-007**: overdue reminders are sent at most once per invoice per day (`lastReminderAt`, `reminderCount`), and link to the portal rather than a possibly expired Checkout URL.

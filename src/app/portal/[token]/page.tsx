@@ -61,6 +61,14 @@ function JobStatusTimeline({ status }: { status: string }) {
 export default function CustomerPortalPage() {
   const { token } = useParams<{ token: string }>();
   const [message, setMessage] = useState("");
+  const [payError, setPayError] = useState<string | null>(null);
+  const payMutation = useMutation({
+    mutationFn: (body: { invoiceId?: string; quoteId?: string }) =>
+      axios.post(`/api/portal/${token}/pay`, body).then((r) => r.data as { url: string }),
+    onMutate: () => setPayError(null),
+    onSuccess: ({ url }) => { window.location.href = url; },
+    onError: (e) => setPayError((axios.isAxiosError(e) && e.response?.data?.error) || "Could not start the payment"),
+  });
   const [messageSent, setMessageSent] = useState(false);
 
   const { data: shopInfo } = useQuery({
@@ -286,6 +294,7 @@ export default function CustomerPortalPage() {
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-4">
+          {payError && <p role="alert" className="mb-2 text-sm text-red-600">{payError}</p>}
           <Card>
             <CardContent className="p-0">
               {(customer.invoices || []).length === 0 ? (
@@ -301,10 +310,15 @@ export default function CustomerPortalPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className={`text-xs ${INVOICE_STATUS_COLORS[inv.status] || "bg-gray-100 text-gray-700"}`}>{inv.status}</Badge>
-                        {inv.stripePaymentUrl && inv.status !== "PAID" && (
-                          <a href={inv.stripePaymentUrl} target="_blank" rel="noopener noreferrer">
-                            <Button size="sm" className="text-xs h-7 bg-green-600 hover:bg-green-700">Pay Now</Button>
-                          </a>
+                        {Number(inv.amountDue) > 0 && !["PAID", "VOID", "REFUNDED", "DRAFT"].includes(inv.status) && (
+                          <Button
+                            size="sm"
+                            className="text-xs h-7 bg-green-600 hover:bg-green-700"
+                            disabled={payMutation.isPending}
+                            onClick={() => payMutation.mutate({ invoiceId: inv.id })}
+                          >
+                            {payMutation.isPending && payMutation.variables?.invoiceId === inv.id ? "Opening…" : "Pay Now"}
+                          </Button>
                         )}
                       </div>
                     </div>

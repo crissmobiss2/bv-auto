@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { reconcileInvoice } from "@/lib/payments";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { generateInvoiceNumber } from "@/lib/utils";
 import { AuditAction, InvoiceStatus } from "@prisma/client";
@@ -105,6 +106,26 @@ export async function POST(req: NextRequest) {
     },
     include: { lineItems: true, payments: true },
   });
+
+  // A deposit collected on the quote becomes the first payment on the invoice.
+  const deposit = Number(quote.depositPaid ?? 0);
+  if (deposit > 0) {
+    await prisma.$transaction(async (tx) => {
+      await tx.payment.create({
+        data: {
+          invoiceId: invoice.id,
+          amount: deposit,
+          type: "DEPOSIT",
+          method: "CREDIT_CARD",
+          reference: quote.depositExternalId,
+          externalId: quote.depositExternalId ? `deposit:${quote.depositExternalId}` : null,
+          notes: "Deposit collected on quote",
+          receivedAt: quote.depositPaidAt ?? new Date(),
+        },
+      });
+      await reconcileInvoice(tx, invoice.id);
+    });
+  }
 
   // Update job status
   await prisma.job.update({

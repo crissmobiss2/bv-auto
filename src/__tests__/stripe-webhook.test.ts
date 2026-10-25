@@ -80,8 +80,9 @@ describe("Stripe webhook handler", () => {
 
     (prisma.payment.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     (prisma.invoice.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockInvoice);
+    (prisma.invoice.findUniqueOrThrow as ReturnType<typeof vi.fn>).mockResolvedValue({ ...mockInvoice, paidAt: null });
     (prisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "pay-1", amount: 299 });
-    (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([{ amount: 299 }]);
+    (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([{ amount: 299, type: "PAYMENT" }]);
     (prisma.invoice.update as ReturnType<typeof vi.fn>).mockResolvedValue({ ...mockInvoice, status: "PAID" });
     (prisma.job.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
@@ -97,6 +98,12 @@ describe("Stripe webhook handler", () => {
     expect(res.status).toBe(200);
     expect(body.received).toBe(true);
     expect(prisma.$transaction).toHaveBeenCalled();
+    expect(prisma.payment.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ externalId: "pi_test" }) }),
+    );
+    expect(prisma.invoice.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "PAID", amountDue: 0 }) }),
+    );
   });
 
   it("ignores a duplicate delivery of an already-recorded payment", async () => {
