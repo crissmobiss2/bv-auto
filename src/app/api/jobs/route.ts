@@ -12,15 +12,15 @@ const createSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
   serviceLocation: z.string().optional(),
-  scheduledAt: z.string().optional(),
-  estimatedHours: z.number().optional(),
-  mileageIn: z.number().optional(),
+  scheduledAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid scheduledAt").optional(),
+  estimatedHours: z.number().nonnegative().optional(),
+  mileageIn: z.number().int().nonnegative().optional(),
   internalNotes: z.string().optional(),
   customerNotes: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const technicianId = searchParams.get("technicianId");
   const customerId = searchParams.get("customerId");
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "25");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "25") || 25));
   const skip = (page - 1) * limit;
 
   const from = searchParams.get("from");
@@ -46,7 +46,14 @@ export async function GET(req: NextRequest) {
     }
     where.status = statuses.length > 1 ? { in: statuses as JobStatus[] } : statuses[0];
   }
-  if (technicianId) where.technicianId = technicianId;
+  // A technician's job list must only contain their own jobs. The UI also
+  // filters client-side, but the API must not send other technicians' customer
+  // and vehicle data in the first place.
+  if (session!.user.role === "TECHNICIAN") {
+    where.technicianId = session!.user.id;
+  } else if (technicianId) {
+    where.technicianId = technicianId;
+  }
   if (customerId) where.customerId = customerId;
   if (vehicleId) where.vehicleId = vehicleId;
   if (from || to) {
@@ -94,11 +101,31 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
+  // Verify the vehicle actually belongs to the selected customer. Without
+  // this, a typo or a crafted request links customer A to customer B's car.
+  const [customer, vehicle, technician] = await Promise.all([
+    prisma.customer.findUnique({ where: { id: parsed.data.customerId }, select: { id: true } }),
+    prisma.vehicle.findUnique({ where: { id: parsed.data.vehicleId }, select: { id: true, customerId: true } }),
+    parsed.data.technicianId
+      ? prisma.user.findUnique({ where: { id: parsed.data.technicianId }, select: { id: true, role: true, isActive: true } })
+      : Promise.resolve(null),
+  ]);
+  if (!customer) return apiError("Customer not found", 404);
+  if (!vehicle) return apiError("Vehicle not found", 404);
+  if (vehicle.customerId !== customer.id) {
+    return apiError("Selected vehicle does not belong to the selected customer", 400);
+  }
+  if (parsed.data.technicianId && (!technician || !technician.isActive || !["TECHNICIAN", "ADMIN"].includes(technician.role))) {
+    return apiError("Selected technician is not an active technician", 400);
+  }
+
   const jobNumber = generateJobNumber();
 
   const job = await prisma.job.create({
     data: {
       ...parsed.data,
+      customerId: customer.id,
+      vehicleId: vehicle.id,
       jobNumber,
       createdById: session!.user.id,
       scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined,

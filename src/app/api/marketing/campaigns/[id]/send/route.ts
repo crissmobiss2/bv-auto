@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 import twilio from "twilio";
 import { NotificationType } from "@prisma/client";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "DISPATCHER"]);
   if (error) return error;
 
   const { id } = await params;

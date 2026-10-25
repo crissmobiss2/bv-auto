@@ -6,18 +6,23 @@ const client =
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     : null;
 
-const FROM = process.env.TWILIO_PHONE_NUMBER || "+15550001000";
+const FROM = process.env.TWILIO_PHONE_NUMBER;
 const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
-export const smsConfigured = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+// A Twilio account without a sending number cannot send. Never fall back to a
+// fake number: that produces a provider error while the UI reports success.
+export const smsConfigured = !!(
+  process.env.TWILIO_ACCOUNT_SID &&
+  process.env.TWILIO_AUTH_TOKEN &&
+  process.env.TWILIO_PHONE_NUMBER
+);
 
 async function send(to: string, body: string) {
   const e164 = to.replace(/\D/g, "");
   const phone = e164.length === 10 ? `+1${e164}` : `+${e164}`;
 
-  if (!client) {
-    console.log(`[SMS STUB] To: ${phone} | Body: ${body}`);
-    return { sid: "stub" };
+  if (!client || !FROM) {
+    throw new Error("SMS is not configured (missing Twilio credentials or phone number)");
   }
   return client.messages.create({ from: FROM, to: phone, body });
 }

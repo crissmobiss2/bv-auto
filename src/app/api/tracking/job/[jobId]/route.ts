@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, getIP } from "@/lib/rate-limit";
 
 // GET /api/tracking/job/[jobId] — public endpoint for customer to track their technician
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
+  if (!rateLimit(`track:${getIP(req)}`, 60, 60_000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const { jobId } = await params;
 
   const since = new Date(Date.now() - 30 * 60 * 1000); // last 30 minutes
@@ -22,7 +27,7 @@ export async function GET(
         title: true,
         status: true,
         scheduledAt: true,
-        customer: { select: { firstName: true, lastName: true } },
+        // Deliberately omit customer PII: the tracking link is public.
         technician: { select: { name: true } },
       },
     }),
@@ -45,9 +50,6 @@ export async function GET(
       title: job.title,
       status: job.status,
       scheduledAt: job.scheduledAt,
-      customer: job.customer
-        ? { firstName: job.customer.firstName, lastName: job.customer.lastName }
-        : null,
       technician: job.technician ? { name: job.technician.name } : null,
     },
     eta: null,

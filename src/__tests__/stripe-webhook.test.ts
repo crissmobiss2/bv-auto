@@ -59,6 +59,8 @@ describe("Stripe webhook handler", () => {
       type: "checkout.session.completed",
       data: {
         object: {
+          id: "cs_test_123",
+          payment_status: "paid",
           metadata: { invoiceId: "inv-123" },
           amount_total: 29900,
           payment_intent: "pi_test",
@@ -69,11 +71,19 @@ describe("Stripe webhook handler", () => {
     const mockInvoice = {
       id: "inv-123",
       invoiceNumber: "INV-001",
+      jobId: "job-123",
+      status: "SENT",
+      totalAmount: 299,
+      amountDue: 299,
       customer: { email: "test@test.com", phone: "5551234567", firstName: "Jane", lastName: "Smith" },
     };
 
+    (prisma.payment.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     (prisma.invoice.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockInvoice);
-    (prisma.$transaction as ReturnType<typeof vi.fn>).mockResolvedValue([{}, {}]);
+    (prisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "pay-1", amount: 299 });
+    (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([{ amount: 299 }]);
+    (prisma.invoice.update as ReturnType<typeof vi.fn>).mockResolvedValue({ ...mockInvoice, status: "PAID" });
+    (prisma.job.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
     const { POST } = await import("@/app/api/stripe/webhook/route");
     const req = new Request("http://localhost/api/stripe/webhook", {

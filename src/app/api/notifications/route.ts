@@ -1,5 +1,6 @@
 import { requireAuth, apiSuccess } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
+import { shopDayStart, shopDayEnd } from "@/lib/timezone";
 
 export async function GET() {
   const { error } = await requireAuth();
@@ -8,7 +9,8 @@ export async function GET() {
   const now = new Date();
   const in7Days = new Date(now.getTime() + 7 * 86400000);
   const in14Days = new Date(now.getTime() + 14 * 86400000);
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayStart = shopDayStart();
+  const todayEnd = shopDayEnd();
 
   const [
     overdueInvoices,
@@ -67,7 +69,7 @@ export async function GET() {
     prisma.job.findMany({
       where: {
         status: { in: ["SCHEDULED", "IN_PROGRESS"] },
-        scheduledAt: { gte: todayStart, lt: new Date(todayStart.getTime() + 86400000) },
+        scheduledAt: { gte: todayStart, lt: todayEnd },
       },
       select: {
         id: true, jobNumber: true, title: true, scheduledAt: true, status: true,

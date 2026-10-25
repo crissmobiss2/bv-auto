@@ -244,6 +244,12 @@ export default function TechInspectionPage() {
 
         {/* Sticky bottom bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 space-y-2 shadow-lg">
+          {sendMutation.isError && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+              {(sendMutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+                "The report was not sent. Ask the shop to verify the customer's email and RESEND_API_KEY."}
+            </p>
+          )}
           {sendSent ? (
             <div className="flex items-center justify-center gap-2 py-2 text-green-600 font-medium text-sm">
               <CheckCircle className="h-5 w-5" />

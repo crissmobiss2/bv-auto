@@ -1,11 +1,14 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { smsConfigured } from "@/lib/sms";
 
 // Weekly: find vehicles with maintenance intervals due soon (within 500 miles or 14 days)
 export async function GET(req: NextRequest) {
   const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (secret !== process.env.CRON_SECRET) return apiError("Unauthorized", 401);
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return apiError("Unauthorized", 401);
+  }
 
   const now = new Date();
   const in14Days = new Date(now.getTime() + 14 * 86400000);
@@ -43,6 +46,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    let created = false;
     if (!existing) {
       await prisma.followUp.create({
         data: {
@@ -52,16 +56,18 @@ export async function GET(req: NextRequest) {
           dueAt: interval.nextDueDate || in14Days,
         },
       });
+      created = true;
     }
 
-    // Send SMS reminder
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+    // Only notify when the follow-up is newly created; otherwise every weekly
+    // cron run would re-text the same customer about the same interval.
+    if (created && customer.phone && smsConfigured) {
       try {
         const twilio = (await import("twilio")).default;
-        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
         await client.messages.create({
           body: `Hi ${customer.firstName}! Your ${vehicleStr} is due for ${interval.serviceName} around ${dueDateStr}. Call or text to schedule: ${process.env.TWILIO_PHONE_NUMBER}`,
-          from: process.env.TWILIO_PHONE_NUMBER,
+          from: process.env.TWILIO_PHONE_NUMBER!,
           to: customer.phone,
         });
         notified++;

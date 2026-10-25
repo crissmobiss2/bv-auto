@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError } from "@/lib/api-helpers";
+import { requireAuth, requireRole, apiError } from "@/lib/api-helpers";
 
 // POST /api/tracking/location — technician posts their GPS location
 export async function POST(req: NextRequest) {
@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
   const lat = typeof body.lat === "number" ? body.lat : parseFloat(String(body.lat));
   const lng = typeof body.lng === "number" ? body.lng : parseFloat(String(body.lng));
 
-  if (isNaN(lat) || isNaN(lng)) {
-    return apiError("lat and lng are required numbers");
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return apiError("lat and lng are required valid coordinates");
   }
 
   const accuracy  = typeof body.accuracy  === "number" ? body.accuracy  : undefined;
@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
 
 // GET /api/tracking/location — admin/dispatcher sees all active technician locations
 export async function GET() {
-  const { error } = await requireAuth();
+  // Technician GPS is sensitive; only dispatch/admin roles may read the map.
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "SERVICE_ADVISOR"]);
   if (error) return error;
 
   const since = new Date(Date.now() - 5 * 60 * 1000); // last 5 minutes

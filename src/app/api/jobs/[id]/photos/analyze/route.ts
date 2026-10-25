@@ -3,11 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import Anthropic from "@anthropic-ai/sdk";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return apiError("Photo analysis is not configured (missing ANTHROPIC_API_KEY)", 503);
+  }
+  // Instantiate only after the key check. Constructing the client at module
+  // scope throws during route import when the key is unset, turning a clean
+  // 503 into an opaque 500.
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const { id } = await params;
 
@@ -20,7 +25,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
 
-  if (!job) return apiError("Job not found");
+  if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only analyze photos for jobs assigned to you", 403);
+  }
   if (!job.photos.length) return apiError("No photos to analyze");
 
   const imageMessages = await Promise.all(

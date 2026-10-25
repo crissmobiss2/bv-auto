@@ -10,8 +10,9 @@ import {
   Calendar, TrendingUp, DollarSign, MessageSquare, ChevronDown, ChevronUp,
   Briefcase, HelpCircle,
 } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { signOutAndClear } from "@/lib/sign-out";
 import { useState, useEffect } from "react";
 
 type NavItem = { name: string; href: string; icon: React.ElementType; roles: string[] | null };
@@ -287,7 +288,7 @@ export function Sidebar() {
           </div>
         )}
         <button
-          onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
+          onClick={() => signOutAndClear()}
           className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-gray-400 hover:bg-gray-700/70 hover:text-white transition-colors"
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />

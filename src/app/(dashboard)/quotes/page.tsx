@@ -62,7 +62,13 @@ function QuotesContent() {
         alert(`Sent! Approval link copied to clipboard:\n${res.data.approvalUrl}`);
       }
     },
-    onError: () => setSending(null),
+    onError: (err: unknown) => {
+      setSending(null);
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        "Quote was not sent. Check email/SMS configuration and the customer's contact info.";
+      alert(message);
+    },
   });
 
   const approveMutation = useMutation({

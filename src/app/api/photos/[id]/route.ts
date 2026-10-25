@@ -20,9 +20,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!token || token !== photo.job?.customer?.portalToken) return error;
   }
 
+  // Defend against legacy rows written before upload validation: only serve
+  // known raster image types, and never let the browser sniff another type.
+  const safeMime = photo.mimeType && /^image\/(jpeg|png|webp|heic|heif)$/i.test(photo.mimeType)
+    ? photo.mimeType
+    : "application/octet-stream";
+
   return new NextResponse(new Uint8Array(photo.data), {
     headers: {
-      "Content-Type": photo.mimeType || "image/jpeg",
+      "Content-Type": safeMime,
+      "X-Content-Type-Options": "nosniff",
+      "Content-Disposition": "inline",
       "Cache-Control": "private, max-age=3600",
     },
   });

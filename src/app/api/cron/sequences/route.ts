@@ -1,11 +1,15 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiSuccess } from "@/lib/api-helpers";
+import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { smsConfigured } from "@/lib/sms";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new Response("Unauthorized", { status: 401 });
+  }
+  if (!smsConfigured) {
+    return apiError("SMS is not configured; sequence steps were not sent", 503);
   }
 
   const now = new Date();
@@ -34,39 +38,44 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // Send SMS if Twilio is configured
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER && enrollment.customer.phone) {
-      try {
-        const twilio = (await import("twilio")).default;
-        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        const message = currentStep.messageTemplate
-          .replace("{{firstName}}", enrollment.customer.firstName)
-          .replace("{{lastName}}", enrollment.customer.lastName)
-          .replace("{{name}}", `${enrollment.customer.firstName} ${enrollment.customer.lastName}`);
-        const phone = enrollment.customer.phone.replace(/\D/g, "");
-        await client.messages.create({
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: phone.length === 10 ? `+1${phone}` : `+${phone}`,
-          body: message,
-        });
+    if (!enrollment.customer.phone) {
+      // Keep the enrollment but stop retrying a customer we cannot reach.
+      await prisma.commEnrollment.update({
+        where: { id: enrollment.id },
+        data: { status: "PAUSED" },
+      });
+      continue;
+    }
 
-        // Log to smsMessage
-        await prisma.smsMessage.create({
-          data: {
-            customerId: enrollment.customerId,
-            direction: "OUTBOUND",
-            body: message,
-            fromNumber: process.env.TWILIO_PHONE_NUMBER,
-            toNumber: enrollment.customer.phone,
-          },
-        });
-        sent++;
-      } catch (err) {
-        console.error("Sequence SMS error:", err);
-      }
-    } else {
-      console.log(`[SEQ STUB] To: ${enrollment.customer.firstName} ${enrollment.customer.lastName} | Step ${currentStep.stepNumber}: ${currentStep.messageTemplate.slice(0, 80)}`);
+    try {
+      const twilio = (await import("twilio")).default;
+      const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
+      const message = currentStep.messageTemplate
+        .replace("{{firstName}}", enrollment.customer.firstName)
+        .replace("{{lastName}}", enrollment.customer.lastName)
+        .replace("{{name}}", `${enrollment.customer.firstName} ${enrollment.customer.lastName}`);
+      const phone = enrollment.customer.phone.replace(/\D/g, "");
+      await client.messages.create({
+        from: process.env.TWILIO_PHONE_NUMBER!,
+        to: phone.length === 10 ? `+1${phone}` : `+${phone}`,
+        body: message,
+      });
+
+      await prisma.smsMessage.create({
+        data: {
+          customerId: enrollment.customerId,
+          direction: "OUTBOUND",
+          body: message,
+          fromNumber: process.env.TWILIO_PHONE_NUMBER!,
+          toNumber: enrollment.customer.phone,
+        },
+      });
       sent++;
+    } catch (err) {
+      // Leave the step due so a later run can retry. Never advance a sequence
+      // past a message the customer did not receive.
+      console.error("Sequence SMS error:", err);
+      continue;
     }
 
     // Advance to next step

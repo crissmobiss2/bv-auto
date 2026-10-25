@@ -1,9 +1,27 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
+import { z } from "zod";
+
+const updateFleetSchema = z.object({
+  name: z.string().min(1).optional(),
+  contactName: z.string().nullable().optional(),
+  email: z.string().email().nullable().optional().or(z.literal("")),
+  phone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  zip: z.string().nullable().optional(),
+  billingTerms: z.string().optional(),
+  customLaborRate: z.coerce.number().nonnegative().nullable().optional(),
+  poRequired: z.boolean().optional(),
+  creditLimit: z.coerce.number().nonnegative().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+}).partial();
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "ACCOUNTANT"]);
   if (error) return error;
 
   const { id } = await params;
@@ -35,26 +53,25 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "ACCOUNTANT"]);
   if (error) return error;
 
   const { id } = await params;
   const body = await req.json();
+  const parsed = updateFleetSchema.safeParse(body);
+  if (!parsed.success) return apiError(parsed.error.issues[0].message, 400);
 
+  const { email, ...rest } = parsed.data;
   const account = await prisma.fleetAccount.update({
     where: { id },
-    data: {
-      ...body,
-      customLaborRate: body.customLaborRate != null ? Number(body.customLaborRate) : undefined,
-      creditLimit: body.creditLimit != null ? Number(body.creditLimit) : undefined,
-    },
+    data: { ...rest, ...(email !== undefined && { email: email || null }) },
   });
 
   return apiSuccess(account);
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "ACCOUNTANT"]);
   if (error) return error;
 
   const { id } = await params;

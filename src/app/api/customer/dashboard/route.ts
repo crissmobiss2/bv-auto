@@ -18,7 +18,7 @@ export async function GET() {
 
   const customerId = user.customerId;
 
-  const [customer, vehicles, recentJobs, openInvoices] = await Promise.all([
+  const [customer, vehicles, recentJobs, openInvoices, totalJobs] = await Promise.all([
     prisma.customer.findUnique({
       where: { id: customerId },
       select: { id: true, firstName: true, lastName: true, email: true, phone: true, city: true, state: true },
@@ -61,6 +61,8 @@ export async function GET() {
       orderBy: { dueDate: "asc" },
       take: 10,
     }),
+
+    prisma.job.count({ where: { customerId } }),
   ]);
 
   const totalSpend = await prisma.invoice.aggregate({
@@ -75,7 +77,7 @@ export async function GET() {
     openInvoices,
     stats: {
       totalVehicles: vehicles.length,
-      totalJobs: recentJobs.length,
+      totalJobs,
       totalSpend: Number(totalSpend._sum.totalAmount || 0),
       openBalance: openInvoices.reduce((s, i) => s + Number(i.amountDue), 0),
     },

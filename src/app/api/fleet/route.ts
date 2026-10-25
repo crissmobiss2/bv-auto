@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
+import { requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "ACCOUNTANT"]);
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "ACCOUNTANT"]);
   if (error) return error;
 
   const body = await req.json();

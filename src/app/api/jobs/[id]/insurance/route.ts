@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiError, apiSuccess } from "@/lib/api-helpers";
+
+const INSURANCE_ROLES = ["ADMIN", "DISPATCHER", "SERVICE_ADVISOR", "ACCOUNTANT"];
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(INSURANCE_ROLES);
   if (error) return error;
   const { id } = await params;
   const claim = await prisma.insuranceClaim.findUnique({ where: { jobId: id } });
@@ -12,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(INSURANCE_ROLES);
   if (error) return error;
   const { id } = await params;
   const body = await req.json();
@@ -68,14 +70,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(INSURANCE_ROLES);
   if (error) return error;
   const { id } = await params;
   const body = await req.json();
 
   if (body.subletId) {
+    const existing = await prisma.sublet.findFirst({
+      where: { id: String(body.subletId), jobId: id },
+      select: { id: true },
+    });
+    if (!existing) return apiError("Sublet not found for this job", 404);
     const sublet = await prisma.sublet.update({
-      where: { id: body.subletId },
+      where: { id: existing.id },
       data: { status: body.status, completedAt: body.status === "COMPLETE" ? new Date() : undefined, ourCost: body.ourCost ? Number(body.ourCost) : undefined, ourCharge: body.ourCharge ? Number(body.ourCharge) : undefined },
     });
     return apiSuccess(sublet);

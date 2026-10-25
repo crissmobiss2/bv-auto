@@ -151,6 +151,12 @@ export default function InvoiceDetailPage() {
   const textToPayMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/text-to-pay`),
     onSuccess: () => setTextPaySent(true),
+    onError: (err: unknown) => {
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        "Text-to-pay was not sent. Check Stripe and Twilio configuration.";
+      alert(message);
+    },
   });
 
   const paymentMutation = useMutation({

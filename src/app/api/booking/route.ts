@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { apiError, apiSuccess, requireRole } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -54,6 +54,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  // The booking form is public; the list of submitted requests is not.
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "SERVICE_ADVISOR"]);
+  if (error) return error;
+
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
 

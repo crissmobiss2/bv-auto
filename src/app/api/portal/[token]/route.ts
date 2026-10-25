@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { apiError, apiSuccess, requireRole } from "@/lib/api-helpers";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -51,7 +51,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
 
 // Generate or refresh portal token for a customer (called internally)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
-  // token here = customerId (used by staff to generate the link)
+  // token here = customerId (used by staff to generate the link).
+  // This mutates a customer record, so it must never be public.
+  const { error } = await requireRole(["ADMIN", "DISPATCHER", "SERVICE_ADVISOR"]);
+  if (error) return error;
+
   const { token: customerId } = await params;
 
   const portalToken = crypto.randomBytes(20).toString("hex");

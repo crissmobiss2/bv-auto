@@ -1,16 +1,16 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { shopDayStart, shopDayEnd, shopWeekStart, shopMonthStart } from "@/lib/timezone";
 
 export async function GET() {
   const { error } = await requireAuth();
   if (error) return error;
 
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfWeek = new Date(startOfToday);
-  startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfToday = shopDayStart();
+  const endOfToday = shopDayEnd();
+  const startOfWeek = shopWeekStart();
+  const startOfMonth = shopMonthStart();
 
   const [
     openJobs,
@@ -33,7 +33,7 @@ export async function GET() {
     }),
     prisma.job.count({
       where: {
-        scheduledAt: { gte: startOfToday, lt: new Date(startOfToday.getTime() + 86400000) },
+        scheduledAt: { gte: startOfToday, lt: endOfToday },
       },
     }),
     prisma.invoice.count({

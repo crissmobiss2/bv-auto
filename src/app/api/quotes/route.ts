@@ -24,7 +24,7 @@ const createSchema = z.object({
   title: z.string().optional(),
   notes: z.string().optional(),
   internalNotes: z.string().optional(),
-  validUntil: z.string().optional(),
+  validUntil: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid validUntil").optional(),
   taxRate: z.number().min(0).max(30).default(0),
   depositRequired: z.number().optional(),
   lineItems: z.array(lineItemSchema).default([]),
@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
   const jobId = searchParams.get("jobId");
   const customerId = searchParams.get("customerId");
   const status = searchParams.get("status");
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "25");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "25") || 25));
   const skip = (page - 1) * limit;
 
   const where: Record<string, unknown> = {};
@@ -73,9 +73,12 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
-  // Check job exists
+  // Check job exists and that the customer on the quote is the job's customer.
   const job = await prisma.job.findUnique({ where: { id: parsed.data.jobId } });
   if (!job) return apiError("Job not found", 404);
+  if (job.customerId !== parsed.data.customerId) {
+    return apiError("Quote customer does not match the job customer", 400);
+  }
 
   // Check no existing quote for this job
   const existing = await prisma.quote.findUnique({ where: { jobId: parsed.data.jobId } });

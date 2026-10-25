@@ -39,24 +39,34 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // For customers: find or create a Customer record linked to this account
+  // For customers: create a Customer record linked to this account.
+  //
+  // Never auto-link an existing customer record by email. Email ownership is
+  // not verified during registration, so doing that lets anyone register with
+  // a victim's email and read that customer's jobs, invoices and messages.
+  // Existing customers must be linked by staff (or a future verified-email
+  // claim flow) instead.
   let customerId: string | undefined;
   if (role === "CUSTOMER") {
     const existingCustomer = await prisma.customer.findFirst({
       where: { email, isActive: true },
+      select: { id: true },
     });
 
     if (existingCustomer) {
-      customerId = existingCustomer.id;
-    } else {
-      const nameParts = name.trim().split(" ");
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(" ") || "-";
-      const newCustomer = await prisma.customer.create({
-        data: { firstName, lastName, email, phone: phone || "", isActive: true },
-      });
-      customerId = newCustomer.id;
+      return apiError(
+        "A customer record already exists for this email. Contact the shop to activate online access.",
+        409,
+      );
     }
+
+    const nameParts = name.trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ") || "-";
+    const newCustomer = await prisma.customer.create({
+      data: { firstName, lastName, email, phone: phone || "", isActive: true },
+    });
+    customerId = newCustomer.id;
   }
 
   const user = await prisma.user.create({

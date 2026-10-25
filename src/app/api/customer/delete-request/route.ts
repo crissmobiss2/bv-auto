@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, logAudit, apiError } from "@/lib/api-helpers";
 import { AuditAction } from "@prisma/client";
 import { Resend } from "resend";
+import { emailConfigured, escapeHtml } from "@/lib/email";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "crissmobiss@gmail.com";
@@ -19,6 +20,9 @@ export async function POST() {
 
   if (!user?.customerId) {
     return apiError("No customer record linked to your account", 404);
+  }
+  if (!emailConfigured) {
+    return apiError("Deletion requests are temporarily unavailable (email is not configured)", 503);
   }
 
   const customer = await prisma.customer.findUnique({
@@ -45,15 +49,15 @@ export async function POST() {
     <table style="width:100%;border-collapse:collapse;margin:16px 0;">
       <tr style="border-bottom:1px solid #e5e7eb;">
         <td style="padding:8px 0;font-size:13px;color:#6b7280;width:140px;">Customer Name</td>
-        <td style="padding:8px 0;font-size:13px;font-weight:600;">${customerName}</td>
+        <td style="padding:8px 0;font-size:13px;font-weight:600;">${escapeHtml(customerName)}</td>
       </tr>
       <tr style="border-bottom:1px solid #e5e7eb;">
         <td style="padding:8px 0;font-size:13px;color:#6b7280;">Email</td>
-        <td style="padding:8px 0;font-size:13px;">${customer.email || "N/A"}</td>
+        <td style="padding:8px 0;font-size:13px;">${escapeHtml(customer.email || "N/A")}</td>
       </tr>
       <tr style="border-bottom:1px solid #e5e7eb;">
         <td style="padding:8px 0;font-size:13px;color:#6b7280;">Customer ID</td>
-        <td style="padding:8px 0;font-family:monospace;font-size:12px;">${customer.id}</td>
+        <td style="padding:8px 0;font-family:monospace;font-size:12px;">${escapeHtml(customer.id)}</td>
       </tr>
       <tr>
         <td style="padding:8px 0;font-size:13px;color:#6b7280;">Requested At</td>
@@ -73,15 +77,14 @@ export async function POST() {
 </body>
 </html>`;
 
-  if (resend) {
-    await resend.emails.send({
-      from: FROM,
-      to: ADMIN_EMAIL,
-      subject: `CCPA Delete Request — ${customerName}`,
-      html: emailHtml,
-    });
-  } else {
-    console.log(`[EMAIL STUB] CCPA Delete Request — ${customerName} (${customer.id}) at ${requestedAt}`);
+  const result = await resend!.emails.send({
+    from: FROM,
+    to: ADMIN_EMAIL,
+    subject: `CCPA Delete Request — ${customerName.replace(/[\r\n]/g, " ")}`,
+    html: emailHtml,
+  });
+  if (result.error) {
+    return apiError("Could not notify the shop about your deletion request. Please call the shop directly.", 502);
   }
 
   await logAudit(

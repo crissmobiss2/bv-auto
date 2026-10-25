@@ -24,6 +24,18 @@ export async function POST(req: NextRequest) {
     return apiError("symptoms or dtcCodes are required", 400);
   }
 
+  // A technician may only write an AI note onto a job assigned to them.
+  if (jobId) {
+    const job = await prisma.job.findUnique({
+      where: { id: String(jobId) },
+      select: { id: true, technicianId: true },
+    });
+    if (!job) return apiError("Job not found", 404);
+    if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+      return apiError("You can only save diagnoses to your own jobs", 403);
+    }
+  }
+
   const vehicleInfo = [year, make, model].filter(Boolean).join(" ") || "Unknown vehicle";
   const mileageInfo = mileage ? ` with ${Number(mileage).toLocaleString()} miles` : "";
   const dtcInfo = dtcCodes?.length ? `\nDTC Codes: ${dtcCodes.join(", ")}` : "";

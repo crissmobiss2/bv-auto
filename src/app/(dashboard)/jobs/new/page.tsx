@@ -60,7 +60,9 @@ function NewJobForm() {
         estimatedHours: data.estimatedHours ? parseFloat(data.estimatedHours) : undefined,
         mileageIn: data.mileageIn ? parseInt(data.mileageIn) : undefined,
         technicianId: data.technicianId || undefined,
-        scheduledAt: data.scheduledAt || undefined,
+        // datetime-local is a wall-clock value. Convert it in the browser so
+        // the server does not interpret 10:00 AM as 10:00 UTC.
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt).toISOString() : undefined,
       }),
     onSuccess: (res) => router.push(`/jobs/${res.data.id}`),
   });

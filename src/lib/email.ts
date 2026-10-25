@@ -7,12 +7,25 @@ const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
 export const emailConfigured = !!resend;
 
+export function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]!));
+}
+
 async function send(to: string, subject: string, html: string) {
   if (!resend) {
-    console.log(`[EMAIL STUB] To: ${to} | Subject: ${subject}`);
-    return { id: "stub" };
+    throw new Error("Email is not configured (missing RESEND_API_KEY)");
   }
-  return resend.emails.send({ from: FROM, to, subject, html });
+  const result = await resend.emails.send({ from: FROM, to, subject, html });
+  if (result.error) {
+    throw new Error(result.error.message || "Email provider rejected the message");
+  }
+  return result;
 }
 
 function baseTemplate(content: string) {
@@ -40,13 +53,13 @@ export async function sendQuoteEmail(opts: {
   const phone = await getShopPhone();
   const html = baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Your Estimate is Ready</h2>
-    <p>Hi ${opts.customerName},</p>
-    <p>Your estimate for your <strong>${opts.vehicleDescription}</strong> is ready for review.</p>
+    <p>Hi ${escapeHtml(opts.customerName)},</p>
+    <p>Your estimate for your <strong>${escapeHtml(opts.vehicleDescription)}</strong> is ready for review.</p>
     <div style="background:#f3f4f6;padding:16px;border-radius:8px;margin:16px 0;">
-      <p style="margin:0;font-size:13px;color:#6b7280;">Quote #${opts.quoteNumber}</p>
-      <p style="margin:4px 0 0;font-size:28px;font-weight:bold;color:#1e3a5f;">${opts.totalAmount}</p>
+      <p style="margin:0;font-size:13px;color:#6b7280;">Quote #${escapeHtml(opts.quoteNumber)}</p>
+      <p style="margin:4px 0 0;font-size:28px;font-weight:bold;color:#1e3a5f;">${escapeHtml(opts.totalAmount)}</p>
     </div>
-    <a href="${approvalUrl}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">Review &amp; Approve Estimate</a>
+    <a href="${escapeHtml(approvalUrl)}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">Review &amp; Approve Estimate</a>
     <p style="color:#6b7280;font-size:13px;">You can approve or decline this estimate. No account required.</p>
     ${phone ? `<p style="color:#6b7280;font-size:13px;">Questions? Call us at ${phone}</p>` : ""}
   `);
@@ -65,14 +78,14 @@ export async function sendInvoiceEmail(opts: {
 }) {
   const html = baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Invoice for Service</h2>
-    <p>Hi ${opts.customerName},</p>
-    <p>Thank you for choosing B&amp;V Mobile Auto! Your invoice for service on your <strong>${opts.vehicleDescription}</strong> is attached.</p>
+    <p>Hi ${escapeHtml(opts.customerName)},</p>
+    <p>Thank you for choosing B&amp;V Mobile Auto! Your invoice for service on your <strong>${escapeHtml(opts.vehicleDescription)}</strong> is attached.</p>
     <div style="background:#f3f4f6;padding:16px;border-radius:8px;margin:16px 0;">
-      <p style="margin:0;font-size:13px;color:#6b7280;">Invoice #${opts.invoiceNumber}</p>
-      <p style="margin:4px 0 0;font-size:28px;font-weight:bold;color:#1e3a5f;">${opts.amountDue} due</p>
+      <p style="margin:0;font-size:13px;color:#6b7280;">Invoice #${escapeHtml(opts.invoiceNumber)}</p>
+      <p style="margin:4px 0 0;font-size:28px;font-weight:bold;color:#1e3a5f;">${escapeHtml(opts.amountDue)} due</p>
     </div>
-    ${opts.paymentUrl ? `<a href="${opts.paymentUrl}" style="display:inline-block;background:#16a34a;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">Pay Now Online</a>` : ""}
-    <a href="${opts.invoiceUrl}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 4px;">View Invoice</a>
+    ${opts.paymentUrl ? `<a href="${escapeHtml(opts.paymentUrl)}" style="display:inline-block;background:#16a34a;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">Pay Now Online</a>` : ""}
+    <a href="${escapeHtml(opts.invoiceUrl)}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 4px;">View Invoice</a>
     <p style="color:#6b7280;font-size:13px;">We accept cash, check, card, Zelle, Venmo &amp; CashApp.</p>
   `);
   return send(opts.to, `Invoice ${opts.invoiceNumber} — ${opts.amountDue} due`, html);
@@ -88,8 +101,8 @@ export async function sendInspectionEmail(opts: {
   const phone = await getShopPhone();
   const html = baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Vehicle Inspection Report</h2>
-    <p>Hi ${opts.customerName},</p>
-    <p>Here is the inspection report for your <strong>${opts.vehicleDescription}</strong>:</p>
+    <p>Hi ${escapeHtml(opts.customerName)},</p>
+    <p>Here is the inspection report for your <strong>${escapeHtml(opts.vehicleDescription)}</strong>:</p>
     <div style="margin:16px 0;">${opts.inspectionHtml}</div>
     ${phone ? `<p style="color:#6b7280;font-size:13px;">Questions? Call us at ${phone}</p>` : ""}
   `);
@@ -105,12 +118,12 @@ export async function sendPaymentReceiptEmail(opts: {
 }) {
   const html = baseTemplate(`
     <h2 style="color:#16a34a;margin:0 0 8px;">✓ Payment Received</h2>
-    <p>Hi ${opts.customerName},</p>
+    <p>Hi ${escapeHtml(opts.customerName)},</p>
     <p>We received your payment. Thank you!</p>
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:8px;margin:16px 0;">
-      <p style="margin:0;font-size:13px;color:#6b7280;">Invoice #${opts.invoiceNumber}</p>
-      <p style="margin:4px 0 0;font-size:28px;font-weight:bold;color:#16a34a;">${opts.amountPaid} paid</p>
-      <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">via ${opts.method}</p>
+      <p style="margin:0;font-size:13px;color:#6b7280;">Invoice #${escapeHtml(opts.invoiceNumber)}</p>
+      <p style="margin:4px 0 0;font-size:28px;font-weight:bold;color:#16a34a;">${escapeHtml(opts.amountPaid)} paid</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">via ${escapeHtml(opts.method)}</p>
     </div>
     <p>Thank you for your business! We look forward to serving you again.</p>
   `);
@@ -124,8 +137,8 @@ export async function sendFollowUpEmail(opts: {
 }) {
   const phone = await getShopPhone();
   const html = baseTemplate(`
-    <p>Hi ${opts.customerName},</p>
-    <p>${opts.message}</p>
+    <p>Hi ${escapeHtml(opts.customerName)},</p>
+    <p>${escapeHtml(opts.message)}</p>
     ${phone ? `<p>To schedule service, call us at <strong>${phone}</strong> or reply to this email.</p>` : "<p>Reply to this email to schedule service.</p>"}
   `);
   return send(opts.to, "Service Reminder from B&V Mobile Auto", html);

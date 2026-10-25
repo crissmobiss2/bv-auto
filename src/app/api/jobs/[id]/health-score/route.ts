@@ -50,15 +50,18 @@ export function computeHealthScore(checklist: {
 }
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
   const { id } = await params;
 
   const job = await prisma.job.findUnique({
     where: { id },
-    select: { id: true, checklist: true, vehicleHealthScore: true, vehicle: { select: { year: true, make: true, model: true } } },
+    select: { id: true, checklist: true, vehicleHealthScore: true, technicianId: true, vehicle: { select: { year: true, make: true, model: true } } },
   });
   if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only view health scores for jobs assigned to you", 403);
+  }
 
   if (!job.checklist) return apiSuccess({ score: null, summary: "No inspection on file" });
 
@@ -67,15 +70,18 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
   const { id } = await params;
 
   const job = await prisma.job.findUnique({
     where: { id },
-    select: { id: true, checklist: true, customerId: true, vehicle: { select: { year: true, make: true, model: true } }, customer: { select: { phone: true, firstName: true } } },
+    select: { id: true, checklist: true, customerId: true, technicianId: true, vehicle: { select: { year: true, make: true, model: true } }, customer: { select: { phone: true, firstName: true } } },
   });
   if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only score jobs assigned to you", 403);
+  }
   if (!job.checklist) return apiError("No inspection data to score");
 
   const result = computeHealthScore(job.checklist as Parameters<typeof computeHealthScore>[0]);

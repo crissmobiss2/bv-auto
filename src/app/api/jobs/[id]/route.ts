@@ -2,8 +2,29 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, JobStatus } from "@prisma/client";
+import { z } from "zod";
 import twilio from "twilio";
 import { sendPushToUser, sendPushToRole } from "@/lib/push";
+
+const updateJobSchema = z.object({
+  status: z.nativeEnum(JobStatus).optional(),
+  technicianId: z.string().nullable().optional(),
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  serviceLocation: z.string().optional(),
+  scheduledAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid scheduledAt").nullable().optional(),
+  estimatedHours: z.number().nonnegative().nullable().optional(),
+  actualHours: z.number().nonnegative().nullable().optional(),
+  mileageIn: z.number().int().nonnegative().nullable().optional(),
+  mileageOut: z.number().int().nonnegative().nullable().optional(),
+  internalNotes: z.string().optional(),
+  customerNotes: z.string().optional(),
+  checklist: z.unknown().optional(),
+  requiresReturn: z.boolean().optional(),
+  vehicleHealthScore: z.number().int().min(0).max(100).nullable().optional(),
+  fleetAccountId: z.string().nullable().optional(),
+  fleetPoNumber: z.string().optional(),
+}).partial();
 
 const STATUS_SMS: Partial<Record<JobStatus, string>> = {
   IN_PROGRESS: "Hi {name}, your {vehicle} has been checked in and work has started. We'll keep you updated!",
@@ -70,7 +91,7 @@ async function sendJobStatusPush(jobId: string, oldStatus: JobStatus, newStatus:
 }
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
@@ -98,6 +119,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   });
 
   if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technician?.id !== session!.user.id) {
+    return apiError("You can only view jobs assigned to you", 403);
+  }
   return apiSuccess(job);
 }
 
@@ -107,28 +131,52 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
+  const parsed = updateJobSchema.safeParse(body);
+  if (!parsed.success) return apiError(parsed.error.issues[0].message, 400);
 
   const existing = await prisma.job.findUnique({ where: { id } });
   if (!existing) return apiError("Job not found", 404);
 
-  // Handle status transitions
-  const updateData: Record<string, unknown> = { ...body };
-  if (body.status && body.status !== existing.status) {
-    if (body.status === JobStatus.IN_PROGRESS && !existing.startedAt) {
+  if (session!.user.role === "TECHNICIAN") {
+    if (existing.technicianId !== session!.user.id) {
+      return apiError("You can only update jobs assigned to you", 403);
+    }
+    if (parsed.data.technicianId !== undefined) {
+      return apiError("Only dispatch or admin can reassign a job", 403);
+    }
+  }
+
+  const input = parsed.data;
+
+  // Reassignment must target an active technician. Otherwise a typo or crafted
+  // request can assign work to a customer, an inactive tech, or an admin-only
+  // account that never sees the technician board.
+  if (input.technicianId) {
+    const technician = await prisma.user.findUnique({
+      where: { id: input.technicianId },
+      select: { id: true, role: true, isActive: true },
+    });
+    if (!technician || !technician.isActive || !["TECHNICIAN", "ADMIN"].includes(technician.role)) {
+      return apiError("Selected technician is not an active technician", 400);
+    }
+  }
+
+  const updateData: Record<string, unknown> = { ...input };
+  if (input.scheduledAt !== undefined) {
+    updateData.scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : null;
+  }
+  if (input.status && input.status !== existing.status) {
+    if (input.status === JobStatus.IN_PROGRESS && !existing.startedAt) {
       updateData.startedAt = new Date();
     }
-    if (body.status === JobStatus.COMPLETED && !existing.completedAt) {
+    if (input.status === JobStatus.COMPLETED && !existing.completedAt) {
       updateData.completedAt = new Date();
     }
   }
 
-  if (body.scheduledAt) {
-    updateData.scheduledAt = new Date(body.scheduledAt);
-  }
-
   const updated = await prisma.job.update({ where: { id }, data: updateData });
 
-  if (body.status && body.status !== existing.status) {
+  if (input.status && input.status !== existing.status) {
     await logAudit(
       session!.user.id,
       AuditAction.STATUS_CHANGE,
@@ -146,9 +194,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // Push when technician is newly assigned
-  if (body.technicianId && body.technicianId !== existing.technicianId) {
+  if (input.technicianId && input.technicianId !== existing.technicianId) {
     const jobTitle = (await prisma.job.findUnique({ where: { id }, select: { title: true } }))?.title ?? "a job";
-    sendPushToUser(body.technicianId, { title: "Job Assigned to You", body: jobTitle, url: `/tech/jobs/${id}`, tag: `assign-${id}` }).catch(() => {});
+    sendPushToUser(input.technicianId, { title: "Job Assigned to You", body: jobTitle, url: `/tech/jobs/${id}`, tag: `assign-${id}` }).catch(() => {});
   }
 
   return apiSuccess(updated);

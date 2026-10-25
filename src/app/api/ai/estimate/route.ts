@@ -20,11 +20,13 @@ export async function POST(req: NextRequest) {
 
   if (!complaint) return apiError("complaint is required", 400);
 
+  const rate = Number(laborRate);
+  const safeLaborRate = Number.isFinite(rate) && rate > 0 ? rate : 120;
   const vehicleStr = [year, make, model].filter(Boolean).join(" ") || "vehicle";
   const mileageStr = mileage ? ` with ${Number(mileage).toLocaleString()} miles` : "";
   const dtcStr = dtcCodes?.length ? `\nDTC Codes: ${dtcCodes.join(", ")}` : "";
 
-  const prompt = `You are an expert auto service advisor at a professional repair shop. Labor rate is $${laborRate}/hr.
+  const prompt = `You are an expert auto service advisor at a professional repair shop. Labor rate is $${safeLaborRate}/hr.
 
 Vehicle: ${vehicleStr}${mileageStr}${dtcStr}
 Customer complaint: ${complaint}
@@ -37,7 +39,7 @@ Generate a detailed repair estimate. Respond ONLY with valid JSON:
     {
       "description": "Labor description",
       "hours": 1.5,
-      "unitPrice": ${laborRate},
+      "unitPrice": ${safeLaborRate},
       "total": 180.00
     }
   ],
@@ -58,7 +60,7 @@ Generate a detailed repair estimate. Respond ONLY with valid JSON:
 }
 
 Rules:
-- Labor price = hours × $${laborRate}
+- Labor price = hours × $${safeLaborRate}
 - Include all likely parts needed (don't under-estimate)
 - Part prices should be realistic retail prices
 - If multiple repairs needed, include all labor + parts
@@ -78,10 +80,36 @@ Rules:
     if (!jsonMatch) return apiError("AI returned invalid response", 500);
 
     const result = JSON.parse(jsonMatch[0]);
-    // Recalculate subtotal from items to ensure accuracy
-    const laborTotal = (result.laborItems || []).reduce((s: number, i: { total: number }) => s + i.total, 0);
-    const partsTotal = (result.partItems || []).reduce((s: number, i: { total: number }) => s + i.total, 0);
-    result.subtotal = laborTotal + partsTotal + (result.shopSupplies || 0);
+    const money = (value: unknown) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? Math.max(0, Math.round(n * 100) / 100) : 0;
+    };
+
+    // The model sometimes returns numeric strings. Coerce everything and
+    // recompute each line so a string "45.00" can never concatenate into
+    // "180.0045.00" and produce a nonsense estimate.
+    const laborItems = (Array.isArray(result.laborItems) ? result.laborItems : []).map(
+      (item: Record<string, unknown>) => {
+        const hours = money(item.hours);
+        const unitPrice = money(item.unitPrice);
+        return { ...item, hours, unitPrice, total: Math.round(hours * unitPrice * 100) / 100 };
+      },
+    );
+    const partItems = (Array.isArray(result.partItems) ? result.partItems : []).map(
+      (item: Record<string, unknown>) => {
+        const quantity = money(item.quantity) || 1;
+        const unitPrice = money(item.unitPrice);
+        return { ...item, quantity, unitPrice, total: Math.round(quantity * unitPrice * 100) / 100 };
+      },
+    );
+    const shopSupplies = money(result.shopSupplies);
+    const laborTotal = laborItems.reduce((sum: number, item: { total: number }) => sum + item.total, 0);
+    const partsTotal = partItems.reduce((sum: number, item: { total: number }) => sum + item.total, 0);
+
+    result.laborItems = laborItems;
+    result.partItems = partItems;
+    result.shopSupplies = shopSupplies;
+    result.subtotal = Math.round((laborTotal + partsTotal + shopSupplies) * 100) / 100;
 
     return apiSuccess(result);
   } catch (e: unknown) {

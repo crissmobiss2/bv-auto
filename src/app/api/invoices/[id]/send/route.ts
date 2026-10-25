@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { sendInvoiceEmail, emailConfigured } from "@/lib/email";
@@ -23,11 +24,18 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
   if (!invoice) return apiError("Invoice not found", 404);
 
   const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
-  // Customers can't open staff-only dashboard pages — send them to their
-  // tokenized portal when one exists so the link actually works for them.
-  const invoiceUrl = invoice.customer.portalToken
-    ? `${BASE_URL}/portal/${invoice.customer.portalToken}`
-    : `${BASE_URL}/invoices/${id}`;
+  // Customers can't open staff-only dashboard pages. Create a portal token on
+  // first send so the emailed link always works, instead of falling back to a
+  // staff URL the customer cannot access.
+  let portalToken = invoice.customer.portalToken;
+  if (!portalToken) {
+    portalToken = crypto.randomBytes(20).toString("hex");
+    await prisma.customer.update({
+      where: { id: invoice.customerId },
+      data: { portalToken },
+    });
+  }
+  const invoiceUrl = `${BASE_URL}/portal/${portalToken}`;
   const vehicleDesc = `${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model}`;
   const amountDue = formatCurrency(Number(invoice.amountDue));
   const totalAmount = formatCurrency(Number(invoice.totalAmount));
@@ -77,14 +85,29 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     }
   }
 
-  await prisma.invoice.update({
-    where: { id },
-    data: { status: "SENT", sentAt: new Date() },
+  const delivered = emailSent || smsSent;
+  if (!delivered && !emailError && !smsError) {
+    emailError = "Customer has no email address or phone number on file";
+  }
+
+  // Only advance the invoice to SENT when a channel actually accepted the
+  // message. A failed send must remain visibly unsent so staff can retry.
+  if (delivered) {
+    await prisma.invoice.update({
+      where: { id },
+      data: { status: invoice.status === "DRAFT" ? "SENT" : invoice.status, sentAt: new Date() },
+    });
+  }
+
+  await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Invoice", id, null, {
+    emailSent,
+    smsSent,
+    emailError,
+    smsError,
   });
 
-  await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Invoice", id, null, { emailSent, smsSent });
-
   return apiSuccess({
+    sent: delivered,
     emailSent,
     smsSent,
     emailError,

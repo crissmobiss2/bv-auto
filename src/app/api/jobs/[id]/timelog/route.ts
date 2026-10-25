@@ -3,10 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session: _session } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
+  const job = await prisma.job.findUnique({ where: { id }, select: { technicianId: true } });
+  if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only view time logs for jobs assigned to you", 403);
+  }
+
   const logs = await prisma.timeLog.findMany({
     where: { jobId: id },
     orderBy: { clockedIn: "asc" },
@@ -27,6 +33,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   const { action, logId, notes, lat, lng } = await req.json();
+
+  const job = await prisma.job.findUnique({ where: { id }, select: { technicianId: true } });
+  if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only log time on jobs assigned to you", 403);
+  }
 
   if (action === "clock-in") {
     const open = await prisma.timeLog.findFirst({
@@ -49,8 +61,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (action === "clock-out") {
     if (!logId) return apiError("logId required", 400);
+    const existingLog = await prisma.timeLog.findFirst({
+      where: {
+        id: String(logId),
+        jobId: id,
+        ...(session!.user.role === "TECHNICIAN" ? { technicianId: session!.user.id } : {}),
+      },
+      select: { id: true },
+    });
+    if (!existingLog) return apiError("Time log not found for this job", 404);
+
     const log = await prisma.timeLog.update({
-      where: { id: logId },
+      where: { id: existingLog.id },
       data: { clockedOut: new Date(), ...(notes && { notes }) },
       include: { technician: { select: { id: true, name: true } } },
     });

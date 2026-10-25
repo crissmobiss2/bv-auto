@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: Request) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const shopId = new URL(req.url).searchParams.get("shopId") || null;
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     prisma.customer.findMany({
       where: { isActive: true },
       include: {
-        invoices: { where: { status: "PAID", ...invScope }, select: { totalAmount: true } },
+        invoices: { where: { status: { in: ["PAID", "PARTIAL"] }, ...invScope }, select: { amountPaid: true } },
         _count: { select: { jobs: true } },
       },
     }),
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
         jobs: {
           where: { status: { in: ["COMPLETED", "INVOICED", "PAID"] }, ...jobScope },
           include: {
-            invoice: { select: { totalAmount: true, status: true } },
+            invoice: { select: { amountPaid: true, status: true } },
             timeLogs: { select: { clockedIn: true, clockedOut: true } },
           },
         },
@@ -84,9 +84,9 @@ export async function GET(req: Request) {
     }),
     // For gross profit calculation — get paid invoices with parts cost
     prisma.invoice.findMany({
-      where: { status: "PAID", updatedAt: { gte: start30 }, ...invScope },
+      where: { status: { in: ["PAID", "PARTIAL"] }, updatedAt: { gte: start30 }, ...invScope },
       select: {
-        totalAmount: true,
+        amountPaid: true,
         job: { select: { parts: { select: { totalCost: true } } } },
       },
     }),
@@ -103,7 +103,7 @@ export async function GET(req: Request) {
   const topCustomersByRevenue = topCustomers
     .map((c) => ({
       name: `${c.firstName} ${c.lastName}`,
-      revenue: c.invoices.reduce((s, i) => s + Number(i.totalAmount), 0),
+      revenue: c.invoices.reduce((s, i) => s + Number(i.amountPaid), 0),
       jobs: c._count.jobs,
     }))
     .sort((a, b) => b.revenue - a.revenue)
@@ -112,7 +112,7 @@ export async function GET(req: Request) {
   // Technician scorecards
   const techScores = technicianJobs.map((tech) => {
     const completedJobs = tech.jobs.length;
-    const revenue = tech.jobs.reduce((s, j) => s + (j.invoice ? Number(j.invoice.totalAmount) : 0), 0);
+    const revenue = tech.jobs.reduce((s, j) => s + (j.invoice ? Number(j.invoice.amountPaid) : 0), 0);
 
     // Calculate actual hours worked (last 30 days)
     const actualMinutes = tech.timeLogs.reduce((s, log) => {
@@ -145,7 +145,9 @@ export async function GET(req: Request) {
   // Gross profit (last 30 days)
   const gpData = allInvoicesForGP.reduce(
     (acc, inv) => {
-      const revenue = Number(inv.totalAmount);
+      // Collected revenue, not invoiced total: a partial payment must not be
+      // reported as if the whole invoice was paid.
+      const revenue = Number(inv.amountPaid);
       const cogs = (inv.job?.parts || []).reduce((s, p) => s + (p.totalCost ? Number(p.totalCost) : 0), 0);
       acc.revenue += revenue;
       acc.cogs += cogs;

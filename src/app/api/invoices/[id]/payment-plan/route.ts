@@ -49,17 +49,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   return apiSuccess(created, 201);
 }
 
-export async function PATCH(req: NextRequest, { params: _params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
   if (error) return error;
 
+  const { id } = await params;
   const body = await req.json();
   const { installmentId, paidAmount } = body;
-  if (!installmentId || !paidAmount) return apiError("installmentId and paidAmount required", 400);
+  if (!installmentId || paidAmount == null) return apiError("installmentId and paidAmount required", 400);
+
+  const existing = await prisma.paymentPlanInstallment.findFirst({
+    where: { id: installmentId, invoiceId: id },
+  });
+  if (!existing) return apiError("Installment not found on this invoice", 404);
+
+  const amount = Number(paidAmount);
+  if (!Number.isFinite(amount) || amount < 0 || amount > Number(existing.amount) + 0.005) {
+    return apiError("paidAmount must be between 0 and the installment amount", 400);
+  }
 
   const installment = await prisma.paymentPlanInstallment.update({
     where: { id: installmentId },
-    data: { paidAt: new Date(), paidAmount, status: "PAID" },
+    data: {
+      paidAt: new Date(),
+      paidAmount: amount,
+      status: amount >= Number(existing.amount) - 0.005 ? "PAID" : "PARTIAL",
+    },
   });
 
   return apiSuccess(installment);

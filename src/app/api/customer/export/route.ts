@@ -55,7 +55,8 @@ export async function GET() {
       where: { customerId },
       include: {
         parts: {
-          select: { description: true, partNumber: true, quantity: true, unitCost: true, unitPrice: true },
+          // Never include unitCost: that is internal shop margin data.
+          select: { description: true, partNumber: true, quantity: true, unitPrice: true },
         },
         jobNotes: {
           where: { isInternal: false },

@@ -14,15 +14,22 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireRole(["ADMIN", "DISPATCHER", "ACCOUNTANT", "TECHNICIAN", "PARTS_COORDINATOR"]);
+  const { error, session } = await requireRole(["ADMIN", "DISPATCHER", "ACCOUNTANT", "TECHNICIAN", "PARTS_COORDINATOR"]);
   if (error) return error;
 
-  const role = req.nextUrl.searchParams.get("role") as UserRole | null;
+  const requestedRole = req.nextUrl.searchParams.get("role");
+  const role = requestedRole && Object.values(UserRole).includes(requestedRole as UserRole)
+    ? (requestedRole as UserRole)
+    : null;
+
+  // Technicians only need the technician roster (shop board / schedule).
+  // Do not expose the admin/accountant email and phone directory to them.
+  const effectiveRole = session!.user.role === "TECHNICIAN" ? "TECHNICIAN" : role;
 
   const users = await prisma.user.findMany({
     where: {
       isActive: true,
-      ...(role ? { role } : {}),
+      ...(effectiveRole ? { role: effectiveRole } : {}),
     },
     select: { id: true, name: true, email: true, role: true, phone: true },
     orderBy: { name: "asc" },

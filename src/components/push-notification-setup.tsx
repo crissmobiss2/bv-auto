@@ -1,11 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Bell, X } from "lucide-react";
 import axios from "axios";
 
 const DISMISSED_KEY = "push-notification-dismissed";
+
+// Public pages where a push-permission prompt would be intrusive and is not
+// relevant to the visitor (booking, tracking, portal, approval, review, auth).
+const PUBLIC_PREFIXES = [
+  "/book",
+  "/track",
+  "/portal",
+  "/approve",
+  "/review",
+  "/login",
+  "/register",
+  "/reset",
+  "/offline",
+];
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -16,16 +32,24 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 }
 
 export function PushNotificationSetup() {
+  const { status } = useSession();
+  const pathname = usePathname();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Never ask public visitors or signed-out users for push access. The prompt
+  // belongs to authenticated app sessions, not booking/portal pages.
+  const isPublic = pathname === "/" || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const canPrompt = status === "authenticated" && !isPublic;
+
   useEffect(() => {
+    if (!canPrompt) return;
     if (typeof window === "undefined") return;
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
     if (Notification.permission !== "default") return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
     queueMicrotask(() => setShow(true));
-  }, []);
+  }, [canPrompt]);
 
   const handleDismiss = () => {
     setShow(false);
@@ -68,7 +92,7 @@ export function PushNotificationSetup() {
     }
   };
 
-  if (!show) return null;
+  if (!show || !canPrompt) return null;
 
   return (
     <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-50 animate-in slide-in-from-bottom-4">

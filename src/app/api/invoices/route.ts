@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { generateInvoiceNumber } from "@/lib/utils";
-import { AuditAction } from "@prisma/client";
+import { AuditAction, InvoiceStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAuth();
@@ -11,13 +11,18 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const customerId = searchParams.get("customerId");
   const status = searchParams.get("status");
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "25");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "25") || 25));
   const skip = (page - 1) * limit;
 
   const where: Record<string, unknown> = {};
   if (customerId) where.customerId = customerId;
-  if (status) where.status = status;
+  if (status) {
+    if (!Object.values(InvoiceStatus).includes(status as InvoiceStatus)) {
+      return apiError(`Invalid invoice status: ${status}`, 400);
+    }
+    where.status = status;
+  }
 
   const [invoices, total] = await Promise.all([
     prisma.invoice.findMany({
@@ -57,6 +62,9 @@ export async function POST(req: NextRequest) {
 
   if (!job) return apiError("Job not found", 404);
   if (!job.quote) return apiError("No quote found for this job");
+  if (!["APPROVED", "CONVERTED"].includes(job.quote.status)) {
+    return apiError("The quote must be approved before an invoice can be created", 400);
+  }
 
   // Check for existing invoice
   const existing = await prisma.invoice.findUnique({ where: { jobId } });

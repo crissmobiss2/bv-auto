@@ -1,11 +1,12 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendInvoiceEmail } from "@/lib/email";
+import { sendInvoiceEmail, emailConfigured } from "@/lib/email";
 import { formatCurrency } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === "production") {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -30,6 +31,15 @@ export async function GET(req: NextRequest) {
   });
 
   let remindersSent = 0;
+  if (!emailConfigured) {
+    return NextResponse.json({
+      markedOverdue: overdueResult.count,
+      remindersSent: 0,
+      skipped: "Email is not configured (missing RESEND_API_KEY)",
+      timestamp: now.toISOString(),
+    });
+  }
+
   for (const invoice of overdueInvoices) {
     if (!invoice.customer.email || !invoice.dueDate) continue;
 
@@ -37,18 +47,33 @@ export async function GET(req: NextRequest) {
     if (![1, 7, 14].includes(daysOverdue)) continue;
 
     const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
-    await sendInvoiceEmail({
-      to: invoice.customer.email,
-      customerName: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
-      invoiceNumber: invoice.invoiceNumber,
-      vehicleDescription: `${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model}`,
-      totalAmount: formatCurrency(Number(invoice.totalAmount)),
-      amountDue: formatCurrency(Number(invoice.amountDue)),
-      invoiceUrl: `${BASE_URL}/invoices/${invoice.id}`,
-      paymentUrl: invoice.stripePaymentUrl || undefined,
-    }).catch(console.error);
-
-    remindersSent++;
+    // Customers cannot open staff dashboard pages. Create a portal token on
+    // first reminder so every overdue email links somewhere the customer can
+    // actually open.
+    let portalToken = invoice.customer.portalToken;
+    if (!portalToken) {
+      portalToken = crypto.randomBytes(20).toString("hex");
+      await prisma.customer.update({
+        where: { id: invoice.customerId },
+        data: { portalToken },
+      });
+    }
+    const invoiceUrl = `${BASE_URL}/portal/${portalToken}`;
+    try {
+      await sendInvoiceEmail({
+        to: invoice.customer.email,
+        customerName: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
+        invoiceNumber: invoice.invoiceNumber,
+        vehicleDescription: `${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model}`,
+        totalAmount: formatCurrency(Number(invoice.totalAmount)),
+        amountDue: formatCurrency(Number(invoice.amountDue)),
+        invoiceUrl,
+        paymentUrl: invoice.stripePaymentUrl || undefined,
+      });
+      remindersSent++;
+    } catch (e) {
+      console.error(`Overdue reminder failed for invoice ${invoice.invoiceNumber}:`, e);
+    }
   }
 
   return NextResponse.json({

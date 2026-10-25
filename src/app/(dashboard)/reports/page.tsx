@@ -254,7 +254,7 @@ export default function ReportsPage() {
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg text-blue-600 bg-blue-50"><GitPullRequest className="h-5 w-5" /></div>
                 <div>
-                  <p className="text-2xl font-bold">{convData.rate30}%</p>
+                  <p className="text-2xl font-bold">{convData.period30?.approvalRate ?? 0}%</p>
                   <p className="text-xs text-gray-500">Approval Rate (30d)</p>
                 </div>
               </CardContent>
@@ -263,7 +263,7 @@ export default function ReportsPage() {
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg text-green-600 bg-green-50"><Clock className="h-5 w-5" /></div>
                 <div>
-                  <p className="text-2xl font-bold">{convData.avgHoursToApprove ?? "—"}h</p>
+                  <p className="text-2xl font-bold">{convData.avgApprovalHours != null ? `${convData.avgApprovalHours}h` : "—"}</p>
                   <p className="text-xs text-gray-500">Avg Hours to Approve</p>
                 </div>
               </CardContent>
@@ -272,7 +272,7 @@ export default function ReportsPage() {
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg text-purple-600 bg-purple-50"><Target className="h-5 w-5" /></div>
                 <div>
-                  <p className="text-2xl font-bold">{convData.rate90}%</p>
+                  <p className="text-2xl font-bold">{convData.period90?.approvalRate ?? 0}%</p>
                   <p className="text-xs text-gray-500">Approval Rate (90d)</p>
                 </div>
               </CardContent>
@@ -302,12 +302,12 @@ export default function ReportsPage() {
                 </CardContent>
               </Card>
             )}
-            {convData.declineReasons?.length > 0 && (
+            {convData.topDeclineReasons?.length > 0 && (
               <Card>
                 <CardHeader><CardTitle className="text-base flex items-center gap-2"><XCircle className="h-4 w-4 text-red-500" /> Top Decline Reasons</CardTitle></CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {convData.declineReasons.map((r: { reason: string; count: number }) => (
+                    {convData.topDeclineReasons.map((r: { reason: string; count: number }) => (
                       <div key={r.reason} className="flex items-center justify-between text-sm">
                         <span className="text-gray-600 truncate max-w-[75%]">{r.reason}</span>
                         <span className="font-medium text-red-600">{r.count}×</span>

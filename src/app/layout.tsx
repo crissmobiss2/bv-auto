@@ -51,10 +51,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <GlobalSearch />
           <KeyboardShortcuts />
+          <PushNotificationSetup />
         </Providers>
         <PwaInstallPrompt />
         <AppUpdateChecker />
-        <PushNotificationSetup />
         <Analytics />
         <SpeedInsights />
       </body>

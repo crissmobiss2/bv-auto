@@ -1,0 +1,145 @@
+# Fix Plan — Deduplicated, Batched
+
+This plan is ordered by risk and dependency, not by section number. Items marked **DONE** were changed and verified by type-check, lint, tests, and build in this pass. Items marked **OPEN** are still in the codebase.
+
+## Phase 0 — Critical security and money truthfulness (DONE)
+| ID | Fix | Files | Verification |
+|---|---|---|---|
+| AUTH-001 | Default-deny proxy; customer/tech allowlists | `src/proxy.ts` | Role matrix inspection; type-check |
+| AUTH-002 | Stop auto-linking existing customers by unverified email | `src/app/api/auth/register/route.ts` | 409 path; type-check |
+| AUTH-003 | Booking GET staff-only | `src/app/api/booking/route.ts`, `src/proxy.ts` | Proxy + route check |
+| AUTH-004 | Portal token creation staff-only | `src/app/api/portal/[token]/route.ts` | Role check |
+| AUTH-005 | Block tech financial/admin APIs/pages | `src/proxy.ts` | Proxy inspection |
+| AUTH-006 | Cron routes fail closed when secret unset | `src/app/api/cron/*/route.ts` | Code inspection |
+| AUTH-007 | Twilio signature validation + dedupe | `src/app/api/sms/webhook/route.ts` | Type-check |
+| AUTH-008 | Tech job ownership + scoped clock-out | `src/app/api/jobs/[id]/**` | Type-check |
+| BILL-001 | Stripe paid-only, dedupe, serializable, balance-aware | `src/app/api/stripe/webhook/route.ts` | Unit test |
+| BILL-002 | Manual payment overpay/void guards | `src/app/api/invoices/[id]/route.ts` | Type-check |
+| BILL-003 | Require approved quote before invoice | `src/app/api/invoices/route.ts` | Type-check |
+| BILL-004 | Invoice send only marks SENT on real delivery; portal token | `src/app/api/invoices/[id]/send/route.ts` | Type-check |
+| BILL-005 | Text-to-pay requires Stripe + SMS | `src/app/api/invoices/[id]/text-to-pay/route.ts` | Type-check |
+| BILL-006 | Escape invoice PDF fields | `src/lib/pdf.ts` | Type-check |
+| BILL-007 | Payment-plan ownership/amount validation | `src/app/api/invoices/[id]/payment-plan/route.ts` | Type-check |
+| BILL-012 | Quote approval expiry + serializable re-check | `src/app/api/approve/[token]/route.ts` | Type-check |
+| COMM-001–006 | No fake quote/review/reset/text-to-pay/SMS success | `src/app/api/**`, `src/lib/email.ts`, `src/lib/sms.ts` | Type-check |
+| COMM-010 | Escape email/inspection HTML | `src/lib/email.ts` | Type-check |
+| PORT-001–003 | Portal/token/tracking fixes | `src/proxy.ts`, `src/app/api/portal/**`, `src/app/api/tracking/**` | Type-check |
+| PORT-006 | Portal message rate limit/length | `src/app/api/portal/[token]/message/route.ts` | Type-check |
+| PORT-009–010 | Real shop phone; real review URL | `src/app/(customer)/layout.tsx`, `src/app/api/review/[token]/route.ts` | Type-check |
+| PLAT-001 | Remove authenticated API caching | `public/sw.js` | Build |
+| PLAT-002 | Electron exact-origin check | `electron/main.js` | Code inspection |
+| PLAT-010 | Clear cache on sign-out | `src/lib/sign-out.ts`, layouts/sidebar | Type-check |
+| PLAT-013 | Allow Vercel Analytics/Speed Insights in CSP | `next.config.ts` | Browser console clean |
+| FIN-003 | Neutralize CSV formula injection in payroll export | `src/app/api/payroll/route.ts` | Type-check |
+| FIN-004 | Use collected `amountPaid` for customer/tech/GP revenue | `src/app/api/reports/route.ts` | Type-check |
+| FIN-012 | Fix reports conversion metric field names | `src/app/(dashboard)/reports/page.tsx` | Mobile reports render |
+| UX-013 | Hide push prompt on public pages | `src/components/push-notification-setup.tsx`, `src/app/layout.tsx` | Mobile `/book` render |
+| JOBS-004 | Real inspection email + escaping | `src/app/api/jobs/[id]/inspection/send/route.ts` | Type-check |
+| JOBS-013 | Tech job list filter + insurance/sublet role/ownership | `src/app/api/jobs/route.ts`, `src/app/api/jobs/[id]/insurance/route.ts` | Type-check |
+| JOBS-014 | Validate reassignment target is active technician | `src/app/api/jobs/[id]/route.ts` | Type-check |
+| JOBS-015 | Scope photo deletion to the assigned technician | `src/app/api/jobs/[id]/photos/route.ts` | Type-check |
+| BILL-015 | Re-check quote expiry inside serializable approval | `src/app/api/approve/[token]/route.ts` | Type-check |
+| BILL-016 | Restrict invoice void/refund to admin/accounting | `src/app/api/invoices/[id]/route.ts` | Type-check |
+| COMM-014 | Create portal token for overdue reminder links | `src/app/api/cron/overdue/route.ts` | Type-check |
+| COMM-015 | Escape customer name in review email | `src/app/api/cron/reviews/route.ts` | Type-check |
+| AI-011 | Clamp negative AI estimate values | `src/app/api/ai/estimate/route.ts` | Type-check |
+| AI-012 | Instantiate Anthropic client inside photo-analysis handler | `src/app/api/jobs/[id]/photos/analyze/route.ts` | Type-check |
+| PART-011 | Block technician edits to part pricing fields | `src/app/api/parts/[id]/route.ts` | Type-check |
+| JOBS-006 | Shop-timezone day/week/month + local datetime → ISO | `src/lib/timezone.ts`, dashboard/notifications/jobs-new | Type-check |
+| AI-001 | Coerce/recompute AI estimate numbers | `src/app/api/ai/estimate/route.ts` | Type-check |
+| AI-002 | AI diagnosis job ownership | `src/app/api/ai/diagnose/route.ts` | Type-check |
+| CRM-003/JOBS-003 | Vehicle must belong to customer | `src/app/api/jobs/route.ts` | Type-check |
+| CRM-005 | Remove internal `unitCost` from customer export | `src/app/api/customer/export/route.ts` | Type-check |
+| DATA-008/PLAT-010 | Sign-out clears cache (queue scoping remains OPEN) | `src/lib/sign-out.ts` | Type-check |
+
+## Phase 1 — P1 workflow/data integrity (OPEN)
+| ID | Fix | Why now | Effort | Files |
+|---|---|---|---|---|
+| AUTH-010/DATA-001 | Add `shopId` to tenant models, backfill, enforce query helper | Only remaining P0 for multi-shop | L | `prisma/schema.prisma`, all API routes |
+| BILL-009 | Refund/credit model and reversal transaction | Revenue is wrong after refunds | M | payments/invoices |
+| BILL-013/FLOW-006 | Deposit checkout + balance application | Protects special-order work | M | quote/invoice/Stripe |
+| PART-004/PART-005 | PO receiving + inventory movement ledger | Stock and job cost drift | M | parts/PO/inventory |
+| COMM-008/COMM-011 | STOP/START consent + campaign suppression | TCPA/compliance | M | SMS webhook, marketing |
+| FIN-006 | Payroll run snapshot + period lock | Historical pay integrity | L | payroll |
+| PLAT-003 | Add `master` to CI triggers/deploy condition | Pushes currently bypass CI | S | `.github/workflows/ci.yml` |
+| PLAT-004 | Baseline `prisma/migrations` and use `migrate deploy` | Production schema safety | M | `prisma/migrations` |
+| FLOW-003/PORT-011 | Booking confirmation + staff alert | Leads go stale | M | booking, notifications |
+| QUAL-001–003 | Authz table tests + Playwright smoke + money tests | Prevent regressions | L | `src/__tests__`, e2e |
+| BILL-008 | Refresh expired Stripe Checkout sessions | Customer pay link breaks | S | `invoices/[id]/collect` |
+| BILL-010 | Manual payment idempotency key | Double-submit duplicates | S | invoice payment route |
+| PLAT-007 | Release keystore + signed APK | In-place updates fail | M | Android build |
+
+## Phase 2 — P2 UX, workflow, and integration quality (OPEN)
+| ID | Fix | Effort | Files |
+|---|---|---|---|
+| UX-001 | Searchable customer combobox in New Job | M | `jobs/new`, customers API |
+| UX-002/UX-003 | Shared `MoneyInput`/`TextField` with `inputMode`, step, autocaps/autocorrect | M | all forms |
+| UX-004/UX-006 | Toast-based mutation errors with retry | M | shared mutation wrapper |
+| UX-007/FLOW-010 | Payment `type` + running balance in history | S | invoice detail |
+| UX-008 | Mobile card layouts for wide tables | M | payroll/reports/invoices/inventory |
+| UX-010 | aria labels/labels/focus rings | M | components |
+| UX-011 | Format all dates in shop timezone | S | date helpers |
+| UX-012/FLOW-011 | Portal “Pay now” button | M | portal, Stripe |
+| CRM-007/CRM-008 | Customer search + duplicate merge | M | CRM |
+| CRM-011 | VIN validation/decode | M | vehicles |
+| JOBS-005 | Status transition matrix | M | jobs |
+| JOBS-010/DATA-005 | Concurrency-safe document numbers | S | `lib/utils` |
+| JOBS-012 | Audit notes/timelog/photos/signatures | S | job subroutes |
+| PART-002/PART-003 | Vendor/PO whitelists + shop scope | M | vendors/POs |
+| PART-006 | Markup/price bounds | S | parts |
+| COMM-009 | Resend/Twilio delivery status callbacks | M | webhooks |
+| COMM-012 | Shared rate limiter | M | `lib/rate-limit` |
+| AI-003–AI-008 | Model envs, JSON schema, prompt delimiting, PII redaction, cost quota, safe errors | M | AI routes |
+| FIN-005/FIN-008/FIN-009 | Shop filter, money math, time windows | M | reports/payroll |
+| PLAT-005 | Nonce/hash CSP; remove `unsafe-eval` | M | `next.config.ts` |
+| PLAT-006 | Redis/KV rate limits/idempotency | M | infra |
+| PLAT-008 | Neon `DATABASE_URL` + production schema push/migration | S | `.env`/deploy |
+| PLAT-009 | Verify Sentry DSN/alerts | S | Vercel/Sentry |
+| PLAT-011 | Backup/PITR + restore drill | S | ops |
+| QUAL-004–QUAL-010 | Error wrapper, validation rule, error boundaries, OpenAPI, dependency audit | M | app-wide |
+
+## Phase 3 — P3 polish (OPEN)
+- FLOW-012 supplemental quotes / mid-job approvals.
+- FLOW-009 cancellation/no-show reasons and fees.
+- FIN-010 owner inclusion independent of role.
+- FIN-011 overtime/burden/reimbursement.
+- DATA-010 audit-log PII retention.
+- PLAT-012 build-injected service-worker cache version.
+- QUAL-007 delete offline dead code; QUAL-008 fix Vitest CJS warning.
+- PART-009 vendor price history; PART-010 reorder automation.
+- PORT-012 review-click bot filtering.
+- BILL-014 PDF filename/explicit print.
+
+## Dependency order
+1. **Tenant scoping design** before any second shop or shop-scoped report work.
+2. **Migrations baseline** before production schema changes.
+3. **Refund model** before revenue-report rewrite (otherwise reports change twice).
+4. **Inventory ledger** before PO receiving UI.
+5. **Consent model** before marketing campaigns.
+6. **Payroll snapshot** before payroll export is treated as authoritative.
+7. **Authz tests** immediately after Phase 0 so the fixes stay fixed.
+
+## Verification gate for every batch
+```bash
+npx prisma validate
+npm run type-check
+npm run lint
+npm test -- --run
+npm run build
+```
+For money/authz changes, add:
+```bash
+npm test -- --run --reporter=verbose
+```
+For mobile/UI changes, verify at a 390×844 viewport and one physical device.
+
+## Blocked items
+| Item | Blocker | Unblock action |
+|---|---|---|
+| Production `db:push`/migration | No Neon `DATABASE_URL` in `.env` | Add pooled + unpooled URLs |
+| Live Stripe webhook/checkout | No `STRIPE_SECRET_KEY`/webhook secret | Add test-mode keys and run `stripe listen` |
+| Live email/SMS | No `RESEND_API_KEY`/`TWILIO_*` | Add keys and verified sender/number |
+| Live AI | No `ANTHROPIC_API_KEY` | Add key and confirm model IDs |
+| Parts availability/ordering | No `PARTSTECH_*` | Add provider credentials |
+| APK in-place update | Debug signing key mismatch | Create release keystore; one-time uninstall/reinstall |
+| Subagent fix workspaces | OpenRouter key exhausted | Restore key or run lanes sequentially |

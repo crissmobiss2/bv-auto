@@ -68,17 +68,20 @@ export const DEFAULT_INSPECTION_ITEMS = [
 ];
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
 
   const job = await prisma.job.findUnique({
     where: { id },
-    select: { checklist: true, mileageIn: true },
+    select: { checklist: true, mileageIn: true, technicianId: true },
   });
 
   if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only inspect jobs assigned to you", 403);
+  }
 
   return apiSuccess({
     checklist: job.checklist || null,
@@ -99,6 +102,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const job = await prisma.job.findUnique({ where: { id } });
   if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only inspect jobs assigned to you", 403);
+  }
 
   const checklistData = {
     completedAt: new Date().toISOString(),

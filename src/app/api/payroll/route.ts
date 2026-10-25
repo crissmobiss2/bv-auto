@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -82,15 +82,37 @@ export async function GET(req: NextRequest) {
   });
 
   if (format === "csv") {
+    // Neutralize spreadsheet formulas and always quote/escape text cells.
+    // A technician or job title beginning with =, +, -, or @ must not execute
+    // when an accountant opens the export in Excel/Sheets.
+    const csvCell = (value: unknown) => {
+      const text = String(value ?? "");
+      const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const rows = ["Name,Role,Rate Type,Rate,Total Hours,Gross Pay,Job Count"];
     for (const p of technicians) {
-      rows.push(`"${p.name}",${p.role},${p.payType},${p.rate},${p.totalHours},${p.grossPay},${p.totalJobs}`);
+      rows.push([
+        p.name,
+        p.role,
+        p.payType,
+        p.rate,
+        p.totalHours,
+        p.grossPay,
+        p.totalJobs,
+      ].map(csvCell).join(","));
     }
     // Detail rows
     rows.push("", "JOB DETAIL", "Tech Name,Job Title,Hours,Pay,Type");
     for (const p of technicians) {
       for (const j of p.details) {
-        rows.push(`"${p.name}","${j.jobTitle}",${j.hours ?? ""},${j.pay},${j.type}`);
+        rows.push([
+          p.name,
+          j.jobTitle,
+          j.hours ?? "",
+          j.pay,
+          j.type,
+        ].map(csvCell).join(","));
       }
     }
     return new NextResponse(rows.join("\n"), {
@@ -117,7 +139,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const body = await req.json();

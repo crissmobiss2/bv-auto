@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError } from "@/lib/api-helpers";
+import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { getShopPhone } from "@/lib/shop";
+import { sendInspectionEmail, emailConfigured, escapeHtml } from "@/lib/email";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
@@ -18,7 +19,16 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
   });
 
   if (!job) return apiError("Job not found", 404);
+  if (session!.user.role === "TECHNICIAN" && job.technicianId !== session!.user.id) {
+    return apiError("You can only send inspections for jobs assigned to you", 403);
+  }
   if (!job.checklist) return apiError("No inspection data found for this job");
+  if (!job.customer.email) {
+    return apiError("Customer has no email address on file. Add one before sending the inspection.", 400);
+  }
+  if (!emailConfigured) {
+    return apiError("Email is not configured (missing RESEND_API_KEY)", 503);
+  }
 
   const checklist = job.checklist as {
     items: { id: string; category: string; item: string; condition: string; notes?: string }[];
@@ -26,23 +36,26 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     technicianNotes?: string;
     completedAt?: string;
   };
+  if (!Array.isArray(checklist.items)) {
+    return apiError("Inspection data is invalid", 400);
+  }
 
   const phone = await getShopPhone();
   const html = generateInspectionHTML(job, checklist, phone);
 
-  // In production: send via Resend/email
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // await resend.emails.send({
-  //   from: "noreply@bvauto.com",
-  //   to: job.customer.email,
-  //   subject: `Vehicle Inspection Report — ${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`,
-  //   html,
-  // });
+  try {
+    await sendInspectionEmail({
+      to: job.customer.email,
+      customerName: `${job.customer.firstName} ${job.customer.lastName}`,
+      vehicleDescription: `${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`,
+      inspectionHtml: html,
+      jobId: job.id,
+    });
+  } catch (e) {
+    return apiError(e instanceof Error ? e.message : "Inspection email failed to send", 502);
+  }
 
-  // For demo: return HTML as preview
-  return new NextResponse(html, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
+  return apiSuccess({ sent: true, to: job.customer.email });
 }
 
 function generateInspectionHTML(
@@ -78,8 +91,8 @@ function generateInspectionHTML(
 </head>
 <body>
 <h1>B&V Mobile Auto — Vehicle Inspection Report</h1>
-<p style="color:#6b7280;font-size:14px">${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}${job.vehicle.vin ? ` · VIN: ${job.vehicle.vin}` : ""}</p>
-<p style="color:#6b7280;font-size:14px">Customer: ${job.customer.firstName} ${job.customer.lastName}${checklist.mileage ? ` · Mileage: ${checklist.mileage.toLocaleString()}` : ""}</p>
+<p style="color:#6b7280;font-size:14px">${escapeHtml(String(job.vehicle.year))} ${escapeHtml(job.vehicle.make)} ${escapeHtml(job.vehicle.model)}${job.vehicle.vin ? ` · VIN: ${escapeHtml(job.vehicle.vin)}` : ""}</p>
+<p style="color:#6b7280;font-size:14px">Customer: ${escapeHtml(job.customer.firstName)} ${escapeHtml(job.customer.lastName)}${checklist.mileage ? ` · Mileage: ${checklist.mileage.toLocaleString()}` : ""}</p>
 ${checklist.completedAt ? `<p style="color:#9ca3af;font-size:12px">Inspected: ${new Date(checklist.completedAt).toLocaleString()}</p>` : ""}
 
 <div class="summary">
@@ -93,13 +106,13 @@ ${checklist.completedAt ? `<p style="color:#9ca3af;font-size:12px">Inspected: ${
 </div>
 
 ${categories.map((cat) => `
-  <h2>${cat}</h2>
+  <h2>${escapeHtml(cat)}</h2>
   ${checklist.items.filter((i) => i.category === cat).map((item) => `
     <div class="item">
-      <span>${item.item}</span>
+      <span>${escapeHtml(item.item)}</span>
       <div style="text-align:right">
-        <span class="condition" style="color:${conditionColor[item.condition]}">${item.condition.replace("_", " ")}</span>
-        ${item.notes ? `<p style="font-size:12px;color:#6b7280;margin-top:2px">${item.notes}</p>` : ""}
+        <span class="condition" style="color:${conditionColor[item.condition] || "#9ca3af"}">${escapeHtml(item.condition.replace("_", " "))}</span>
+        ${item.notes ? `<p style="font-size:12px;color:#6b7280;margin-top:2px">${escapeHtml(item.notes)}</p>` : ""}
       </div>
     </div>`).join("")}
 `).join("")}
@@ -107,10 +120,10 @@ ${categories.map((cat) => `
 ${checklist.technicianNotes ? `
   <div class="notes">
     <strong>Technician Notes:</strong><br>
-    ${checklist.technicianNotes}
+    ${escapeHtml(checklist.technicianNotes)}
   </div>` : ""}
 
-${phone ? `<p style="margin-top:32px;font-size:12px;color:#9ca3af;text-align:center">Questions? Call B&V Mobile Auto at ${phone}</p>` : ""}
+${phone ? `<p style="margin-top:32px;font-size:12px;color:#9ca3af;text-align:center">Questions? Call B&amp;V Mobile Auto at ${escapeHtml(phone)}</p>` : ""}
 </body>
 </html>`;
 }

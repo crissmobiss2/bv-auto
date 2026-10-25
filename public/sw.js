@@ -1,4 +1,4 @@
-const CACHE_VERSION = "bvauto-v3";
+const CACHE_VERSION = "bvauto-v4";
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const API_CACHE     = `${CACHE_VERSION}-api`;
 
@@ -10,15 +10,10 @@ const PRECACHE_URLS = [
   "/icons/icon-512.png",
 ];
 
-// API routes to cache for offline access (GET only)
-const CACHEABLE_API = [
-  "/api/jobs",
-  "/api/customers",
-  "/api/vehicles",
-  "/api/parts",
-  "/api/canned-services",
-  "/api/labor-times",
-];
+// Authenticated API responses are intentionally NOT cached. Cache Storage is
+// shared by every user of a device; caching customer/job data would leak one
+// user's records to the next user after logout.
+const CACHEABLE_API = [];
 
 // ── Install ───────────────────────────────────────────────────────────────────
 self.addEventListener("install", (e) => {
@@ -149,12 +144,16 @@ async function replayMutations() {
     const mutations = await getAllMutations(db);
     for (const mutation of mutations) {
       try {
-        await fetch(mutation.url, {
+        const res = await fetch(mutation.url, {
           method: mutation.method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(mutation.body),
         });
-        await deleteMutation(db, mutation.id);
+        // Drop requests the server definitively rejected; keep 5xx/offline
+        // failures queued so they can be retried.
+        if (res.ok || [400, 401, 403, 404, 409, 422].includes(res.status)) {
+          await deleteMutation(db, mutation.id);
+        }
       } catch {
         // Still offline — leave in queue
       }

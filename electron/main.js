@@ -3,7 +3,16 @@ const path = require("path");
 const { autoUpdater } = require("electron-updater");
 
 const APP_URL = "https://bv-auto.vercel.app";
+const APP_ORIGIN = new URL(APP_URL).origin;
 const APP_NAME = "B&V Auto";
+
+function isAppUrl(url) {
+  try {
+    return new URL(url).origin === APP_ORIGIN;
+  } catch {
+    return false;
+  }
+}
 
 let mainWindow;
 let tray;
@@ -83,7 +92,7 @@ function createWindow() {
   setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 4 * 60 * 60 * 1000);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.startsWith(APP_URL)) { shell.openExternal(url); return { action: "deny" }; }
+    if (!isAppUrl(url)) { shell.openExternal(url); return { action: "deny" }; }
     return { action: "allow" };
   });
 
@@ -190,6 +199,6 @@ app.on("window-all-closed", () => {
 
 app.on("web-contents-created", (_, contents) => {
   contents.on("will-navigate", (e, url) => {
-    if (!url.startsWith(APP_URL)) e.preventDefault();
+    if (!isAppUrl(url)) e.preventDefault();
   });
 });

@@ -1,10 +1,13 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Car, FileText, Clock, Home, LogOut, Wrench, Phone, Menu, X, Shield } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { signOutAndClear } from "@/lib/sign-out";
 
 const NAV = [
   { href: "/customer", label: "Home", icon: Home },
@@ -18,6 +21,12 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const { data: session } = useSession();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: shop } = useQuery({
+    queryKey: ["shop-info"],
+    queryFn: () => axios.get("/api/shop-info").then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+  const shopPhone = typeof shop?.phone === "string" ? shop.phone.replace(/[^0-9+]/g, "") : "";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -31,9 +40,11 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             <span className="font-bold text-gray-900">B&V Auto</span>
           </div>
           <div className="flex items-center gap-2">
-            <a href="tel:+1" className="p-2 text-gray-500 hover:text-blue-600">
-              <Phone className="h-4 w-4" />
-            </a>
+            {shopPhone && (
+              <a href={`tel:${shopPhone}`} className="p-2 text-gray-500 hover:text-blue-600" aria-label="Call the shop">
+                <Phone className="h-4 w-4" />
+              </a>
+            )}
             <button className="p-2 text-gray-500 md:hidden" onClick={() => setMobileOpen(o => !o)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -60,7 +71,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           <div className="pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-400 px-3 mb-1 truncate">{session?.user?.name}</p>
             <button
-              onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
+              onClick={() => signOutAndClear()}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 w-full"
             >
               <LogOut className="h-4 w-4" /> Sign Out
@@ -88,7 +99,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                 </Link>
               ))}
               <button
-                onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
+                onClick={() => signOutAndClear()}
                 className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm text-red-600 w-full"
               >
                 <LogOut className="h-4 w-4" /> Sign Out

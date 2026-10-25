@@ -1,7 +1,29 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { AuditAction } from "@prisma/client";
+import { AuditAction, CustomerType, LeadSource } from "@prisma/client";
+import { z } from "zod";
+
+const updateSchema = z.object({
+  type: z.nativeEnum(CustomerType).optional(),
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  company: z.string().optional(),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().min(7).optional(),
+  altPhone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
+  leadSource: z.nativeEnum(LeadSource).optional(),
+  referredBy: z.string().optional(),
+  taxExempt: z.boolean().optional(),
+  taxExemptId: z.string().optional(),
+  notes: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+}).partial();
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
@@ -51,11 +73,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
+  const parsed = updateSchema.safeParse(body);
+  if (!parsed.success) return apiError(parsed.error.issues[0].message, 400);
 
   const existing = await prisma.customer.findUnique({ where: { id } });
   if (!existing) return apiError("Customer not found", 404);
 
-  const updated = await prisma.customer.update({ where: { id }, data: body });
+  const { email, ...rest } = parsed.data;
+  const updated = await prisma.customer.update({
+    where: { id },
+    data: { ...rest, ...(email !== undefined && { email: email || null }) },
+  });
 
   await logAudit(session!.user.id, AuditAction.UPDATE, "Customer", id, existing, updated);
 
