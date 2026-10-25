@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireAuth, requireRole, apiError, apiSuccess } from "@/lib/api-helpers";
+import { moveStock } from "@/lib/inventory";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -8,9 +9,9 @@ const createSchema = z.object({
   partNumber: z.string().optional(),
   description: z.string().optional(),
   category: z.string().optional(),
-  quantityOnHand: z.number().int().default(0),
-  reorderPoint: z.number().int().default(0),
-  unitCost: z.number().default(0),
+  quantityOnHand: z.number().int().min(0).default(0),
+  reorderPoint: z.number().int().min(0).default(0),
+  unitCost: z.number().min(0).default(0),
   location: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -43,13 +44,25 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireRole(["ADMIN", "PARTS_COORDINATOR", "DISPATCHER", "SERVICE_ADVISOR", "ACCOUNTANT"]);
   if (error) return error;
 
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return apiError("Invalid data", 400);
+  if (!parsed.success) return apiError(parsed.error.issues[0].message, 400);
 
-  const item = await prisma.inventoryItem.create({ data: parsed.data });
+  const { quantityOnHand, ...rest } = parsed.data;
+  const item = await prisma.$transaction(async (tx) => {
+    const created = await tx.inventoryItem.create({ data: { ...rest, quantityOnHand: 0 } });
+    await moveStock(tx, {
+      itemId: created.id,
+      quantity: quantityOnHand,
+      type: "INITIAL",
+      unitCost: rest.unitCost,
+      reason: "Opening stock",
+      createdById: session!.user.id,
+    });
+    return tx.inventoryItem.findUniqueOrThrow({ where: { id: created.id } });
+  });
   return apiSuccess(item, 201);
 }

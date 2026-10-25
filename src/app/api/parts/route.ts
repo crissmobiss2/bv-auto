@@ -9,13 +9,14 @@ const createSchema = z.object({
   vendorId: z.string().optional(),
   partNumber: z.string().optional(),
   description: z.string().min(1),
-  quantity: z.number().positive().default(1),
-  unitCost: z.number().optional(),
-  unitPrice: z.number().optional(),
-  markup: z.number().optional(),
+  quantity: z.number().positive().max(10000).default(1),
+  unitCost: z.number().min(0).max(1_000_000).optional(),
+  unitPrice: z.number().min(0).max(1_000_000).optional(),
+  markup: z.number().min(0).max(500).optional(),
+  inventoryItemId: z.string().optional(),
   poNumber: z.string().optional(),
   coreReturn: z.boolean().optional(),
-  coreCharge: z.number().optional(),
+  coreCharge: z.number().min(0).optional(),
   notes: z.string().optional(),
 });
 
@@ -57,7 +58,18 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
   const data = parsed.data;
-  const unitCost = data.unitCost ?? 0;
+  if (data.vendorId) {
+    const vendor = await prisma.partsVendor.findFirst({ where: { id: data.vendorId, isActive: true }, select: { id: true } });
+    if (!vendor) return apiError("Vendor not found or inactive", 400);
+  }
+  let stockCost: number | undefined;
+  if (data.inventoryItemId) {
+    const stock = await prisma.inventoryItem.findFirst({ where: { id: data.inventoryItemId, isActive: true } });
+    if (!stock) return apiError("Inventory item not found", 400);
+    stockCost = Number(stock.unitCost);
+    data.partNumber ??= stock.partNumber ?? undefined;
+  }
+  const unitCost = data.unitCost ?? stockCost ?? 0;
   let markup = data.markup;
   if (markup == null && data.unitPrice == null) {
     const shop = await prisma.shop.findFirst({
@@ -75,6 +87,7 @@ export async function POST(req: NextRequest) {
   const part = await prisma.jobPart.create({
     data: {
       ...data,
+      unitCost,
       markup,
       unitPrice,
       totalCost,

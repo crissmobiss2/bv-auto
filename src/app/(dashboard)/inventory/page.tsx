@@ -51,8 +51,13 @@ export default function InventoryPage() {
   const adjustMutation = useMutation({
     mutationFn: ({ id, adjustment }: { id: string; adjustment: number }) =>
       axios.patch(`/api/inventory/${id}`, { adjustment }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["inventory"] }),
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-movements", v.id] });
+    },
+    onError: (e) => alert((axios.isAxiosError(e) && e.response?.data?.error) || "Stock change failed"),
   });
+  const [historyFor, setHistoryFor] = useState<string | null>(null);
 
   const lowStockCount = (items || []).filter((i: InventoryItem) => i.quantityOnHand <= i.reorderPoint).length;
 
@@ -121,6 +126,7 @@ export default function InventoryPage() {
                         size="icon"
                         variant="outline"
                         className="h-8 w-8"
+                        aria-label={`Remove one ${item.name}`}
                         onClick={() => adjustMutation.mutate({ id: item.id, adjustment: -1 })}
                         disabled={item.quantityOnHand <= 0}
                       >
@@ -133,12 +139,17 @@ export default function InventoryPage() {
                         size="icon"
                         variant="outline"
                         className="h-8 w-8"
+                        aria-label={`Add one ${item.name}`}
                         onClick={() => adjustMutation.mutate({ id: item.id, adjustment: 1 })}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
+                      <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setHistoryFor(historyFor === item.id ? null : item.id)}>
+                        History
+                      </Button>
                     </div>
                   </div>
+                  {historyFor === item.id && <StockHistory itemId={item.id} />}
                 </CardContent>
               </Card>
             );
@@ -179,5 +190,31 @@ export default function InventoryPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function StockHistory({ itemId }: { itemId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["inventory-movements", itemId],
+    queryFn: () => axios.get(`/api/inventory/${itemId}/movements`).then((r) => r.data),
+  });
+  if (isLoading) return <p className="mt-3 text-xs text-gray-500">Loading history…</p>;
+  const rows = (data || []) as { id: string; type: string; quantity: number; balanceAfter: number; reason?: string; createdAt: string }[];
+  if (rows.length === 0) return <p className="mt-3 text-xs text-gray-500">No stock movements recorded yet.</p>;
+  return (
+    <ul className="mt-3 divide-y border-t text-xs">
+      {rows.map((m) => (
+        <li key={m.id} className="flex justify-between py-1.5">
+          <span>
+            <span className="font-medium">{m.type}</span> {m.reason && <span className="text-gray-500">· {m.reason}</span>}
+            <span className="block text-gray-400">{new Date(m.createdAt).toLocaleString()}</span>
+          </span>
+          <span className="text-right">
+            <span className={m.quantity < 0 ? "text-red-600" : "text-green-600"}>{m.quantity > 0 ? `+${m.quantity}` : m.quantity}</span>
+            <span className="block text-gray-400">on hand {m.balanceAfter}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
