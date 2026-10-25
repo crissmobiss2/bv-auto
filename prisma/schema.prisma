@@ -70,6 +70,12 @@ enum InvoiceStatus {
   REFUNDED
 }
 
+enum PaymentType {
+  PAYMENT
+  DEPOSIT
+  REFUND
+}
+
 enum PaymentMethod {
   CASH
   CHECK
@@ -418,6 +424,8 @@ model Quote {
   totalAmount    Decimal     @default(0)
   depositRequired Decimal?
   depositPaid    Decimal?
+  depositExternalId String?  @unique
+  depositPaidAt  DateTime?
   approvalToken  String?     @unique
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -451,6 +459,8 @@ model Invoice {
   voidReason        String?
   stripeSessionId   String?
   stripePaymentUrl  String?
+  lastReminderAt    DateTime?
+  reminderCount     Int           @default(0)
   subtotal          Decimal       @default(0)
   taxRate        Decimal       @default(0)
   taxAmount      Decimal       @default(0)
@@ -506,18 +516,29 @@ model LineItem {
 // ─── PAYMENTS ─────────────────────────────────────────────────────────────────
 
 model Payment {
-  id         String        @id @default(cuid())
-  invoiceId  String
-  amount     Decimal
-  method     PaymentMethod
-  reference  String?
-  notes      String?
-  receivedAt DateTime      @default(now())
-  createdAt  DateTime      @default(now())
+  id             String        @id @default(cuid())
+  invoiceId      String
+  // Negative for refunds; invoice amountPaid is always the sum of these rows.
+  amount         Decimal
+  type           PaymentType   @default(PAYMENT)
+  method         PaymentMethod
+  reference      String?
+  notes          String?
+  // Provider id (Stripe PaymentIntent/refund id); unique so retries cannot double-record.
+  externalId     String?       @unique
+  // Client-supplied key so a double-submitted desk payment is recorded once.
+  idempotencyKey String?       @unique
+  refundOfId     String?
+  createdById    String?
+  receivedAt     DateTime      @default(now())
+  createdAt      DateTime      @default(now())
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  invoice  Invoice   @relation(fields: [invoiceId], references: [id])
+  refundOf Payment?  @relation("PaymentRefunds", fields: [refundOfId], references: [id])
+  refunds  Payment[] @relation("PaymentRefunds")
 
   @@index([invoiceId])
+  @@index([receivedAt])
 }
 
 // ─── PARTS ────────────────────────────────────────────────────────────────────
@@ -573,9 +594,14 @@ model JobPart {
   poNumber     String?
   coreReturn   Boolean    @default(false)
   coreCharge   Decimal?
+  // Stock this part is drawn from; issuedQty tracks what the ledger has taken.
+  inventoryItemId    String?
+  inventoryIssuedQty Int        @default(0)
+  quantityReceived   Decimal    @default(0)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
   job           Job            @relation(fields: [jobId], references: [id])
   vendor        PartsVendor?   @relation(fields: [vendorId], references: [id])
   purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
@@ -584,6 +610,7 @@ model JobPart {
   @@index([vendorId])
   @@index([status])
   @@index([purchaseOrderId])
+  @@index([inventoryItemId])
 }
 
 // ─── PURCHASE ORDERS ──────────────────────────────────────────────────────────
@@ -864,8 +891,40 @@ model InventoryItem {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  movements InventoryMovement[]
+  jobParts  JobPart[]
+
   @@index([category])
   @@index([location])
+}
+
+enum InventoryMovementType {
+  INITIAL
+  RECEIVE
+  ISSUE
+  RETURN
+  ADJUST
+}
+
+// Append-only stock ledger; InventoryItem.quantityOnHand is the running sum.
+model InventoryMovement {
+  id              String                @id @default(cuid())
+  itemId          String
+  type            InventoryMovementType
+  quantity        Int
+  balanceAfter    Int
+  unitCost        Decimal?              @db.Decimal(10, 2)
+  reason          String?
+  jobId           String?
+  jobPartId       String?
+  purchaseOrderId String?
+  createdById     String?
+  createdAt       DateTime              @default(now())
+
+  item InventoryItem @relation(fields: [itemId], references: [id])
+
+  @@index([itemId, createdAt])
+  @@index([jobPartId])
 }
 
 // ─── REVIEW REQUESTS ─────────────────────────────────────────────────────────

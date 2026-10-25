@@ -46,6 +46,7 @@ type Job = {
     taxAmount: number;
     taxRate: number;
     notes?: string;
+    depositRequired?: number | null;
     lineItems: LineItem[];
   } | null;
 };
@@ -59,6 +60,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
   );
   const [taxRate, setTaxRate] = useState(quote ? Number(quote.taxRate) : 0);
   const [notes, setNotes] = useState(quote?.notes || "");
+  const [deposit, setDeposit] = useState(quote?.depositRequired ? String(Number(quote.depositRequired)) : "");
   const [editing, setEditing] = useState(!quote);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
@@ -159,7 +161,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
   const saveMutation = useMutation({
     mutationFn: async (): Promise<AxiosResponse> => {
       if (quote) {
-        return axios.patch(`/api/quotes/${quote.id}`, { lineItems: items, taxRate, notes });
+        return axios.patch(`/api/quotes/${quote.id}`, { lineItems: items, taxRate, notes, depositRequired: deposit ? parseFloat(deposit) : null });
       }
       return axios.post("/api/quotes", {
         jobId: job.id,
@@ -167,6 +169,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
         lineItems: items,
         taxRate,
         notes,
+        depositRequired: deposit ? parseFloat(deposit) : undefined,
       });
     },
     onSuccess: () => {
@@ -376,6 +379,20 @@ export function QuoteBuilder({ job }: { job: Job }) {
               className="w-24 h-8 text-sm"
               value={taxRate}
               onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+            />
+          </div>
+          <div className="flex items-center gap-4 justify-end">
+            <Label htmlFor="quote-deposit" className="text-sm">Deposit required ($)</Label>
+            <Input
+              id="quote-deposit"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              className="w-28 h-8 text-sm"
+              value={deposit}
+              placeholder="None"
+              onChange={(e) => setDeposit(e.target.value)}
             />
           </div>
           <div className="text-sm space-y-1 text-right">

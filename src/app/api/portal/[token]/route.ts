@@ -29,7 +29,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
         include: { payments: true },
       },
       quotes: {
-        where: { status: { in: ["SENT", "VIEWED"] } },
+        where: {
+          OR: [
+            { status: { in: ["SENT", "VIEWED"] } },
+            { status: "APPROVED", depositRequired: { gt: 0 } },
+          ],
+        },
         orderBy: { createdAt: "desc" },
         include: { lineItems: true, job: { include: { vehicle: true } } },
       },

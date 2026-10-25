@@ -26,7 +26,7 @@ const createSchema = z.object({
   internalNotes: z.string().optional(),
   validUntil: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid validUntil").optional(),
   taxRate: z.number().min(0).max(30).default(0),
-  depositRequired: z.number().optional(),
+  depositRequired: z.number().min(0).optional(),
   lineItems: z.array(lineItemSchema).default([]),
 });
 
@@ -100,6 +100,9 @@ export async function POST(req: NextRequest) {
 
   const taxAmount = Math.round(taxableAmount * (parsed.data.taxRate / 100) * 100) / 100;
   const totalAmount = Math.round((subtotal + taxAmount) * 100) / 100;
+  if ((parsed.data.depositRequired ?? 0) > totalAmount) {
+    return apiError("Deposit must be between 0 and the quote total", 400);
+  }
 
   const quote = await prisma.quote.create({
     data: {

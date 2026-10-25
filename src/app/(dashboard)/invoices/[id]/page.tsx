@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Download, Send, DollarSign, Phone, Smartphone, CheckCircle } from "lucide-react";
@@ -134,6 +135,28 @@ export default function InvoiceDetailPage() {
   const [paymentForm, setPaymentForm] = useState({
     amount: "", method: "CASH", reference: "", notes: "",
   });
+  // One key per opened payment dialog, so a double-click records once.
+  const [paymentKey, setPaymentKey] = useState(() => crypto.randomUUID());
+  const [refundTarget, setRefundTarget] = useState<null | { id: string; refundable: number }>(null);
+  const [refundForm, setRefundForm] = useState({ amount: "", reason: "" });
+  const [refundKey, setRefundKey] = useState(() => crypto.randomUUID());
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const refundMutation = useMutation({
+    mutationFn: () =>
+      axios.post(`/api/invoices/${id}/refund`, {
+        paymentId: refundTarget!.id,
+        amount: parseFloat(refundForm.amount),
+        reason: refundForm.reason || undefined,
+        idempotencyKey: refundKey,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+      setRefundTarget(null);
+      setRefundForm({ amount: "", reason: "" });
+      setRefundKey(crypto.randomUUID());
+    },
+    onError: (e) => setRefundError((axios.isAxiosError(e) && e.response?.data?.error) || "Refund failed"),
+  });
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ["invoice", id],
@@ -167,11 +190,13 @@ export default function InvoiceDetailPage() {
         method: paymentForm.method,
         reference: paymentForm.reference || undefined,
         notes: paymentForm.notes || undefined,
+        idempotencyKey: paymentKey,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoice", id] });
       setShowPayment(false);
       setPaymentForm({ amount: "", method: "CASH", reference: "", notes: "" });
+      setPaymentKey(crypto.randomUUID());
     },
   });
 
@@ -347,18 +372,34 @@ export default function InvoiceDetailPage() {
           <CardHeader><CardTitle className="text-base">Payment History</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {invoice.payments.map((p: {
-                id: string; amount: number; method: string; reference?: string; receivedAt: string;
-              }) => (
-                <div key={p.id} className="flex justify-between text-sm py-2 border-b last:border-0">
+              {(() => {
+                type Pay = { id: string; amount: number; type?: string; method: string; reference?: string; receivedAt: string; refundOfId?: string | null };
+                const rows = [...(invoice.payments as Pay[])].sort((x, y) => new Date(x.receivedAt).getTime() - new Date(y.receivedAt).getTime());
+                let balance = Number(invoice.totalAmount);
+                const withBalance = rows.map((p) => {
+                  balance = Math.round((balance - Number(p.amount)) * 100) / 100;
+                  const refunded = rows.filter((r) => r.refundOfId === p.id).reduce((s2, r) => s2 + Number(r.amount), 0);
+                  return { ...p, balanceAfter: balance, refundable: Math.round((Number(p.amount) + refunded) * 100) / 100 };
+                });
+                return withBalance.reverse().map((p) => (
+                <div key={p.id} className="flex justify-between items-start text-sm py-2 border-b last:border-0">
                   <div>
+                    <Badge variant="outline" className="mr-2 text-[10px]">{p.type ?? "PAYMENT"}</Badge>
                     <span className="font-medium">{p.method.replace(/_/g, " ")}</span>
                     {p.reference && <span className="text-gray-400 ml-2">#{p.reference}</span>}
-                    <p className="text-xs text-gray-400">{formatDateTime(p.receivedAt)}</p>
+                    <p className="text-xs text-gray-400">{formatDateTime(p.receivedAt)} · Balance after: {formatCurrency(Math.max(0, p.balanceAfter))}</p>
                   </div>
-                  <span className="text-green-600 font-medium">{formatCurrency(p.amount)}</span>
+                  <div className="text-right">
+                    <span className={Number(p.amount) < 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>{formatCurrency(p.amount)}</span>
+                    {p.type !== "REFUND" && p.refundable > 0 && (
+                      <Button variant="ghost" size="sm" className="h-6 text-xs ml-2" onClick={() => { setRefundError(null); setRefundForm({ amount: String(p.refundable), reason: "" }); setRefundTarget({ id: p.id, refundable: p.refundable }); }}>
+                        Refund
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              ))}
+              ));
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -366,6 +407,30 @@ export default function InvoiceDetailPage() {
 
       {/* Payment Plan */}
       <PaymentPlanSection invoiceId={id} amountDue={Number(invoice.amountDue)} />
+
+      <Dialog open={!!refundTarget} onOpenChange={(o) => !o && setRefundTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Refund Payment</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="refund-amount">Amount (max {formatCurrency(refundTarget?.refundable ?? 0)})</Label>
+              <Input id="refund-amount" type="number" inputMode="decimal" step="0.01" min="0" value={refundForm.amount} onChange={(e) => setRefundForm({ ...refundForm, amount: e.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="refund-reason">Reason</Label>
+              <Input id="refund-reason" value={refundForm.reason} onChange={(e) => setRefundForm({ ...refundForm, reason: e.target.value })} />
+            </div>
+            <p className="text-xs text-gray-500">Card payments are refunded through Stripe. Cash/check refunds are recorded only.</p>
+            {refundError && <p role="alert" className="text-sm text-red-600">{refundError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundTarget(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => refundMutation.mutate()} disabled={!refundForm.amount || refundMutation.isPending}>
+              {refundMutation.isPending ? "Refunding..." : "Refund"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Record Payment Dialog */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>

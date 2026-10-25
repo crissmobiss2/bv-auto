@@ -5,6 +5,7 @@ import { vi } from "vitest";
 const db = {
   invoice: {
     findUnique: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
     update: vi.fn(),
     create: vi.fn(),
   },
@@ -12,6 +13,8 @@ const db = {
     create: vi.fn(),
     findFirst: vi.fn(),
     findMany: vi.fn(),
+    findUnique: vi.fn(),
+    aggregate: vi.fn(),
   },
   customer: {
     findUnique: vi.fn(),
@@ -25,8 +28,10 @@ const db = {
     create: vi.fn(),
     count: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
   },
   $transaction: vi.fn(),
+  $queryRaw: vi.fn(() => Promise.resolve([])),
 };
 
 // Support both array transactions and interactive callback transactions.

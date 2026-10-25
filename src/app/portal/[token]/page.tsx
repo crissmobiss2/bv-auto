@@ -61,6 +61,14 @@ function JobStatusTimeline({ status }: { status: string }) {
 export default function CustomerPortalPage() {
   const { token } = useParams<{ token: string }>();
   const [message, setMessage] = useState("");
+  const [payError, setPayError] = useState<string | null>(null);
+  const payMutation = useMutation({
+    mutationFn: (body: { invoiceId?: string; quoteId?: string }) =>
+      axios.post(`/api/portal/${token}/pay`, body).then((r) => r.data as { url: string }),
+    onMutate: () => setPayError(null),
+    onSuccess: ({ url }) => { window.location.href = url; },
+    onError: (e) => setPayError((axios.isAxiosError(e) && e.response?.data?.error) || "Could not start the payment"),
+  });
   const [messageSent, setMessageSent] = useState(false);
 
   const { data: shopInfo } = useQuery({
@@ -177,18 +185,28 @@ export default function CustomerPortalPage() {
       )}
 
       {/* Pending quotes */}
+      {payError && <p role="alert" className="text-sm text-red-600">{payError}</p>}
       {pendingQuotes.length > 0 && (
         <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-yellow-800 flex items-center gap-2"><Clock className="h-4 w-4" /> Estimates Awaiting Your Approval</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-yellow-800 flex items-center gap-2"><Clock className="h-4 w-4" /> Estimates and Deposits</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {pendingQuotes.map((q: { id: string; quoteNumber: string; totalAmount: number; job: { vehicle: { year: number; make: string; model: string } }; approvalToken: string }) => (
+            {pendingQuotes.map((q: { id: string; quoteNumber: string; status: string; totalAmount: number; depositRequired?: number | null; depositPaid?: number | null; job: { vehicle: { year: number; make: string; model: string } }; approvalToken: string }) => (
               <div key={q.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-yellow-200">
                 <div>
                   <p className="font-medium text-sm">{q.quoteNumber}</p>
                   <p className="text-xs text-gray-500">{`${q.job?.vehicle?.year} ${q.job?.vehicle?.make} ${q.job?.vehicle?.model}`}</p>
                   <p className="font-bold text-yellow-700">{formatCurrency(q.totalAmount)}</p>
                 </div>
-                {q.approvalToken && (
+                {Number(q.depositRequired ?? 0) - Number(q.depositPaid ?? 0) > 0.004 && q.status === "APPROVED" ? (
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={payMutation.isPending}
+                    onClick={() => payMutation.mutate({ quoteId: q.id })}
+                  >
+                    Pay {formatCurrency(Number(q.depositRequired) - Number(q.depositPaid ?? 0))} deposit
+                  </Button>
+                ) : q.status !== "APPROVED" && q.approvalToken && (
                   <Link href={`/approve/${q.approvalToken}`}>
                     <Button size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-white">
                       Review <ChevronRight className="h-3 w-3 ml-1" />
@@ -286,6 +304,7 @@ export default function CustomerPortalPage() {
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-4">
+          {payError && <p role="alert" className="mb-2 text-sm text-red-600">{payError}</p>}
           <Card>
             <CardContent className="p-0">
               {(customer.invoices || []).length === 0 ? (
@@ -301,10 +320,15 @@ export default function CustomerPortalPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className={`text-xs ${INVOICE_STATUS_COLORS[inv.status] || "bg-gray-100 text-gray-700"}`}>{inv.status}</Badge>
-                        {inv.stripePaymentUrl && inv.status !== "PAID" && (
-                          <a href={inv.stripePaymentUrl} target="_blank" rel="noopener noreferrer">
-                            <Button size="sm" className="text-xs h-7 bg-green-600 hover:bg-green-700">Pay Now</Button>
-                          </a>
+                        {Number(inv.amountDue) > 0 && !["PAID", "VOID", "REFUNDED", "DRAFT"].includes(inv.status) && (
+                          <Button
+                            size="sm"
+                            className="text-xs h-7 bg-green-600 hover:bg-green-700"
+                            disabled={payMutation.isPending}
+                            onClick={() => payMutation.mutate({ invoiceId: inv.id })}
+                          >
+                            {payMutation.isPending && payMutation.variables?.invoiceId === inv.id ? "Opening…" : "Pay Now"}
+                          </Button>
                         )}
                       </div>
                     </div>
