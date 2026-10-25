@@ -568,9 +568,14 @@ model JobPart {
   poNumber     String?
   coreReturn   Boolean    @default(false)
   coreCharge   Decimal?
+  // Stock this part is drawn from; issuedQty tracks what the ledger has taken.
+  inventoryItemId    String?
+  inventoryIssuedQty Int        @default(0)
+  quantityReceived   Decimal    @default(0)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
   job           Job            @relation(fields: [jobId], references: [id])
   vendor        PartsVendor?   @relation(fields: [vendorId], references: [id])
   purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
@@ -579,6 +584,7 @@ model JobPart {
   @@index([vendorId])
   @@index([status])
   @@index([purchaseOrderId])
+  @@index([inventoryItemId])
 }
 
 // ─── PURCHASE ORDERS ──────────────────────────────────────────────────────────
@@ -859,8 +865,40 @@ model InventoryItem {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  movements InventoryMovement[]
+  jobParts  JobPart[]
+
   @@index([category])
   @@index([location])
+}
+
+enum InventoryMovementType {
+  INITIAL
+  RECEIVE
+  ISSUE
+  RETURN
+  ADJUST
+}
+
+// Append-only stock ledger; InventoryItem.quantityOnHand is the running sum.
+model InventoryMovement {
+  id              String                @id @default(cuid())
+  itemId          String
+  type            InventoryMovementType
+  quantity        Int
+  balanceAfter    Int
+  unitCost        Decimal?              @db.Decimal(10, 2)
+  reason          String?
+  jobId           String?
+  jobPartId       String?
+  purchaseOrderId String?
+  createdById     String?
+  createdAt       DateTime              @default(now())
+
+  item InventoryItem @relation(fields: [itemId], references: [id])
+
+  @@index([itemId, createdAt])
+  @@index([jobPartId])
 }
 
 // ─── REVIEW REQUESTS ─────────────────────────────────────────────────────────

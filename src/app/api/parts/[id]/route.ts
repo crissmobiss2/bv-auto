@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, PartStatus } from "@prisma/client";
 import { z } from "zod";
+import { InsufficientStockError, moveStock, RETURNED_PART_STATUSES } from "@/lib/inventory";
 
 const updatePartSchema = z.object({
   vendorId: z.string().nullable().optional(),
@@ -10,10 +11,11 @@ const updatePartSchema = z.object({
   status: z.nativeEnum(PartStatus).optional(),
   partNumber: z.string().nullable().optional(),
   description: z.string().min(1).optional(),
-  quantity: z.coerce.number().nonnegative().optional(),
+  quantity: z.coerce.number().nonnegative().max(10000).optional(),
   unitCost: z.coerce.number().nonnegative().nullable().optional(),
   unitPrice: z.coerce.number().nonnegative().nullable().optional(),
-  markup: z.coerce.number().optional(),
+  markup: z.coerce.number().min(0).max(500).optional(),
+  inventoryItemId: z.string().nullable().optional(),
   totalCost: z.coerce.number().nonnegative().nullable().optional(),
   totalPrice: z.coerce.number().nonnegative().nullable().optional(),
   creditAmount: z.coerce.number().nonnegative().nullable().optional(),
@@ -64,7 +66,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (tsField) updateData[tsField] = new Date();
   }
 
-  const updated = await prisma.jobPart.update({ where: { id }, data: updateData });
+  if (parsed.data.vendorId) {
+    const vendor = await prisma.partsVendor.findFirst({ where: { id: parsed.data.vendorId, isActive: true }, select: { id: true } });
+    if (!vendor) return apiError("Vendor not found or inactive", 400);
+  }
+  if (parsed.data.status === PartStatus.RECEIVED) {
+    updateData.quantityReceived = parsed.data.quantity ?? existing.quantity;
+  }
+  if (existing.inventoryIssuedQty > 0 && parsed.data.inventoryItemId !== undefined && parsed.data.inventoryItemId !== existing.inventoryItemId) {
+    return apiError("Return this part to stock before linking it to a different inventory item", 400);
+  }
+
+  // Stock-backed parts leave inventory when installed and go back on the
+  // shelf when returned/cancelled; the ledger row and stock change commit
+  // together with the part update.
+  const itemId = parsed.data.inventoryItemId !== undefined ? parsed.data.inventoryItemId : existing.inventoryItemId;
+  const nextStatus = parsed.data.status ?? existing.status;
+  const qty = Math.ceil(Number(parsed.data.quantity ?? existing.quantity));
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      if (itemId && nextStatus === PartStatus.INSTALLED && existing.inventoryIssuedQty === 0 && qty > 0) {
+        await moveStock(tx, { itemId, quantity: -qty, type: "ISSUE", jobId: existing.jobId, jobPartId: id, createdById: session!.user.id, reason: "Installed on job" });
+        updateData.inventoryIssuedQty = qty;
+      } else if (
+        existing.inventoryItemId && existing.inventoryIssuedQty > 0 &&
+        (RETURNED_PART_STATUSES as readonly string[]).includes(nextStatus)
+      ) {
+        await moveStock(tx, { itemId: existing.inventoryItemId, quantity: existing.inventoryIssuedQty, type: "RETURN", jobId: existing.jobId, jobPartId: id, createdById: session!.user.id, reason: `Part ${nextStatus.toLowerCase()}` });
+        updateData.inventoryIssuedQty = 0;
+      }
+      return tx.jobPart.update({ where: { id }, data: updateData });
+    });
+  } catch (e) {
+    if (e instanceof InsufficientStockError) return apiError(`Not enough stock to install (on hand: ${e.available})`, 409);
+    throw e;
+  }
   await logAudit(session!.user.id, AuditAction.UPDATE, "JobPart", id, existing, updated);
 
   return apiSuccess(updated);
@@ -75,7 +112,14 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
   if (error) return error;
 
   const { id } = await params;
-  await prisma.jobPart.delete({ where: { id } });
+  const part = await prisma.jobPart.findUnique({ where: { id } });
+  if (!part) return apiError("Part not found", 404);
+  await prisma.$transaction(async (tx) => {
+    if (part.inventoryItemId && part.inventoryIssuedQty > 0) {
+      await moveStock(tx, { itemId: part.inventoryItemId, quantity: part.inventoryIssuedQty, type: "RETURN", jobId: part.jobId, createdById: session!.user.id, reason: "Part deleted from job" });
+    }
+    await tx.jobPart.delete({ where: { id } });
+  });
   await logAudit(session!.user.id, AuditAction.DELETE, "JobPart", id);
 
   return apiSuccess({ success: true });

@@ -42,6 +42,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!["DRAFT", "SENT", "CONFIRMED", "RECEIVED", "CANCELLED"].includes(status)) {
       return apiError("Invalid status", 400);
     }
+    const allowed: Record<string, string[]> = {
+      DRAFT: ["SENT", "CANCELLED"],
+      SENT: ["CONFIRMED", "RECEIVED", "CANCELLED"],
+      CONFIRMED: ["RECEIVED", "CANCELLED"],
+      RECEIVED: [],
+      CANCELLED: [],
+    };
+    if (status !== po.status && !allowed[po.status].includes(status)) {
+      return apiError(`A ${po.status.toLowerCase()} purchase order cannot be marked ${status.toLowerCase()}`, 400);
+    }
     data.status = status as POStatus;
 
     if (status === "SENT" && !po.orderedAt) data.orderedAt = new Date();
@@ -52,6 +62,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         where: { purchaseOrderId: id, status: { in: [PartStatus.ORDERED, PartStatus.SHIPPED, PartStatus.PICKED_UP] } },
         data: { status: PartStatus.RECEIVED, receivedAt: new Date() },
       });
+      await prisma.$executeRaw`UPDATE "JobPart" SET "quantityReceived" = "quantity" WHERE "purchaseOrderId" = ${id} AND "status" = 'RECEIVED'`;
     }
     if (status === "CANCELLED") {
       data.cancelledAt = new Date();
