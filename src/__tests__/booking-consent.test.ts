@@ -50,4 +50,10 @@ describe("booking SMS consent", () => {
     expect(shops.resolvePublicShop).toHaveBeenCalledWith("no-such-shop");
     expect(prisma.serviceRequest.create).not.toHaveBeenCalled();
   });
+
+  it("silently drops honeypot bots and asks instant submits to resubmit", async () => {
+    expect((await post({ website: "http://spam.example" })).status).toBe(201);
+    expect((await post({ elapsedMs: 500 })).status).toBe(400);
+    expect(prisma.serviceRequest.create).not.toHaveBeenCalled();
+  });
 });

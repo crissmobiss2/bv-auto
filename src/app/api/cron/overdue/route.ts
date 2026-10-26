@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { enterShop } from "@/lib/tenant";
 import { sendInvoiceEmail, emailConfigured } from "@/lib/email";
 import { formatCurrency } from "@/lib/utils";
 
@@ -42,6 +43,8 @@ export async function GET(req: NextRequest) {
 
   for (const invoice of overdueInvoices) {
     if (!invoice.customer.email || !invoice.dueDate) continue;
+    // Each reminder carries its own shop's name and reply-to address.
+    if (invoice.shopId) enterShop(invoice.shopId);
 
     const daysOverdue = Math.floor((now.getTime() - invoice.dueDate.getTime()) / 86400000);
     if (![1, 7, 14].includes(daysOverdue)) continue;
