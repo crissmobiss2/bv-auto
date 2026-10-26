@@ -34,6 +34,7 @@ const FILL_FIELDS = ["company", "email", "altPhone", "address", "city", "state",
 
 type MergeCustomer = {
   id: string;
+  phone?: string | null;
   tags: string[];
   notes: string | null;
   smsOptOut: boolean;
@@ -53,7 +54,11 @@ export function mergedFields(target: MergeCustomer, source: MergeCustomer) {
     data.smsOptOut = true;
     data.smsOptOutAt = source.smsOptOutAt ?? new Date();
   }
-  if (source.smsConsentAt && !target.smsConsentAt) data.smsConsentAt = source.smsConsentAt;
+  // Consent belongs to a phone number, so it only carries over when both records share the number.
+  const digits = (p?: string | null) => (p ?? "").replace(/\D/g, "").slice(-10);
+  if (source.smsConsentAt && !target.smsConsentAt && digits(source.phone) && digits(source.phone) === digits(target.phone)) {
+    data.smsConsentAt = source.smsConsentAt;
+  }
   if (source.marketingOptOut) data.marketingOptOut = true;
   if (source.taxExempt) data.taxExempt = true;
   return data;
