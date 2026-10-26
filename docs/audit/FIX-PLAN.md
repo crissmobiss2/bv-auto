@@ -61,12 +61,6 @@ Fixed in code, with unit tests in `src/__tests__/inventory.test.ts`:
 - **PO receiving**: `POST /api/purchase-orders/[id]/receive` records partial receipts per line (`JobPart.quantityReceived`). The PO becomes RECEIVED only when every line is in, and PO status changes follow a transition table (no receiving a cancelled PO, no reopening a received one).
 - **PART-002 / PART-006 (partial)**: vendors must exist and be active, markup is bounded to 0–500%, and costs, prices and quantities are non-negative and bounded.
 
-## Status updates — platform (branch `devin/*-platform`)
-
-- **PLAT-004 (fixed)**: `prisma/migrations` already held `init`, `schema_drift_fix` and `photo_blob_vendor_website`, but everything since had been applied with `db push`. The new `20261025000000_audit_phase_catchup` migration covers the gap: purchase orders, payroll payouts, payment types and unique keys, inventory movements, consent columns and `RateLimit`. A fresh database built with `prisma migrate deploy` now matches `schema.prisma`; this was checked against a clean Postgres 14. Production `_prisma_migrations` was baselined with `migrate resolve --applied`, so `migrate deploy` is a no-op there. Future schema changes need a migration (`npm run db:migrate`), not `db push`. Any other existing database that was kept in sync with `db push` (a dev or staging copy) must be baselined the same way before its first `migrate deploy`: run `npx prisma migrate resolve --applied <name>` for each migration up to and including `20261025000000_audit_phase_catchup` (and `20261025010000_payroll_run` once that migration is on master). A brand-new database needs nothing extra.
-- **PLAT-003 (fixed)**: CI runs on pushes and PRs to `master`. The unused `deploy-preview` and Vercel-CLI production jobs were removed, because Vercel's Git integration already deploys. `migrate-production` runs `prisma migrate deploy` on `master` pushes when the `DATABASE_URL_UNPOOLED` secret is set; otherwise it logs a warning and skips.
-- **AUTH-009 / PLAT-006 (fixed for rate limits)**: `rateLimit()` is now async and backed by the `RateLimit` table (one atomic `INSERT … ON CONFLICT … RETURNING count` per check). Limits now apply across all serverless instances and survive restarts. If the database errors it falls back to the per-instance in-memory window. Idempotency keys were already DB-unique (phase 1).
-
 ## Status updates — communications consent and booking (branch `devin/*-comms-consent`)
 
 Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
