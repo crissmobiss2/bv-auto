@@ -70,11 +70,6 @@ Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
 - **PORT-011 / FLOW-003**: a public booking now sends a confirmation SMS and/or email (best-effort, so a provider failure never loses the booking), creates an in-app notification plus a push for ADMIN/DISPATCHER/SERVICE_ADVISOR users, and shows the customer a `BR-XXXXXX` reference.
 - Not exercised against live Twilio/Resend (no keys in this environment).
 
-## Status updates — error boundaries (branch `devin/*-error-boundaries`)
-
-- **QUAL-006 (fixed)**: `error.tsx` boundaries for the root app, `(dashboard)`, `tech`, `(customer)` and `portal` share `ErrorFallback`. It shows "Something went wrong" with "Try again" (`retry()`), a "Go home" link and the error digest, and reports to Sentry. `global-error.tsx` covers root-layout failures. The dashboard boundary sits below the dashboard layout, so the sidebar stays usable when one page fails.
-- **QUAL-008 (fixed)**: `vitest.config.ts` → `vitest.config.mts` (ESM, `import.meta.url` alias), which silences the Vite native-config-loader CJS warning.
-
 ## Phase 1 — P1 workflow/data integrity (OPEN)
 | ID | Fix | Why now | Effort | Files |
 |---|---|---|---|---|
