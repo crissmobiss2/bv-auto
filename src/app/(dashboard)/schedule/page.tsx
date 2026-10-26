@@ -105,13 +105,13 @@ export default function SchedulePage() {
           <p className="text-sm text-gray-500">Week of {format(weekStart, "MMMM d, yyyy")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => setWeekStart((w) => subWeeks(w, 1))}>
+          <Button aria-label="Previous week" variant="outline" size="icon" onClick={() => setWeekStart((w) => subWeeks(w, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}>
             Today
           </Button>
-          <Button variant="outline" size="icon" onClick={() => setWeekStart((w) => addWeeks(w, 1))}>
+          <Button aria-label="Next week" variant="outline" size="icon" onClick={() => setWeekStart((w) => addWeeks(w, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Link href="/jobs/new">

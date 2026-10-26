@@ -316,7 +316,7 @@ export default function JobDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link href="/jobs"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+        <Link href="/jobs"><Button aria-label="Back" variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-bold text-gray-900 truncate">{job.title}</h1>

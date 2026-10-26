@@ -84,7 +84,7 @@ export default function TechJobDetailPage() {
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href="/tech">
-          <Button variant="ghost" size="icon" className="flex-shrink-0"><ArrowLeft className="h-4 w-4" /></Button>
+          <Button aria-label="Back" variant="ghost" size="icon" className="flex-shrink-0"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-gray-900 truncate">{job.title}</h1>

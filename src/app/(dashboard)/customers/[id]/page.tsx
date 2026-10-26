@@ -192,7 +192,7 @@ function FollowUpTab({ customerId, followUps }: {
             <p className="text-xs text-blue-600">Due {formatDate(fu.dueAt)}</p>
             {fu.notes && <p className="text-xs text-gray-600 mt-1">{fu.notes}</p>}
           </div>
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={() => completeMutation.mutate(fu.id)}>
+          <Button aria-label="Mark complete" size="icon" variant="ghost" className="h-7 w-7 text-green-600" onClick={() => completeMutation.mutate(fu.id)}>
             <CheckCircle className="h-4 w-4" />
           </Button>
         </div>
@@ -289,7 +289,7 @@ export default function CustomerDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/customers">
-          <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
+          <Button aria-label="Back" variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">
@@ -428,7 +428,7 @@ export default function CustomerDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm">Vehicles ({customer.vehicles?.length || 0})</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setShowAddVehicle(true)}>
+              <Button aria-label="Add vehicle" variant="ghost" size="icon" onClick={() => setShowAddVehicle(true)}>
                 <Plus className="h-4 w-4" />
               </Button>
             </CardHeader>

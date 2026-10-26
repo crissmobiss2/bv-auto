@@ -209,7 +209,7 @@ export default function InvoiceDetailPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/invoices"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+        <Link href="/invoices"><Button aria-label="Back" variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-900">{invoice.invoiceNumber}</h1>
           <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${INVOICE_STATUS_COLORS[invoice.status]}`}>

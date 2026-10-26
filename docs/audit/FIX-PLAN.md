@@ -2,6 +2,8 @@
 
 This plan is ordered by risk and dependency, not by section number. Items marked **DONE** were changed and verified by type-check, lint, tests, and build in this pass. Items marked **OPEN** are still in the codebase.
 
+Per-PR status notes for fixes made after this plan live in [`status/`](status/) (one file per fix PR, so parallel PRs don't conflict here).
+
 ## Phase 0 — Critical security and money truthfulness (DONE)
 | ID | Fix | Files | Verification |
 |---|---|---|---|

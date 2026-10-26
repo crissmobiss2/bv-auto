@@ -207,7 +207,7 @@ export default function SequencesPage() {
                       Step {step.stepNumber}
                     </span>
                     {steps.length > 1 && (
-                      <Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => removeStep(index)}>
+                      <Button aria-label="Remove step" type="button" size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => removeStep(index)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     )}

@@ -153,8 +153,8 @@ export default function PriceBookPage() {
                     <TableCell className="font-semibold text-sm">{formatCurrency(s.totalPrice)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="text-red-500" onClick={() => deleteSvc.mutate(s.id)}>
+                        <Button aria-label="Edit" variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                        <Button aria-label="Delete" variant="ghost" size="icon" className="text-red-500" onClick={() => deleteSvc.mutate(s.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -207,7 +207,7 @@ export default function PriceBookPage() {
                   <Input className="col-span-2" placeholder="Part #" value={p.partNumber || ""} onChange={(e) => updatePart(i, "partNumber", e.target.value)} />
                   <Input className="col-span-2" type="number" placeholder="Qty" min="1" value={p.quantity} onChange={(e) => updatePart(i, "quantity", parseFloat(e.target.value))} />
                   <Input className="col-span-2" type="number" placeholder="Price" min="0" step="0.01" value={p.unitPrice} onChange={(e) => updatePart(i, "unitPrice", parseFloat(e.target.value))} />
-                  <Button type="button" variant="ghost" size="icon" className="col-span-1" onClick={() => removePart(i)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
+                  <Button aria-label="Delete" type="button" variant="ghost" size="icon" className="col-span-1" onClick={() => removePart(i)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
                 </div>
               ))}
             </div>

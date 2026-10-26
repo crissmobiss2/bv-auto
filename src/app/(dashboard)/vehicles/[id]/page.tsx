@@ -122,7 +122,7 @@ function MaintenanceSection({ vehicleId }: { vehicleId: string }) {
                 </p>
               )}
             </div>
-            <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500"
+            <Button aria-label="Delete" size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500"
               onClick={() => deleteMutation.mutate(interval.id)}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -218,7 +218,7 @@ export default function VehicleDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/vehicles">
-          <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
+          <Button aria-label="Back" variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">
