@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { z } from "zod";
+import { findDuplicateCustomers } from "@/lib/customer-merge";
 import { AuditAction, CustomerType, LeadSource } from "@prisma/client";
 
 const createSchema = z.object({
@@ -97,6 +98,16 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
     return apiError(parsed.error.issues[0].message);
+  }
+
+  if (body?.allowDuplicate !== true) {
+    const duplicates = await findDuplicateCustomers(prisma, parsed.data);
+    if (duplicates.length) {
+      return Response.json(
+        { error: "A customer with this phone or email already exists.", duplicates },
+        { status: 409 },
+      );
+    }
   }
 
   const customer = await prisma.customer.create({

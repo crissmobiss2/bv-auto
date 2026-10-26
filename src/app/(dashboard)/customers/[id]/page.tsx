@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -209,6 +210,61 @@ function FollowUpTab({ customerId, followUps }: {
   );
 }
 
+function DuplicatesCard({ customerId }: { customerId: string }) {
+  const queryClient = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["customer-duplicates", customerId],
+    queryFn: () =>
+      axios.get(`/api/customers/${customerId}/merge`).then(
+        (r) => r.data.duplicates as { id: string; firstName: string; lastName: string; phone: string; email: string | null }[],
+      ),
+  });
+  const merge = useMutation({
+    mutationFn: (sourceId: string) => axios.post(`/api/customers/${customerId}/merge`, { sourceId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customer", customerId] });
+      queryClient.invalidateQueries({ queryKey: ["customer-duplicates", customerId] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+    },
+  });
+  if (!data?.length) return null;
+  return (
+    <Card className="border-amber-200 bg-amber-50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base text-amber-900">Possible duplicates (same phone or email)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        {data.map((d) => (
+          <div key={d.id} className="flex flex-wrap items-center gap-2">
+            <Link href={`/customers/${d.id}`} className="font-medium text-blue-700 underline">
+              {d.firstName} {d.lastName}
+            </Link>
+            <span className="text-gray-600">{d.phone}{d.email ? ` · ${d.email}` : ""}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto"
+              disabled={merge.isPending}
+              onClick={() => {
+                if (confirm(`Move all of ${d.firstName} ${d.lastName}'s vehicles, jobs, invoices and messages into this customer and deactivate the duplicate?`)) {
+                  merge.mutate(d.id);
+                }
+              }}
+            >
+              Merge into this customer
+            </Button>
+          </div>
+        ))}
+        {merge.isError && (
+          <p className="text-red-700">
+            {(axios.isAxiosError(merge.error) && merge.error.response?.data?.error) || "Merge failed."}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const _queryClient = useQueryClient();
@@ -218,6 +274,7 @@ export default function CustomerDetailPage() {
   });
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const { data: session } = useSession();
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ["customer", id],
@@ -256,6 +313,8 @@ export default function CustomerDetailPage() {
           <Button><Plus className="h-4 w-4 mr-2" /> New Job</Button>
         </Link>
       </div>
+
+      {session?.user?.role === "ADMIN" && <DuplicatesCard customerId={id} />}
 
       {/* CLV Summary */}
       {customer.clv && (
