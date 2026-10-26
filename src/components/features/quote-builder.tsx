@@ -13,6 +13,7 @@ import { Plus, Trash2, Send, CheckCircle, XCircle, Brain, Loader2 } from "lucide
 import { formatCurrency, calculateLineItemTotal } from "@/lib/utils";
 import { PartsCatalogDialog, type PickedPart } from "@/components/features/parts-catalog-dialog";
 import { ShoppingCart } from "lucide-react";
+import { toast } from "@/components/ui/toaster";
 
 const LINE_ITEM_TYPES = ["LABOR", "PART", "FLUID", "SUBLET", "SHOP_SUPPLY", "FEE", "DISCOUNT", "OTHER"];
 // Only parts-type lines get a markup; labor is billed at the labor rate.
@@ -201,7 +202,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
           : status === "no_contact" ? `customer has no ${channel === "Email" ? "email" : "phone"} on file`
           : null;
         const reasons = [reason("Email", res.data.emailStatus), reason("Text", res.data.smsStatus)].filter(Boolean).join("; ");
-        alert(
+        (via ? toast : toast.error)(
           via
             ? `Quote sent by ${via}. Approval link copied to clipboard:\n${res.data.approvalUrl}`
             : `Quote NOT delivered: ${reasons || "no delivery method succeeded"}.\nThe approval link was copied to your clipboard. Send it to the customer yourself:\n${res.data.approvalUrl}`

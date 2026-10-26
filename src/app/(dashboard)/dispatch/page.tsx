@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { MapPin, Navigation, Plus } from "lucide-react";
 import { useState } from "react";
+import { toast } from "@/components/ui/toaster";
 
 function getDaysInView(date: Date) {
   const days = [];
@@ -86,7 +87,7 @@ export default function DispatchPage() {
             size="sm"
             onClick={() => {
               const todayJobs = getJobsForDay(new Date()).filter((j: { serviceLocation?: string }) => j.serviceLocation);
-              if (!todayJobs.length) { alert("No jobs with locations scheduled today."); return; }
+              if (!todayJobs.length) { toast("No jobs with locations scheduled today."); return; }
               const stops = todayJobs.map((j: { serviceLocation: string }) => encodeURIComponent(j.serviceLocation)).join("/");
               window.open(`https://www.google.com/maps/dir/${stops}`, "_blank");
             }}

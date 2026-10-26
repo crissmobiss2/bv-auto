@@ -15,6 +15,7 @@ import Link from "next/link";
 import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS, lineItemSalePrice } from "@/lib/utils";
 import { useState } from "react";
 import { CollectPaymentButton } from "@/components/collect-payment-button";
+import { toast } from "@/components/ui/toaster";
 
 const PAYMENT_METHODS = ["CASH", "CHECK", "CREDIT_CARD", "DEBIT_CARD", "ZELLE", "VENMO", "CASHAPP", "ACH", "OTHER"];
 
@@ -52,7 +53,7 @@ function PaymentPlanSection({ invoiceId, amountDue }: { invoiceId: string; amoun
       queryClient.invalidateQueries({ queryKey: ["payment-plan", invoiceId] });
       queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
     },
-    onError: (e) => alert((axios.isAxiosError(e) && e.response?.data?.error) || "Could not record installment payment"),
+    onError: (e) => toast.error((axios.isAxiosError(e) && e.response?.data?.error) || "Could not record installment payment"),
   });
 
   if (!show && (!plan || plan.length === 0)) {
@@ -179,7 +180,7 @@ export default function InvoiceDetailPage() {
   const textToPayMutation = useMutation({
     mutationFn: () => axios.post(`/api/invoices/${id}/text-to-pay`),
     onSuccess: () => setTextPaySent(true),
-    onError: (e) => alert(axios.isAxiosError(e) ? e.response?.data?.error ?? "Text-to-Pay failed" : "Text-to-Pay failed"),
+    onError: (e) => toast.error(axios.isAxiosError(e) ? e.response?.data?.error ?? "Text-to-Pay failed" : "Text-to-Pay failed"),
   });
 
   const paymentMutation = useMutation({

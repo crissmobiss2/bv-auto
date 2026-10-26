@@ -13,12 +13,16 @@ export function formatCurrency(amount: number | string | null | undefined): stri
   }).format(num);
 }
 
+// Dates render in the shop's timezone, not the viewer's device timezone (UX-011).
+const DISPLAY_TZ = process.env.NEXT_PUBLIC_SHOP_TIMEZONE || "America/Los_Angeles";
+
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: DISPLAY_TZ,
   }).format(new Date(date));
 }
 
@@ -30,6 +34,7 @@ export function formatDateTime(date: Date | string | null | undefined): string {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: DISPLAY_TZ,
   }).format(new Date(date));
 }
 

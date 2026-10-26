@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Eye, Plus, Send, CheckCircle, XCircle, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { toast } from "@/components/ui/toaster";
 
 const QUOTE_STATUSES = ["ALL", "DRAFT", "SENT", "VIEWED", "APPROVED", "DECLINED", "EXPIRED"];
 
@@ -59,7 +60,7 @@ function QuotesContent() {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       if (res.data.approvalUrl) {
         navigator.clipboard?.writeText(res.data.approvalUrl).catch(() => null);
-        alert(`Sent! Approval link copied to clipboard:\n${res.data.approvalUrl}`);
+        toast(`Sent! Approval link copied to clipboard:\n${res.data.approvalUrl}`);
       }
     },
     onError: (err: unknown) => {
@@ -67,7 +68,7 @@ function QuotesContent() {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
         "Quote was not sent. Check email/SMS configuration and the customer's contact info.";
-      alert(message);
+      toast.error(message);
     },
   });
 
@@ -92,11 +93,11 @@ function QuotesContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      alert("Invoice created! Go to Invoices to view it.");
+      toast("Invoice created! Go to Invoices to view it.");
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { error?: string } } };
-      alert(e?.response?.data?.error || "Failed to create invoice");
+      toast.error(e?.response?.data?.error || "Failed to create invoice");
     },
   });
 

@@ -15,6 +15,7 @@ import { Plus, TrendingUp, TrendingDown, DollarSign, ClipboardCopy, ExternalLink
 import Link from "next/link";
 import { formatCurrency, PART_STATUS_COLORS } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/toaster";
 
 const PART_STATUSES = ["REQUESTED", "QUOTED", "ORDERED", "SHIPPED", "PICKED_UP", "RECEIVED", "INSTALLED", "RETURNED", "CREDITED", "CANCELLED"];
 const PO_STATUSES = ["DRAFT", "SENT", "CONFIRMED", "RECEIVED", "CANCELLED"];
@@ -171,7 +172,7 @@ export default function PartsPage() {
   const copyOrder = async (po: PurchaseOrder) => {
     try {
       await navigator.clipboard.writeText(buildOrderText(po));
-      alert("Order list copied — paste it into a text or email to the vendor.");
+      toast("Order list copied — paste it into a text or email to the vendor.");
     } catch {
       // clipboard may be blocked; fall back to a printable window
       const w = window.open("", "_blank");
