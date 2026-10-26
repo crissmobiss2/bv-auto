@@ -175,9 +175,10 @@ export function ObdScanner({ onResult }: { onResult?: (r: ObdScanResult) => void
         setEstimateTotal(total || null);
       } catch { /* estimate optional */ }
       setAiStatus("done");
-    } catch {
+    } catch (e) {
       setAiStatus("idle");
-      setError("AI diagnosis failed — check that ANTHROPIC_API_KEY is configured on the server.");
+      const msg = axios.isAxiosError(e) ? (e.response?.data as { error?: string } | undefined)?.error : undefined;
+      setError(msg || "AI diagnosis failed. Please try again.");
     }
   }
 

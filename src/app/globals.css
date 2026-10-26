@@ -177,6 +177,14 @@ button, a, input, select, textarea {
   border-color: hsl(217 33% 20%);
 }
 .dark .hover\:bg-gray-50:hover, .dark .hover\:bg-gray-100:hover { background-color: hsl(217 33% 16%); }
+.dark .bg-gray-50\/60, .dark .bg-gray-50\/80 { background-color: hsl(222 30% 11%); }
+.dark .bg-white\/70, .dark .hover\:bg-white\/80:hover, .dark .focus\:bg-white:focus { background-color: hsl(222 30% 14%); }
+.dark input:-webkit-autofill, .dark input:-webkit-autofill:hover, .dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill, .dark select:-webkit-autofill {
+  -webkit-text-fill-color: hsl(210 40% 94%);
+  -webkit-box-shadow: 0 0 0 1000px hsl(222 30% 14%) inset;
+  caret-color: hsl(210 40% 94%);
+}
 .dark .skeleton {
   background: linear-gradient(90deg, hsl(217 33% 15%) 25%, hsl(217 33% 20%) 50%, hsl(217 33% 15%) 75%);
   background-size: 800px 100%;
