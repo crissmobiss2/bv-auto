@@ -105,7 +105,7 @@ export default async function DashboardPage() {
             Good {getGreeting()}, {session?.user?.name?.split(" ")[0]}
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            Here&apos;s what&apos;s happening at B&amp;V today.
+            Here&apos;s what&apos;s happening today.
           </p>
         </div>
         <Link

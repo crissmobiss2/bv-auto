@@ -8,6 +8,7 @@ import { Wrench, LogOut, ClipboardList, Stethoscope, CloudOff } from "lucide-rea
 import Link from "next/link";
 import { installOfflineQueueListener, queueSize } from "@/lib/offline-queue";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { APP_NAME } from "@/lib/app-name";
 
 const NAV_ITEMS = [
   { href: "/tech", label: "My Jobs", icon: ClipboardList, match: (p: string) => p === "/tech" || p.startsWith("/tech/jobs") },
@@ -51,7 +52,7 @@ export default function TechLayout({ children }: { children: React.ReactNode }) 
         <Link href="/tech" className="flex items-center gap-2">
           <Wrench className="h-5 w-5 text-blue-400" />
           <div>
-            <p className="font-bold text-sm leading-tight">B&V Auto</p>
+            <p className="font-bold text-sm leading-tight">{APP_NAME}</p>
             <p className="text-xs text-gray-400 leading-tight">{session?.user?.name}</p>
           </div>
         </Link>

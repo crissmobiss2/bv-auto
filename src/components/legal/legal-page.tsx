@@ -1,15 +1,11 @@
 import Link from "next/link";
-import { getDefaultShop } from "@/lib/shop";
+import { getBranding } from "@/lib/shop";
 
 export const LEGAL_UPDATED = "October 26, 2026";
 
 export async function getLegalShop() {
-  const shop = await getDefaultShop().catch(() => null);
-  return {
-    name: shop?.name || "B&V Mobile Auto",
-    phone: shop?.phone || null,
-    email: shop?.email || null,
-  };
+  const { name, phone, email } = await getBranding();
+  return { name, phone, email };
 }
 
 export function LegalPage({ title, children }: { title: string; children: React.ReactNode }) {

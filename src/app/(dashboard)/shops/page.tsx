@@ -148,7 +148,7 @@ export default function ShopsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1">
               <Label>Shop Name *</Label>
-              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="B&V Mobile Auto - Main" />
+              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Main Street Auto Repair" />
             </div>
             <div className="col-span-2 space-y-1">
               <Label>Address</Label>

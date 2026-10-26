@@ -3,9 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { AUDIT_RETENTION_DAYS } from "@/lib/audit-redact";
 import { Resend } from "resend";
+import { emailFrom, escapeHtml } from "@/lib/email";
+import { APP_NAME } from "@/lib/app-name";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = "B&V Auto Monitor <service@bvauto.com>";
+
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "crissmobiss@gmail.com";
 const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
@@ -270,7 +272,7 @@ export async function GET(req: NextRequest) {
 
   const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:20px;color:#1f2937;">
     <div style="background:linear-gradient(135deg,#1e3a5f,#1e40af);padding:24px;border-radius:10px 10px 0 0;">
-      <h1 style="color:white;margin:0;font-size:22px;">B&amp;V Auto — Daily Platform Report</h1>
+      <h1 style="color:white;margin:0;font-size:22px;">${escapeHtml(APP_NAME)} — Daily Platform Report</h1>
       <p style="color:#93c5fd;margin:4px 0 0;font-size:13px;">${new Date().toLocaleDateString("en-US", { weekday:"long", year:"numeric", month:"long", day:"numeric" })}</p>
     </div>
     <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;">
@@ -290,17 +292,17 @@ export async function GET(req: NextRequest) {
         <a href="${BASE_URL}/notifications" style="background:#f3f4f6;color:#374151;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin-left:8px;">View Notifications</a>
       </div>
     </div>
-    <p style="text-align:center;color:#9ca3af;font-size:11px;margin-top:12px;">B&amp;V Mobile Auto · Automated daily report · <a href="${BASE_URL}/settings" style="color:#9ca3af;">Manage alerts</a></p>
+    <p style="text-align:center;color:#9ca3af;font-size:11px;margin-top:12px;">${escapeHtml(APP_NAME)} · Automated daily report · <a href="${BASE_URL}/settings" style="color:#9ca3af;">Manage alerts</a></p>
   </body></html>`;
 
   // ── Send email ─────────────────────────────────────────────────────────────
   if (resend) {
     await resend.emails.send({
-      from: FROM,
+      from: emailFrom(`${APP_NAME} Monitor`),
       to: ADMIN_EMAIL,
       subject: hasIssues
-        ? `⚠️ B&V Auto — ${issues.length} issue${issues.length > 1 ? "s" : ""} need attention`
-        : `✅ B&V Auto — Daily report: all systems healthy`,
+        ? `⚠️ ${APP_NAME} — ${issues.length} issue${issues.length > 1 ? "s" : ""} need attention`
+        : `✅ ${APP_NAME} — Daily report: all systems healthy`,
       html,
     });
   } else {

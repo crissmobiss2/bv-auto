@@ -3,6 +3,7 @@ import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
 import { AI_MODELS, UNTRUSTED_NOTE, aiFailure, untrusted } from "@/lib/ai";
+import { getBranding } from "@/lib/shop";
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAuth();
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const prompt = `You are a professional auto shop service advisor drafting a text message to a customer.
 
-Shop name: B&V Mobile Auto
+Shop name: ${untrusted("shop", (await getBranding()).name, 80)}
 ${UNTRUSTED_NOTE}
 
 Customer first name: ${customerName ? untrusted("customer", String(customerName).trim().split(/\s+/)[0], 40) : "the customer"}

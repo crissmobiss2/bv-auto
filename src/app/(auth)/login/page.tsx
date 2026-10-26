@@ -12,6 +12,7 @@ import {
   Wrench, Shield, Loader2, Eye, EyeOff,
   Calendar, FileText, BarChart3, Smartphone,
 } from "lucide-react";
+import { APP_NAME } from "@/lib/app-name";
 
 const FEATURES = [
   { icon: Wrench,     text: "Jobs, quotes & invoicing in one place" },
@@ -82,7 +83,7 @@ export default function LoginPage() {
             <Wrench className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-white font-bold leading-tight">B&V Mobile Auto</p>
+            <p className="text-white font-bold leading-tight">{APP_NAME}</p>
             <p className="text-blue-400 text-xs leading-tight">Business Operating System</p>
           </div>
         </div>
@@ -112,7 +113,7 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="relative text-gray-600 text-xs">© {new Date().getFullYear()} B&V Mobile Auto. All rights reserved.</p>
+        <p className="relative text-gray-600 text-xs">© {new Date().getFullYear()} {APP_NAME}. All rights reserved.</p>
       </div>
 
       {/* Right panel — login form */}
@@ -125,7 +126,7 @@ export default function LoginPage() {
               <Wrench className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">B&V Mobile Auto</h1>
+              <h1 className="text-xl font-bold text-gray-900">{APP_NAME}</h1>
               <p className="text-gray-500 text-sm">Business Operating System</p>
             </div>
           </div>

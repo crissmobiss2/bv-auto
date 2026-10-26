@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { openGlobalSearch } from "@/components/global-search";
+import { APP_NAME } from "@/lib/app-name";
 
 interface TopbarProps {
   onMenuToggle?: () => void;
@@ -66,7 +67,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="hidden md:flex items-center gap-1.5">
-          <span className="text-xs text-gray-400 font-medium">B&V Auto</span>
+          <span className="text-xs text-gray-400 font-medium">{APP_NAME}</span>
           <span className="text-gray-200">/</span>
           <span className="text-xs text-gray-600 font-semibold">
             {ROLE_LABELS[userRole || ""] || "Dashboard"}

@@ -1,11 +1,16 @@
 import { Resend } from "resend";
-import { getShopPhone } from "@/lib/shop";
+import { getBranding, getShopPhone } from "@/lib/shop";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = process.env.RESEND_FROM_EMAIL || "B&V Mobile Auto <service@bvauto.com>";
+const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || "service@bvauto.com";
 const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
 export const emailConfigured = !!resend;
+
+/** Sender header: a bare RESEND_FROM_EMAIL gets the given display name. */
+export function emailFrom(displayName: string) {
+  return FROM_ADDRESS.includes("<") ? FROM_ADDRESS : `${displayName.replace(/[<>"\r\n]/g, "")} <${FROM_ADDRESS}>`;
+}
 
 export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({
@@ -21,23 +26,27 @@ async function send(to: string, subject: string, html: string) {
   if (!resend) {
     throw new Error("Email is not configured (missing RESEND_API_KEY)");
   }
-  const result = await resend.emails.send({ from: FROM, to, subject, html });
+  const brand = await getBranding();
+  const result = await resend.emails.send({ from: emailFrom(brand.name), to, subject, html, ...(brand.email && { replyTo: brand.email }) });
   if (result.error) {
     throw new Error(result.error.message || "Email provider rejected the message");
   }
   return result;
 }
 
-function baseTemplate(content: string) {
+async function baseTemplate(content: string) {
+  const brand = await getBranding();
+  const name = escapeHtml(brand.name);
+  const footer = [name, brand.location && escapeHtml(brand.location), brand.email && escapeHtml(brand.email)].filter(Boolean).join(" · ");
   return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1f2937;">
     <div style="background:#1e3a5f;padding:20px;border-radius:8px 8px 0 0;">
-      <h1 style="color:white;margin:0;font-size:20px;">B&amp;V Mobile Auto</h1>
+      ${brand.logoUrl ? `<img src="${escapeHtml(brand.logoUrl)}" alt="${name}" style="max-height:48px;display:block;margin-bottom:8px;" />` : ""}<h1 style="color:white;margin:0;font-size:20px;">${name}</h1>
       <p style="color:#93c5fd;margin:4px 0 0;font-size:13px;">Mobile Automotive Repair</p>
     </div>
     <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;">
       ${content}
     </div>
-    <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:16px;">B&amp;V Mobile Auto · Houston, TX · service@bvauto.com</p>
+    <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:16px;">${footer}</p>
   </body></html>`;
 }
 
@@ -51,7 +60,7 @@ export async function sendQuoteEmail(opts: {
 }) {
   const approvalUrl = `${BASE_URL}/approve/${opts.approvalToken}`;
   const phone = await getShopPhone();
-  const html = baseTemplate(`
+  const html = await baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Your Estimate is Ready</h2>
     <p>Hi ${escapeHtml(opts.customerName)},</p>
     <p>Your estimate for your <strong>${escapeHtml(opts.vehicleDescription)}</strong> is ready for review.</p>
@@ -76,10 +85,10 @@ export async function sendInvoiceEmail(opts: {
   invoiceUrl: string;
   paymentUrl?: string;
 }) {
-  const html = baseTemplate(`
+  const html = await baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Invoice for Service</h2>
     <p>Hi ${escapeHtml(opts.customerName)},</p>
-    <p>Thank you for choosing B&amp;V Mobile Auto! Your invoice for service on your <strong>${escapeHtml(opts.vehicleDescription)}</strong> is attached.</p>
+    <p>Thank you for choosing ${escapeHtml((await getBranding()).name)}! Your invoice for service on your <strong>${escapeHtml(opts.vehicleDescription)}</strong> is attached.</p>
     <div style="background:#f3f4f6;padding:16px;border-radius:8px;margin:16px 0;">
       <p style="margin:0;font-size:13px;color:#6b7280;">Invoice #${escapeHtml(opts.invoiceNumber)}</p>
       <p style="margin:4px 0 0;font-size:28px;font-weight:bold;color:#1e3a5f;">${escapeHtml(opts.amountDue)} due</p>
@@ -99,7 +108,7 @@ export async function sendInspectionEmail(opts: {
   jobId: string;
 }) {
   const phone = await getShopPhone();
-  const html = baseTemplate(`
+  const html = await baseTemplate(`
     <h2 style="color:#1e3a5f;margin:0 0 8px;">Vehicle Inspection Report</h2>
     <p>Hi ${escapeHtml(opts.customerName)},</p>
     <p>Here is the inspection report for your <strong>${escapeHtml(opts.vehicleDescription)}</strong>:</p>
@@ -117,7 +126,7 @@ export async function sendBookingConfirmationEmail(opts: {
   preferredDate?: string | null;
 }) {
   const phone = await getShopPhone();
-  const html = baseTemplate(`
+  const html = await baseTemplate(`
     <h2 style="margin:0 0 8px;">We got your request</h2>
     <p>Hi ${escapeHtml(opts.customerName)},</p>
     <p>Thanks for booking <strong>${escapeHtml(opts.serviceType)}</strong>${opts.preferredDate ? ` for ${escapeHtml(opts.preferredDate)}` : ""}. We'll contact you shortly to confirm a time.</p>
@@ -133,7 +142,7 @@ export async function sendPaymentReceiptEmail(opts: {
   amountPaid: string;
   method: string;
 }) {
-  const html = baseTemplate(`
+  const html = await baseTemplate(`
     <h2 style="color:#16a34a;margin:0 0 8px;">✓ Payment Received</h2>
     <p>Hi ${escapeHtml(opts.customerName)},</p>
     <p>We received your payment. Thank you!</p>
@@ -153,10 +162,10 @@ export async function sendFollowUpEmail(opts: {
   message: string;
 }) {
   const phone = await getShopPhone();
-  const html = baseTemplate(`
+  const html = await baseTemplate(`
     <p>Hi ${escapeHtml(opts.customerName)},</p>
     <p>${escapeHtml(opts.message)}</p>
     ${phone ? `<p>To schedule service, call us at <strong>${phone}</strong> or reply to this email.</p>` : "<p>Reply to this email to schedule service.</p>"}
   `);
-  return send(opts.to, "Service Reminder from B&V Mobile Auto", html);
+  return send(opts.to, `Service Reminder from ${(await getBranding()).name}`, html);
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, CarfaxStatus } from "@prisma/client";
 import { z } from "zod";
+import { getBranding } from "@/lib/shop";
 
 const exportSchema = z.object({
   vehicleId: z.string(),
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     vin: parsed.data.vin,
     serviceDate: parsed.data.serviceDate,
     mileage: parsed.data.mileage,
-    shopName: "B&V Mobile Auto",
+    shopName: (await getBranding()).name,
     services: parsed.data.services,
     technician: parsed.data.technicianName,
     notes: parsed.data.notes,

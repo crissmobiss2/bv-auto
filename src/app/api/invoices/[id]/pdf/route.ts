@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError } from "@/lib/api-helpers";
 import { formatCurrency, formatDate, lineItemSalePrice } from "@/lib/utils";
-import { getShopPhone } from "@/lib/shop";
+import { getBranding } from "@/lib/shop";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
@@ -22,8 +22,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
   if (!invoice) return apiError("Invoice not found", 404);
 
-  const phone = await getShopPhone();
-  const html = generateInvoiceHTML(invoice, phone);
+  const brand = await getBranding();
+  const html = generateInvoiceHTML(invoice, brand.phone, brand);
 
   return new NextResponse(html, {
     headers: {
@@ -70,9 +70,11 @@ function generateInvoiceHTML(invoice: {
     taxable: boolean;
   }[];
   payments: { method: string; amount: unknown; receivedAt: Date; reference?: string | null }[];
-}, shopPhone: string | null = null) {
+}, shopPhone: string | null = null, brand: { name: string; email: string | null; logoUrl: string | null; location: string | null } | null = null) {
   const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
   const phone = shopPhone ? esc(shopPhone) : null;
+  const shopName = esc(brand?.name || "");
+  const shopEmail = brand?.email ? esc(brand.email) : null;
   const methodLabel = (m: string) => m.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
   const isPaidInFull = Number(invoice.amountDue) <= 0 && Number(invoice.amountPaid) > 0;
   return `<!DOCTYPE html>
@@ -110,10 +112,11 @@ function generateInvoiceHTML(invoice: {
 <body>
 <div class="header">
   <div class="company">
-    <h1>B&V Mobile Auto</h1>
-    <p>Mobile Automotive Repair</p>
+    ${brand?.logoUrl ? `<img src="${esc(brand.logoUrl)}" alt="${shopName}" style="max-height:56px;margin-bottom:6px" />` : ""}
+    <h1>${shopName}</h1>
+    ${brand?.location ? `<p>${esc(brand.location)}</p>` : ""}
     ${phone ? `<p>Phone: ${phone}</p>` : ""}
-    <p>bvauto@email.com</p>
+    ${shopEmail ? `<p>${shopEmail}</p>` : ""}
   </div>
   <div class="invoice-meta">
     <h2>INVOICE</h2>
@@ -200,7 +203,7 @@ ${invoice.payments.length > 0 ? `
 ${invoice.notes ? `<div style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;font-size:13px;color:#374151"><strong>Notes:</strong> ${esc(invoice.notes)}</div>` : ""}
 
 <div class="footer">
-  <p>Thank you for choosing B&V Mobile Auto!${phone ? ` · For questions call ${phone}` : ""}</p>
+  <p>Thank you for choosing ${shopName}!${phone ? ` · For questions call ${phone}` : ""}</p>
 </div>
 
 <button class="no-print" onclick="window.print()">Print / Save as PDF</button>

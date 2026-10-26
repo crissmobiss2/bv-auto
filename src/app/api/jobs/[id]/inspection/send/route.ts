@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
-import { getShopPhone } from "@/lib/shop";
+import { getBranding } from "@/lib/shop";
 import { sendInspectionEmail, emailConfigured, escapeHtml } from "@/lib/email";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -40,8 +40,8 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     return apiError("Inspection data is invalid", 400);
   }
 
-  const phone = await getShopPhone();
-  const html = generateInspectionHTML(job, checklist, phone);
+  const { name: shopName, phone } = await getBranding();
+  const html = generateInspectionHTML(job, checklist, phone, shopName);
 
   try {
     await sendInspectionEmail({
@@ -61,7 +61,8 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
 function generateInspectionHTML(
   job: { vehicle: { year: number; make: string; model: string; vin?: string | null }; customer: { firstName: string; lastName: string } },
   checklist: { items: { id: string; category: string; item: string; condition: string; notes?: string }[]; mileage?: number; technicianNotes?: string; completedAt?: string },
-  phone: string | null = null
+  phone: string | null = null,
+  shopName = "",
 ) {
   const conditionColor: Record<string, string> = {
     GOOD: "#16a34a",
@@ -90,7 +91,7 @@ function generateInspectionHTML(
 </style>
 </head>
 <body>
-<h1>B&V Mobile Auto — Vehicle Inspection Report</h1>
+<h1>${escapeHtml(shopName)} — Vehicle Inspection Report</h1>
 <p style="color:#6b7280;font-size:14px">${escapeHtml(String(job.vehicle.year))} ${escapeHtml(job.vehicle.make)} ${escapeHtml(job.vehicle.model)}${job.vehicle.vin ? ` · VIN: ${escapeHtml(job.vehicle.vin)}` : ""}</p>
 <p style="color:#6b7280;font-size:14px">Customer: ${escapeHtml(job.customer.firstName)} ${escapeHtml(job.customer.lastName)}${checklist.mileage ? ` · Mileage: ${checklist.mileage.toLocaleString()}` : ""}</p>
 ${checklist.completedAt ? `<p style="color:#9ca3af;font-size:12px">Inspected: ${new Date(checklist.completedAt).toLocaleString()}</p>` : ""}
@@ -123,7 +124,7 @@ ${checklist.technicianNotes ? `
     ${escapeHtml(checklist.technicianNotes)}
   </div>` : ""}
 
-${phone ? `<p style="margin-top:32px;font-size:12px;color:#9ca3af;text-align:center">Questions? Call B&amp;V Mobile Auto at ${escapeHtml(phone)}</p>` : ""}
+${phone ? `<p style="margin-top:32px;font-size:12px;color:#9ca3af;text-align:center">Questions? Call ${escapeHtml(shopName)} at ${escapeHtml(phone)}</p>` : ""}
 </body>
 </html>`;
 }

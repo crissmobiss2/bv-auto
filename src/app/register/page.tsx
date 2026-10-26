@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Wrench, User, Shield, Package, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { APP_NAME } from "@/lib/app-name";
 
 type RoleOption = {
   id: string;
@@ -117,7 +118,7 @@ export default function RegisterPage() {
             <div className="bg-blue-600 rounded-xl p-2">
               <Wrench className="h-6 w-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">B&V Auto</span>
+            <span className="text-2xl font-bold text-gray-900">{APP_NAME}</span>
           </div>
           <p className="text-gray-500 text-sm">Create your account</p>
         </div>

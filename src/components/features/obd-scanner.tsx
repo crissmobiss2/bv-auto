@@ -11,6 +11,7 @@ import { BleObdTransport } from "@/lib/obd2/ble-transport";
 import { Elm327 } from "@/lib/obd2/elm327";
 import { Capacitor } from "@capacitor/core";
 import type { BleDevice } from "@capacitor-community/bluetooth-le";
+import { APP_NAME } from "@/lib/app-name";
 
 type Status = "idle" | "scanning" | "connecting" | "initializing" | "ready" | "reading" | "error";
 
@@ -199,7 +200,7 @@ export function ObdScanner({ onResult }: { onResult?: (r: ObdScanResult) => void
       <Card>
         <CardHeader><CardTitle className="text-base flex items-center gap-2"><Bluetooth className="h-4 w-4" /> OBD-II Scanner</CardTitle></CardHeader>
         <CardContent className="text-sm text-gray-500">
-          Live vehicle scanning requires the B&V mobile app — open this page on the Android/iOS app with a Bluetooth OBD-II adapter plugged into the vehicle.
+          Live vehicle scanning requires the {APP_NAME} mobile app — open this page on the Android/iOS app with a Bluetooth OBD-II adapter plugged into the vehicle.
         </CardContent>
       </Card>
     );

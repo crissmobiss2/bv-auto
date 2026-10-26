@@ -12,8 +12,22 @@ export async function getDefaultShop() {
   return prisma.shop.findFirst({
     where: { isActive: true },
     orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
-    select: { name: true, phone: true, email: true },
+    select: { name: true, phone: true, email: true, logoUrl: true, city: true, state: true },
   });
+}
+
+export const DEFAULT_SHOP_NAME = process.env.DEFAULT_SHOP_NAME || "B&V Mobile Auto";
+
+/** Customer-facing identity of the shop: used in texts, emails, PDFs and public pages. */
+export async function getBranding() {
+  const shop = await getDefaultShop().catch(() => null);
+  return {
+    name: shop?.name?.trim() || DEFAULT_SHOP_NAME,
+    phone: shop?.phone?.replace(/[^0-9+().\-\sx]/g, "") || null,
+    email: shop?.email || null,
+    logoUrl: shop?.logoUrl || null,
+    location: [shop?.city, shop?.state].filter(Boolean).join(", ") || null,
+  };
 }
 
 export async function getShopPhone(): Promise<string | null> {
