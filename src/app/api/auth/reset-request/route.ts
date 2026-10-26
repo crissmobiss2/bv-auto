@@ -7,7 +7,7 @@ import { escapeHtml } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   // 3 resets per 15 min per IP — prevents enumeration
-  if (!rateLimit(`reset:${getIP(req)}`, 3, 15 * 60_000)) {
+  if (!(await rateLimit(`reset:${getIP(req)}`, 3, 15 * 60_000))) {
     return apiError("Too many requests. Please wait before trying again.", 429);
   }
 

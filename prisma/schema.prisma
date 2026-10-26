@@ -1510,3 +1510,12 @@ model PushToken {
 
   @@index([userId])
 }
+
+// Durable rate-limit windows shared by all server instances (src/lib/rate-limit.ts).
+model RateLimit {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}

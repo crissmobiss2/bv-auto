@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cus
   if (error) return error;
 
   // 5 SMS per minute per IP to prevent runaway Twilio charges
-  if (!rateLimit(`sms:${getIP(req)}`, 5, 60_000)) {
+  if (!(await rateLimit(`sms:${getIP(req)}`, 5, 60_000))) {
     return apiError("Too many SMS requests. Please wait a minute.", 429);
   }
 

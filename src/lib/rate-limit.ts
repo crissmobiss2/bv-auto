@@ -1,15 +1,16 @@
-// In-memory sliding-window rate limiter.
-// Works per-instance on Vercel serverless — good enough for soft launch.
-// Upgrade to @upstash/ratelimit + Vercel KV before scaling past ~50 concurrent users.
+import { prisma } from "@/lib/prisma";
 
-interface Record {
+// Durable fixed-window rate limiter backed by the `RateLimit` table, so limits
+// hold across serverless instances and restarts. If the database is
+// unreachable it falls back to a per-instance in-memory window.
+
+interface Window {
   count: number;
   resetAt: number;
 }
 
-const store = new Map<string, Record>();
+const store = new Map<string, Window>();
 
-// Clean up expired entries periodically (runs at most once per minute per instance)
 let lastCleanup = 0;
 function cleanup() {
   const now = Date.now();
@@ -20,13 +21,8 @@ function cleanup() {
   }
 }
 
-/**
- * Returns true if the request is allowed, false if rate-limited.
- * @param key     Unique identifier (e.g. `ip:${ip}:ai`)
- * @param limit   Max requests per window
- * @param windowMs Window size in milliseconds
- */
-export function rateLimit(key: string, limit: number, windowMs: number): boolean {
+/** Per-instance limiter; used directly only as the database fallback. */
+export function rateLimitLocal(key: string, limit: number, windowMs: number): boolean {
   cleanup();
   const now = Date.now();
   const rec = store.get(key);
@@ -39,6 +35,32 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
   if (rec.count >= limit) return false;
   rec.count++;
   return true;
+}
+
+/**
+ * Resolves true if the request is allowed, false if rate-limited.
+ * @param key      Unique identifier (e.g. `ai:${ip}`)
+ * @param limit    Max requests per window
+ * @param windowMs Window size in milliseconds
+ */
+export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  try {
+    const rows = await prisma.$queryRaw<{ count: number }[]>`
+      INSERT INTO "RateLimit" ("key", "count", "resetAt")
+      VALUES (${key}, 1, now() + make_interval(secs => ${windowMs / 1000}))
+      ON CONFLICT ("key") DO UPDATE SET
+        "count" = CASE WHEN "RateLimit"."resetAt" < now() THEN 1 ELSE "RateLimit"."count" + 1 END,
+        "resetAt" = CASE WHEN "RateLimit"."resetAt" < now() THEN EXCLUDED."resetAt" ELSE "RateLimit"."resetAt" END
+      RETURNING "count"`;
+    const count = Number(rows?.[0]?.count);
+    if (!Number.isFinite(count)) throw new Error("rate limit row missing");
+    if (Math.random() < 0.01) {
+      void prisma.$executeRaw`DELETE FROM "RateLimit" WHERE "resetAt" < now()`.catch(() => {});
+    }
+    return count <= limit;
+  } catch {
+    return rateLimitLocal(key, limit, windowMs);
+  }
 }
 
 /** Extracts the best available IP from a Next.js request. */
