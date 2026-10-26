@@ -25,7 +25,6 @@ export default function ApproveQuotePage() {
     staleTime: 10 * 60 * 1000,
   });
   const shopPhone = shopInfo?.phone as string | null | undefined;
-  const shopName: string = shopInfo?.name || "the shop";
   const formatShopPhone = (p: string) => {
     const d = p.replace(/\D/g, "");
     return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p;
@@ -97,6 +96,7 @@ export default function ApproveQuotePage() {
     </div>
   );
 
+  const shopName: string = quote.shopName || shopInfo?.name || "the shop";
   const isAlreadyActioned = ["APPROVED", "DECLINED"].includes(quote.status);
   const vehicle = quote.job?.vehicle;
 
