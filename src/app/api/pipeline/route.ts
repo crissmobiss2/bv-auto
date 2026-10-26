@@ -92,7 +92,7 @@ export async function GET() {
       avgMonthlyRevenue: Math.round(avgMonthly),
     },
     quotes: weightedQuotes.slice(0, 15),
-    scheduledJobs: scheduledJobs.slice(0, 20),
+    scheduledJobs: scheduledJobs.slice(0, 20).map(j => ({ ...j, estimatedTotal: Math.round(Number(j.estimatedHours || 2) * laborRate) })),
     fleetAccounts,
     monthlyTrend: Object.entries(monthlyRevenue)
       .sort(([a], [b]) => a.localeCompare(b))
