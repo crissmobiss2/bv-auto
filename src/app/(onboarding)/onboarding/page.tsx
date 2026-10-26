@@ -61,11 +61,8 @@ export default function OnboardingPage() {
       try {
         await axios.post("/api/shops", shopData);
       } catch (e) {
-        // Single-shop install: re-running onboarding updates the existing shop.
+        // Single-shop install: the shop already exists, so keep its saved details (edit them on the Shops page).
         if (!axios.isAxiosError(e) || e.response?.status !== 409) throw e;
-        const { data: shops } = await axios.get<{ id: string }[]>("/api/shops");
-        if (!shops[0]) throw e;
-        await axios.patch(`/api/shops/${shops[0].id}`, shopData);
       }
       setStep(2);
     } catch (e: unknown) {
