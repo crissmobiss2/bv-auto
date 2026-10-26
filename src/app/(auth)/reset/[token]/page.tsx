@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wrench, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { APP_NAME } from "@/lib/app-name";
 
 export default function ResetConfirmPage() {
   const { token } = useParams<{ token: string }>();
@@ -42,7 +43,7 @@ export default function ResetConfirmPage() {
           <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600">
             <Wrench className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">B&V Mobile Auto</h1>
+          <h1 className="text-2xl font-bold text-white">{APP_NAME}</h1>
         </div>
         <Card>
           <CardHeader>

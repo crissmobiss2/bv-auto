@@ -77,6 +77,7 @@ export default function CustomerPortalPage() {
     staleTime: Infinity,
   });
   const shopPhone: string | null = shopInfo?.phone || null;
+  const shopName: string = shopInfo?.name || "";
 
   const { data: customer, isLoading, error } = useQuery({
     queryKey: ["portal", token],
@@ -124,7 +125,7 @@ export default function CustomerPortalPage() {
       {/* Header */}
       <div className="text-center">
         <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white px-6 py-5 rounded-2xl inline-block mb-4 shadow-lg">
-          <p className="text-2xl font-bold">B&V Mobile Auto</p>
+          <p className="text-2xl font-bold">{shopName}</p>
           <p className="text-blue-300 text-sm mt-0.5">Your Personal Service Portal</p>
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Welcome back, {customer.firstName}!</h1>

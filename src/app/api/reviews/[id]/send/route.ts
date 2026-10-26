@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
 import { smsConfigured } from "@/lib/sms";
+import { getBranding } from "@/lib/shop";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
@@ -34,7 +35,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
   try {
     const twilio = (await import("twilio")).default;
     const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
-    const body = `Hi ${job.customer.firstName}, thank you for choosing B&V Auto! If you had a great experience, a quick Google review means the world to us: ${reviewUrl}`;
+    const body = `Hi ${job.customer.firstName}, thank you for choosing ${(await getBranding()).name}! If you had a great experience, a quick Google review means the world to us: ${reviewUrl}`;
     await client.messages.create({
       body,
       from: process.env.TWILIO_PHONE_NUMBER!,

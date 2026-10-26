@@ -14,6 +14,7 @@ import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { signOutAndClear } from "@/lib/sign-out";
 import { useState, useEffect } from "react";
+import { APP_NAME } from "@/lib/app-name";
 
 type NavItem = { name: string; href: string; icon: React.ElementType; roles: string[] | null };
 type NavSection = { id: string; label: string; icon: React.ElementType; items: NavItem[] };
@@ -169,7 +170,7 @@ export function Sidebar() {
       <div className="flex items-center justify-between px-3 py-4 border-b border-gray-700/60 flex-shrink-0">
         {!collapsed && (
           <div className="min-w-0">
-            <p className="text-sm font-bold text-white leading-tight">B&V Auto</p>
+            <p className="text-sm font-bold text-white leading-tight">{APP_NAME}</p>
             <p className="text-[10px] text-gray-400 leading-tight">Mobile Repair OS</p>
           </div>
         )}

@@ -3,11 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, logAudit, apiError } from "@/lib/api-helpers";
 import { AuditAction } from "@prisma/client";
 import { Resend } from "resend";
-import { emailConfigured, escapeHtml } from "@/lib/email";
+import { emailConfigured, emailFrom, escapeHtml } from "@/lib/email";
+import { getBranding } from "@/lib/shop";
+import { APP_NAME } from "@/lib/app-name";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "crissmobiss@gmail.com";
-const FROM = "B&V Mobile Auto <service@bvauto.com>";
 
 export async function POST() {
   const { error, session } = await requireRole(["CUSTOMER"]);
@@ -42,7 +43,7 @@ export async function POST() {
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1f2937;">
   <div style="background:#dc2626;padding:20px;border-radius:8px 8px 0 0;">
     <h1 style="color:white;margin:0;font-size:20px;">CCPA Deletion Request</h1>
-    <p style="color:#fca5a5;margin:4px 0 0;font-size:13px;">B&amp;V Mobile Auto — Action Required</p>
+    <p style="color:#fca5a5;margin:4px 0 0;font-size:13px;">${escapeHtml((await getBranding()).name)} — Action Required</p>
   </div>
   <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;">
     <p>A customer has submitted a CCPA data deletion request. You must process this within <strong>30 days</strong> per California law.</p>
@@ -78,7 +79,7 @@ export async function POST() {
 </html>`;
 
   const result = await resend!.emails.send({
-    from: FROM,
+    from: emailFrom(APP_NAME),
     to: ADMIN_EMAIL,
     subject: `CCPA Delete Request — ${customerName.replace(/[\r\n]/g, " ")}`,
     html: emailHtml,

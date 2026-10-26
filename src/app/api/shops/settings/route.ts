@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess } from "@/lib/api-helpers";
+import { DEFAULT_SHOP_NAME } from "@/lib/shop";
 
 // Lightweight public-ish endpoint — returns the default shop's operating rates.
 // Used by quote builder, labor times, pipeline, and anywhere else that needs
@@ -18,7 +19,7 @@ export async function GET() {
     laborRate: shop ? Number(shop.laborRate) : 105,
     taxRate: shop ? Number(shop.taxRate) * 100 : 0, // stored as 0.0825, return as 8.25
     partsMarkup: shop ? Number(shop.partsMarkup) : 40, // stored as percent, e.g. 40 = 40%
-    shopName: shop?.name ?? "B&V Mobile Auto",
+    shopName: shop?.name ?? DEFAULT_SHOP_NAME,
     shopPhone: shop?.phone ?? "",
     googleReviewUrl: shop?.googleReviewUrl ?? "",
   });

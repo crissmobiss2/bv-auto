@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Wrench, Building2, Users, BookOpen, UserPlus, CheckCircle, ChevronRight, Loader2 } from "lucide-react";
+import { APP_NAME } from "@/lib/app-name";
 
 const STEPS = [
   { id: "welcome", label: "Welcome", icon: Wrench },
@@ -31,7 +32,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
 
   // Shop
-  const [shopName, setShopName] = useState("B&V Mobile Auto");
+  const [shopName, setShopName] = useState("");
   const [shopPhone, setShopPhone] = useState("");
   const [shopEmail, setShopEmail] = useState("");
   const [shopAddress, setShopAddress] = useState("");
@@ -118,7 +119,7 @@ export default function OnboardingPage() {
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
             <Wrench className="h-5 w-5 text-white" />
           </div>
-          <span className="text-white font-bold text-xl">B&V Mobile Auto</span>
+          <span className="text-white font-bold text-xl">{APP_NAME}</span>
         </div>
         <p className="text-blue-200 text-sm">Let&rsquo;s get your shop set up — takes about 3 minutes</p>
 
@@ -176,7 +177,7 @@ export default function OnboardingPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Shop Name *</Label>
-              <Input value={shopName} onChange={e => setShopName(e.target.value)} placeholder="B&V Mobile Auto" />
+              <Input value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Main Street Auto Repair" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">

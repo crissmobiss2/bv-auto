@@ -25,6 +25,7 @@ export default function ApproveQuotePage() {
     staleTime: 10 * 60 * 1000,
   });
   const shopPhone = shopInfo?.phone as string | null | undefined;
+  const shopName: string = shopInfo?.name || "the shop";
   const formatShopPhone = (p: string) => {
     const d = p.replace(/\D/g, "");
     return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p;
@@ -104,7 +105,7 @@ export default function ApproveQuotePage() {
       {/* Header */}
       <div className="text-center">
         <div className="bg-blue-900 text-white px-6 py-4 rounded-xl inline-block mb-4">
-          <p className="text-xl font-bold">B&V Mobile Auto</p>
+          <p className="text-xl font-bold">{shopInfo?.name}</p>
           <p className="text-blue-300 text-sm">Mobile Automotive Repair · Houston, TX</p>
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Your Estimate</h1>
@@ -254,7 +255,7 @@ export default function ApproveQuotePage() {
           </div>
 
           <p className="text-xs text-gray-400 text-center">
-            By approving, you authorize B&V Mobile Auto to perform the services listed above.
+            By approving, you authorize {shopName} to perform the services listed above.
           </p>
         </div>
       )}
