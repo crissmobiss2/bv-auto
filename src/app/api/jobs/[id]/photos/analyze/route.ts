@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error, session } = await requireAuth();
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Instantiate only after the key check. Constructing the client at module
   // scope throws during route import when the key is unset, turning a clean
   // 503 into an opaque 500.
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const anthropic = createAnthropic();
 
   const { id } = await params;
 

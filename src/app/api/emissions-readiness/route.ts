@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 import { requireAuth } from "@/lib/api-helpers";
 
-const client = new Anthropic();
+const client = createAnthropic();
 
 // State emissions test requirements
 const STATE_REQUIREMENTS: Record<string, { hasTest: boolean; obd2Year: number; testType: string; notes: string }> = {

@@ -1,9 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
 
-const client = new Anthropic();
+const client = createAnthropic();
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAuth();

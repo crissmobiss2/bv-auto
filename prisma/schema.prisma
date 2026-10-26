@@ -183,6 +183,7 @@ model User {
   // Password reset
   resetToken       String?   @unique
   resetTokenExpiry DateTime?
+  passwordChangedAt DateTime?
 
   @@index([email])
   @@index([role])

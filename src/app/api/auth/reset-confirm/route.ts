@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { hashResetToken, passwordSchema } from "@/lib/password";
 
 const schema = z.object({
   token: z.string().min(1),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
 });
 
 export async function POST(req: NextRequest) {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   const { token, password } = parsed.data;
 
   const user = await prisma.user.findUnique({
-    where: { resetToken: token },
+    where: { resetToken: hashResetToken(token) },
     select: { id: true, resetTokenExpiry: true, isActive: true },
   });
 
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
       passwordHash,
       resetToken: null,
       resetTokenExpiry: null,
+      passwordChangedAt: new Date(),
       // Invalidate all existing sessions on password change
       sessions: { deleteMany: {} },
     },

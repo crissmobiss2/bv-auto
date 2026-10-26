@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 
 // Common OBD-II DTC codes — covers ~80% of what shops see day-to-day
 const DTC_DB: Record<string, { description: string; system: string; severity: "low" | "medium" | "high" }> = {
@@ -1039,7 +1039,7 @@ export async function GET(req: NextRequest) {
     // Enhance with AI if vehicle context provided
     if (make && model && year && process.env.ANTHROPIC_API_KEY) {
       try {
-        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const client = createAnthropic();
         const msg = await client.messages.create({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 400,
@@ -1062,7 +1062,7 @@ export async function GET(req: NextRequest) {
   // Code not in local DB — try AI if available
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const client = createAnthropic();
       const vehicleCtx = make ? `Vehicle: ${year} ${make} ${model}\n` : "";
       const msg = await client.messages.create({
         model: "claude-haiku-4-5-20251001",
