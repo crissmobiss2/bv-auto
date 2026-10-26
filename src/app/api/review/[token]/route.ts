@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enterShop } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { looksLikeBot } from "@/lib/audit-redact";
 
@@ -8,6 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   const review = await prisma.reviewRequest.findUnique({
     where: { reviewToken: token },
   });
+  if (review?.shopId) enterShop(review.shopId);
 
   if (review && !review.clickedAt && !looksLikeBot(req.headers.get("user-agent"), req.method)) {
     await prisma.reviewRequest.update({

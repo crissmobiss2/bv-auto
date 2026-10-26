@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { enterShop } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
@@ -18,9 +19,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
 
   const customer = await prisma.customer.findUnique({
     where: { portalToken: token },
-    select: { id: true, firstName: true, lastName: true, phone: true },
+    select: { shopId: true, id: true, firstName: true, lastName: true, phone: true },
   });
   if (!customer) return apiError("Portal not found", 404);
+  if (customer.shopId) enterShop(customer.shopId);
 
   const message = await prisma.smsMessage.create({
     data: {

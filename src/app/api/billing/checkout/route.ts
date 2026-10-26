@@ -19,7 +19,10 @@ export async function POST(req: NextRequest) {
     return apiError("You already have a subscription. Use Manage billing to change it.", 409);
   }
   if (plan === "founding") {
-    const taken = await prisma.shop.count({ where: { plan: "founding", subscriptionStatus: { in: ["active", "trialing", "past_due"] } } });
+    // Raw query: shop queries are scoped to the signed-in shop, and this must count every shop.
+    const [{ taken }] = await prisma.$queryRaw<{ taken: number }[]>`
+      SELECT count(*)::int AS taken FROM "Shop"
+      WHERE "plan" = 'founding' AND "subscriptionStatus" IN ('active', 'trialing', 'past_due') AND "id" <> ${shopId}`;
     if (taken >= FOUNDING_LIMIT) return apiError("The founding offer is full.", 409);
   }
 
@@ -37,6 +40,10 @@ export async function POST(req: NextRequest) {
   const trialEnd = shop.trialEndsAt && shop.trialEndsAt.getTime() > Date.now() + 49 * 3600_000
     ? Math.floor(shop.trialEndsAt.getTime() / 1000)
     : undefined;
+
+  // Only one checkout may be open at a time, so finishing two tabs can't create two subscriptions.
+  const open = await platformStripe.checkout.sessions.list({ customer, status: "open", limit: 20 });
+  await Promise.all(open.data.map((s) => platformStripe!.checkout.sessions.expire(s.id)));
 
   const checkout = await platformStripe.checkout.sessions.create({
     mode: "subscription",

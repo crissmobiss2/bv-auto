@@ -41,6 +41,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Without a shop link there's no way to tell which shop a customer belongs to.
+  if (!shopSlug && (await countActiveShops()) > 1) {
+    return apiError("Please use the sign-up link from your shop's booking page or invoice.", 400);
+  }
   const shop = await resolvePublicShop(shopSlug);
   if (!shop) return apiError("Shop not found", 404);
 

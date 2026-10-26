@@ -18,27 +18,25 @@ export async function POST(req: NextRequest) {
   }
 
   let subscriptionId: string | null = null;
-  let shopId: string | null = null;
   if (event.type === "checkout.session.completed") {
     const s = event.data.object;
     if (s.mode === "subscription" && s.subscription) {
       subscriptionId = typeof s.subscription === "string" ? s.subscription : s.subscription.id;
-      shopId = s.metadata?.shopId || s.client_reference_id || null;
     }
   } else if (event.type.startsWith("customer.subscription.")) {
     subscriptionId = (event.data.object as Stripe.Subscription).id;
   }
-  if (subscriptionId) await syncSubscription(subscriptionId, shopId);
+  if (subscriptionId) await syncSubscription(subscriptionId);
   return NextResponse.json({ received: true });
 }
 
 /** Re-reads the subscription so out-of-order or retried events can't store a stale status. */
-async function syncSubscription(subscriptionId: string, shopIdHint: string | null) {
+async function syncSubscription(subscriptionId: string) {
   const sub = await platformStripe!.subscriptions.retrieve(subscriptionId);
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-  const shopId = shopIdHint || sub.metadata?.shopId || null;
+  // Checkout always saves the Stripe customer on the shop first, so the customer is the trusted link.
   const shop = await prisma.shop.findFirst({
-    where: shopId ? { id: shopId } : { stripeCustomerId: customerId },
+    where: { stripeCustomerId: customerId },
     select: { id: true, stripeSubscriptionId: true, subscriptionStatus: true },
   });
   if (!shop) return;
@@ -46,6 +44,11 @@ async function syncSubscription(subscriptionId: string, shopIdHint: string | nul
   const current = shop.stripeSubscriptionId && shop.stripeSubscriptionId !== sub.id &&
     ["active", "trialing", "past_due"].includes(shop.subscriptionStatus ?? "");
   if (current && !["active", "trialing", "past_due"].includes(sub.status)) return;
+  // While a replacement and an older subscription are both live, keep tracking the newer one.
+  if (current) {
+    const existing = await platformStripe!.subscriptions.retrieve(shop.stripeSubscriptionId!).catch(() => null);
+    if (existing && ["active", "trialing", "past_due"].includes(existing.status) && existing.created > sub.created) return;
+  }
   const item = sub.items.data[0];
   await prisma.shop.update({
     where: { id: shop.id },

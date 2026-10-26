@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { rateLimit } from "@/lib/rate-limit";
-import { isShopLocked } from "@/lib/billing";
+import { isShopLocked, shopIdForUser } from "@/lib/billing";
 
 const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
@@ -175,12 +175,12 @@ export default async function proxy(req: NextRequest) {
   }
 
   // A shop whose trial or subscription has ended can still read its data but not change it.
-  const shopId = (session as { shopId?: string | null }).shopId;
-  if (
-    shopId && role !== "CUSTOMER" && pathname.startsWith("/api/") && MUTATING_METHODS.has(req.method) &&
-    !matchesPrefix(pathname, ["/api/billing"]) && (await isShopLocked(shopId))
-  ) {
-    return NextResponse.json({ error: "Your subscription has ended. Choose a plan on the Billing page to keep making changes." }, { status: 402 });
+  if (role !== "CUSTOMER" && pathname.startsWith("/api/") && MUTATING_METHODS.has(req.method) && !matchesPrefix(pathname, ["/api/billing"])) {
+    const t = session as { shopId?: string | null; id?: string };
+    const shopId = t.shopId ?? (t.id ? await shopIdForUser(t.id) : null);
+    if (shopId && (await isShopLocked(shopId))) {
+      return NextResponse.json({ error: "Your subscription has ended. Choose a plan on the Billing page to keep making changes." }, { status: 402 });
+    }
   }
 
   // Customers are confined to the customer app. This covers /dashboard, /tech,
