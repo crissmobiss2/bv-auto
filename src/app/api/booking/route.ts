@@ -6,6 +6,8 @@ import { z } from "zod";
 import { emailConfigured, sendBookingConfirmationEmail } from "@/lib/email";
 import { sendBookingConfirmationSMS, smsConfigured } from "@/lib/sms";
 import { sendPushToUser } from "@/lib/push";
+import { resolvePublicShop } from "@/lib/public-shop";
+import { enterShop } from "@/lib/tenant";
 
 const BOOKING_STAFF_ROLES = ["ADMIN", "DISPATCHER", "SERVICE_ADVISOR"] as const;
 
@@ -21,6 +23,7 @@ const bookingSchema = z.object({
   photoUrl: z.string().optional(),
   preferredDate: z.string().optional(),
   smsConsent: z.boolean().optional(),
+  shop: z.string().max(80).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -33,6 +36,11 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError("Invalid data", 400);
 
   const data = parsed.data;
+
+  // Bookings belong to the shop named in the link (?shop=slug); links without one go to the original shop.
+  const shop = await resolvePublicShop(data.shop);
+  if (!shop) return apiError("Shop not found", 404);
+  enterShop(shop.id);
 
   // Try to find existing customer by phone
   const existing = await prisma.customer.findFirst({

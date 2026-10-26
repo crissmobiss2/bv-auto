@@ -16,7 +16,7 @@ import { formatCurrency } from "@/lib/utils";
 interface Shop {
   id: string; name: string; address?: string; city?: string; state?: string; zip?: string;
   phone?: string; email?: string; taxRate: number; laborRate: number; partsMarkup?: number;
-  googleReviewUrl?: string; isActive: boolean; isDefault: boolean;
+  googleReviewUrl?: string; isActive: boolean; isDefault: boolean; slug?: string | null;
 }
 
 const emptyForm = {
@@ -115,6 +115,11 @@ export default function ShopsPage() {
                     <p className="font-bold">{(Number(shop.taxRate) * 100).toFixed(2)}%</p>
                   </div>
                 </div>
+                {shop.slug && (
+                  <p className="text-xs text-gray-500 break-all">
+                    Booking link: <a href={`/book?shop=${shop.slug}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{typeof window === "undefined" ? "" : window.location.origin}/book?shop={shop.slug}</a>
+                  </p>
+                )}
                 {shop.googleReviewUrl && (
                   <a href={shop.googleReviewUrl} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1 text-xs text-yellow-600 hover:underline mt-1">

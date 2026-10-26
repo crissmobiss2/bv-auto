@@ -4,6 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
+import { countActiveShops, resolvePublicShop } from "@/lib/public-shop";
+import { enterShop } from "@/lib/tenant";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -12,6 +14,7 @@ const schema = z.object({
   password: z.string().min(8).max(100),
   role: z.enum(["CUSTOMER", "TECHNICIAN", "SERVICE_ADVISOR", "PARTS_COORDINATOR", "DISPATCHER"]).default("CUSTOMER"),
   inviteCode: z.string().optional(),
+  shop: z.string().max(80).optional(),
 });
 
 // Staff roles require an invite code matching STAFF_INVITE_CODE env var
@@ -25,19 +28,27 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return apiError("Invalid registration data", 400);
 
-  const { name, email, phone, password, role, inviteCode } = parsed.data;
+  const { name, email, phone, password, role, inviteCode, shop: shopSlug } = parsed.data;
 
   if (STAFF_ROLES.includes(role)) {
     const expected = process.env.STAFF_INVITE_CODE;
     if (!expected || inviteCode !== expected) {
       return apiError("Invalid invite code for staff registration", 403);
     }
+    // The invite code is app-wide, so it can't say which shop to join once there are several.
+    if ((await countActiveShops()) > 1) {
+      return apiError("Ask your shop's admin to add you from the Users page.", 403);
+    }
   }
+
+  const shop = await resolvePublicShop(shopSlug);
+  if (!shop) return apiError("Shop not found", 404);
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return apiError("An account with this email already exists", 409);
 
   const passwordHash = await bcrypt.hash(password, 12);
+  enterShop(shop.id);
 
   // For customers: create a Customer record linked to this account.
   //

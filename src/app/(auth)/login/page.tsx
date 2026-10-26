@@ -250,6 +250,13 @@ export default function LoginPage() {
             </Link>
           </p>
 
+          <p className="text-center text-sm text-gray-500">
+            Run a repair shop?{" "}
+            <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+              Set up your shop
+            </Link>
+          </p>
+
           <p className="text-center text-xs text-gray-400">
             <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
             {" · "}

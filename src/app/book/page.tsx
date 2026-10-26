@@ -26,6 +26,8 @@ const SERVICE_TYPES = [
   "Other",
 ];
 
+const shopParam = () => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("shop"));
+
 export default function BookPage() {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", smsConsent: false,
@@ -39,7 +41,7 @@ export default function BookPage() {
   const [shopPhone, setShopPhone] = useState<string | null>(null);
   const [shopName, setShopName] = useState("");
   useEffect(() => {
-    fetch("/api/shop-info").then(r => r.json()).then(d => { setShopPhone(d.phone || null); setShopName(d.name || ""); }).catch(() => {});
+    fetch(`/api/shop-info${shopParam() ? `?shop=${encodeURIComponent(shopParam()!)}` : ""}`).then(r => r.json()).then(d => { setShopPhone(d.phone || null); setShopName(d.name || ""); }).catch(() => {});
   }, []);
 
   const handleSubmit = async () => {
@@ -52,6 +54,7 @@ export default function BookPage() {
     try {
       const res = await axios.post("/api/booking", {
         ...form,
+        shop: shopParam() || undefined,
         vehicleYear: form.vehicleYear ? parseInt(form.vehicleYear) : undefined,
       });
       setReference(res.data?.reference ?? "");

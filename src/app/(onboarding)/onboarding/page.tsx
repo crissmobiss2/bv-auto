@@ -62,8 +62,16 @@ export default function OnboardingPage() {
       try {
         await axios.post("/api/shops", shopData);
       } catch (e) {
-        // Single-shop install: the shop already exists, so keep its saved details (edit them on the Shops page).
+        // The shop already exists (self-signup or re-run): fill in only what it is still missing.
         if (!axios.isAxiosError(e) || e.response?.status !== 409) throw e;
+        const { data: shops } = await axios.get("/api/shops");
+        const existing = Array.isArray(shops) ? shops[0] : null;
+        if (existing) {
+          const blanks = Object.fromEntries(
+            Object.entries(shopData).filter(([k, v]) => v && !existing[k]),
+          );
+          if (Object.keys(blanks).length) await axios.patch(`/api/shops/${existing.id}`, blanks);
+        }
       }
       setStep(2);
     } catch (e: unknown) {
