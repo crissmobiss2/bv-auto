@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { z } from "zod";
+import { parseShopDate } from "@/lib/timezone";
 
 const createSchema = z.object({
   customerId: z.string(),
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   const followUp = await prisma.followUp.create({
     data: {
       ...parsed.data,
-      dueAt: new Date(parsed.data.dueAt),
+      dueAt: parseShopDate(parsed.data.dueAt),
     },
   });
 
