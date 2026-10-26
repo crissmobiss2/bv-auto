@@ -35,9 +35,21 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "25") || 25));
   const skip = (page - 1) * limit;
 
+  const terms = search.trim().split(/\s+/).filter(Boolean);
   const where = search
     ? {
         OR: [
+          ...(terms.length > 1
+            ? [{
+                AND: terms.map((t) => ({
+                  OR: [
+                    { firstName: { contains: t, mode: "insensitive" as const } },
+                    { lastName: { contains: t, mode: "insensitive" as const } },
+                    { company: { contains: t, mode: "insensitive" as const } },
+                  ],
+                })),
+              }]
+            : []),
           { firstName: { contains: search, mode: "insensitive" as const } },
           { lastName: { contains: search, mode: "insensitive" as const } },
           { phone: { contains: search } },
