@@ -40,12 +40,13 @@ export function customerToForm(c: {
   firstName?: string | null; lastName?: string | null; company?: string | null; email?: string | null;
   phone?: string | null; altPhone?: string | null; address?: string | null; city?: string | null;
   state?: string | null; zip?: string | null; type?: string | null; leadSource?: string | null; notes?: string | null;
+  smsConsentAt?: string | Date | null;
 }): CustomerFormValues {
   return {
     firstName: c.firstName || "", lastName: c.lastName || "", company: c.company || "", email: c.email || "",
     phone: c.phone || "", altPhone: c.altPhone || "", address: c.address || "", city: c.city || "",
     state: c.state || "", zip: c.zip || "", type: c.type || "INDIVIDUAL", leadSource: c.leadSource || "OTHER",
-    notes: c.notes || "",
+    notes: c.notes || "", smsConsent: !!c.smsConsentAt,
   };
 }
 
@@ -214,17 +215,15 @@ export function CustomerFormDialog({ open, onOpenChange, customer, onSuccess }: 
             {(mutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to save customer."}
           </p>
         )}
-        {!isEdit && (
-          <label className="flex items-start gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={!!form.smsConsent}
-              onChange={(e) => setForm({ ...form, smsConsent: e.target.checked })}
-            />
-            <span>Customer agreed to receive service text messages (appointment, estimate and invoice updates).</span>
-          </label>
-        )}
+        <label className="flex items-start gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={!!form.smsConsent}
+            onChange={(e) => setForm({ ...form, smsConsent: e.target.checked })}
+          />
+          <span>Customer agreed to receive text messages (appointment, estimate and invoice updates, maintenance reminders and offers).</span>
+        </label>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
