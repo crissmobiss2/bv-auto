@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
+import { SMS_LIMIT_MESSAGE, takeSmsQuota } from "@/lib/plan-limits";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ customerId: string }> }) {
   const { error } = await requireAuth();
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cus
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !FROM) {
     return apiError("SMS isn't configured (Twilio credentials missing). Message not sent.", 503);
   }
+  if (!(await takeSmsQuota())) return apiError(SMS_LIMIT_MESSAGE, 429);
   {
     try {
       const twilio = (await import("twilio")).default;

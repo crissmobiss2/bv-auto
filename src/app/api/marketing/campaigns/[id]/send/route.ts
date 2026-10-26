@@ -5,6 +5,7 @@ import twilio from "twilio";
 import { NotificationType } from "@prisma/client";
 import { marketableSms } from "@/lib/consent";
 import { getBranding } from "@/lib/shop";
+import { SMS_LIMIT_MESSAGE, takeSmsQuota } from "@/lib/plan-limits";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireRole(["ADMIN", "DISPATCHER"]);
@@ -74,6 +75,11 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
       .replace(/\{lastName\}/g, customer.lastName)
       .replace(/\{name\}/g, `${customer.firstName} ${customer.lastName}`)
       .replace(/\{shopName\}/g, shopName);
+
+    if (!(await takeSmsQuota())) {
+      errors.push(SMS_LIMIT_MESSAGE);
+      break;
+    }
 
     try {
       const twilioMsg = await twilioClient.messages.create({ body: message, from: fromNumber, to: customer.phone });

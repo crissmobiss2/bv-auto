@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import { smsConfigured } from "@/lib/sms";
+import { takeSmsQuota } from "@/lib/plan-limits";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   });
 
   // Notify the shop via SMS if configured
-  if (smsConfigured && process.env.SHOP_NOTIFY_PHONE) {
+  if (smsConfigured && process.env.SHOP_NOTIFY_PHONE && (await takeSmsQuota())) {
     try {
       const twilio = (await import("twilio")).default;
       const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);

@@ -1,6 +1,7 @@
 import twilio from "twilio";
 import { getBranding, getShopPhone } from "@/lib/shop";
 import { assertSmsAllowed } from "@/lib/consent";
+import { SMS_LIMIT_MESSAGE, takeSmsQuota } from "@/lib/plan-limits";
 
 const client =
   process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
@@ -26,6 +27,7 @@ async function send(to: string, body: string) {
     throw new Error("SMS is not configured (missing Twilio credentials or phone number)");
   }
   await assertSmsAllowed(to);
+  if (!(await takeSmsQuota())) throw new Error(SMS_LIMIT_MESSAGE);
   return client.messages.create({ from: FROM, to: phone, body });
 }
 

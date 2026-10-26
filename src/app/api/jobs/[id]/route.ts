@@ -6,6 +6,8 @@ import { z } from "zod";
 import twilio from "twilio";
 import { sendPushToUser, sendPushToRole } from "@/lib/push";
 import { transitionError } from "@/lib/job-status";
+import { assertSmsAllowed } from "@/lib/consent";
+import { takeSmsQuota } from "@/lib/plan-limits";
 
 const updateJobSchema = z.object({
   status: z.nativeEnum(JobStatus).optional(),
@@ -47,6 +49,9 @@ async function sendStatusSms(jobId: string, status: JobStatus) {
       },
     });
     if (!job?.customer?.phone) return;
+    // A customer who replied STOP gets no status texts.
+    await assertSmsAllowed(job.customer.phone);
+    if (!(await takeSmsQuota())) return;
 
     const vehicleStr = `${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}`;
     const shopPhone = process.env.TWILIO_PHONE_NUMBER!;

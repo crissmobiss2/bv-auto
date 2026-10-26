@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
+import { staffSeatError } from "@/lib/plan-limits";
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -25,6 +26,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (id === session!.user.id && (data.isActive === false || (data.role && data.role !== target.role))) {
     return apiError("You can't deactivate yourself or change your own role", 400);
+  }
+
+  if (data.isActive === true && !target.isActive) {
+    const seatError = await staffSeatError();
+    if (seatError) return apiError(seatError, 402);
   }
 
   const losesAdmin =

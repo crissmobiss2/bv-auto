@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { smsConfigured } from "@/lib/sms";
+import { takeSmsQuota } from "@/lib/plan-limits";
 
 // Weekly: find vehicles with maintenance intervals due soon (within 500 miles or 14 days)
 const REMINDER_PENDING = " (reminder text pending)";
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
     include: {
       vehicle: {
         include: {
-          customer: { select: { id: true, email: true, phone: true, firstName: true, lastName: true, smsOptOut: true, marketingOptOut: true, smsConsentAt: true } },
+          customer: { select: { id: true, shopId: true, email: true, phone: true, firstName: true, lastName: true, smsOptOut: true, marketingOptOut: true, smsConsentAt: true } },
         },
       },
     },
@@ -63,6 +64,8 @@ export async function GET(req: NextRequest) {
     if (!followUp.notes?.includes(REMINDER_PENDING)) continue;
 
     if (!customer.phone || !smsConfigured || customer.smsOptOut || customer.marketingOptOut || !customer.smsConsentAt) continue;
+    // Over the allowance the reminder stays pending and goes out next month.
+    if (!(await takeSmsQuota(customer.shopId))) continue;
 
     // Claim the reminder in SQL so concurrent runs or staff note edits are never
     // overwritten, and a claimed reminder is not texted twice.

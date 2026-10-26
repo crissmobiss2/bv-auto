@@ -3,11 +3,11 @@ import { prisma } from "@/lib/prisma";
 
 export type PlanId = "starter" | "pro" | "shop_plus" | "founding";
 
-export const PLANS: { id: PlanId; name: string; price: number; priceEnv: string; aiMonthly: number; features: string[] }[] = [
-  { id: "starter", name: "Starter", price: 79, priceEnv: "STRIPE_PRICE_STARTER", aiMonthly: 50, features: ["3 users", "500 texts / month", "50 AI requests / month"] },
-  { id: "pro", name: "Pro", price: 149, priceEnv: "STRIPE_PRICE_PRO", aiMonthly: 300, features: ["10 users", "2,000 texts / month", "300 AI requests / month"] },
-  { id: "shop_plus", name: "Shop+", price: 249, priceEnv: "STRIPE_PRICE_SHOP_PLUS", aiMonthly: 1000, features: ["Unlimited users", "5,000 texts / month", "1,000 AI requests / month"] },
-  { id: "founding", name: "Founding Pro", price: 99, priceEnv: "STRIPE_PRICE_FOUNDING", aiMonthly: 300, features: ["Everything in Pro", "Price locked for 12 months", "First 20 shops only"] },
+export const PLANS: { id: PlanId; name: string; price: number; priceEnv: string; users: number; textsMonthly: number; aiMonthly: number; features: string[] }[] = [
+  { id: "starter", name: "Starter", price: 79, priceEnv: "STRIPE_PRICE_STARTER", users: 3, textsMonthly: 500, aiMonthly: 50, features: ["3 users", "500 texts / month", "50 AI requests / month"] },
+  { id: "pro", name: "Pro", price: 149, priceEnv: "STRIPE_PRICE_PRO", users: 10, textsMonthly: 2000, aiMonthly: 300, features: ["10 users", "2,000 texts / month", "300 AI requests / month"] },
+  { id: "shop_plus", name: "Shop+", price: 249, priceEnv: "STRIPE_PRICE_SHOP_PLUS", users: Infinity, textsMonthly: 5000, aiMonthly: 1000, features: ["Unlimited users", "5,000 texts / month", "1,000 AI requests / month"] },
+  { id: "founding", name: "Founding Pro", price: 99, priceEnv: "STRIPE_PRICE_FOUNDING", users: 10, textsMonthly: 2000, aiMonthly: 300, features: ["Everything in Pro", "Price locked for 12 months", "First 20 shops only"] },
 ];
 
 export const TRIAL_DAYS = 14;

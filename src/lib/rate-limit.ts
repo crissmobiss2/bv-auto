@@ -42,14 +42,17 @@ export function rateLimitLocal(key: string, limit: number, windowMs: number): bo
  * @param key      Unique identifier (e.g. `ai:${ip}`)
  * @param limit    Max requests per window
  * @param windowMs Window size in milliseconds
+ * @param opts.durable Refuse when the shared counter is unavailable instead of counting per instance
  */
-export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+export async function rateLimit(key: string, limit: number, windowMs: number, opts: { durable?: boolean } = {}): Promise<boolean> {
+  // Refused calls stop counting at limit+1, so a shop that upgrades mid-window gets its new allowance.
+  const cap = Number.isFinite(limit) ? limit + 1 : 2_147_483_647;
   try {
     const rows = await prisma.$queryRaw<{ count: number }[]>`
       INSERT INTO "RateLimit" ("key", "count", "resetAt")
       VALUES (${key}, 1, now() + make_interval(secs => ${windowMs / 1000}))
       ON CONFLICT ("key") DO UPDATE SET
-        "count" = CASE WHEN "RateLimit"."resetAt" < now() THEN 1 ELSE "RateLimit"."count" + 1 END,
+        "count" = CASE WHEN "RateLimit"."resetAt" < now() THEN 1 ELSE LEAST("RateLimit"."count" + 1, ${cap}) END,
         "resetAt" = CASE WHEN "RateLimit"."resetAt" < now() THEN EXCLUDED."resetAt" ELSE "RateLimit"."resetAt" END
       RETURNING "count"`;
     const count = Number(rows?.[0]?.count);
@@ -59,6 +62,8 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
     }
     return count <= limit;
   } catch {
+    // A per-instance count can't enforce a shop-wide allowance, so durable callers refuse instead.
+    if (opts.durable) return false;
     return rateLimitLocal(key, limit, windowMs);
   }
 }

@@ -37,6 +37,6 @@ describe("cappedFetch", () => {
     expect(res.status).toBe(429);
     expect(res.headers.get("x-should-retry")).toBe("false");
     expect(real).not.toHaveBeenCalled();
-    expect(rl.rateLimit).toHaveBeenCalledWith(expect.stringMatching(/^ai:shop_1:\d{4}-\d{2}$/), 50, expect.any(Number));
+    expect(rl.rateLimit).toHaveBeenCalledWith(expect.stringMatching(/^ai:shop_1:\d{4}-\d{2}$/), 50, expect.any(Number), { durable: true });
   });
 });

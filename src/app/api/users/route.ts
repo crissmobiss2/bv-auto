@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { passwordSchema } from "@/lib/password";
+import { staffSeatError } from "@/lib/plan-limits";
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -49,6 +50,9 @@ export async function POST(req: NextRequest) {
 
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (existing) return apiError("A user with that email already exists", 409);
+
+  const seatError = await staffSeatError();
+  if (seatError) return apiError(seatError, 402);
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
 

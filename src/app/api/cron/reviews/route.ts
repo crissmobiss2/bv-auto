@@ -6,6 +6,7 @@ import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { emailConfigured, emailFrom, escapeHtml } from "@/lib/email";
 import { getBranding } from "@/lib/shop";
 import { smsConfigured } from "@/lib/sms";
+import { takeSmsQuota } from "@/lib/plan-limits";
 
 export async function GET(req: NextRequest) {
   if (!isCronAuthorized(req)) return apiError("Unauthorized", 401);
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Send SMS
-    if (job.customer.phone && smsConfigured && !job.customer.smsOptOut && !job.customer.marketingOptOut && job.customer.smsConsentAt) {
+    if (job.customer.phone && smsConfigured && !job.customer.smsOptOut && !job.customer.marketingOptOut && job.customer.smsConsentAt && (await takeSmsQuota())) {
       try {
         const twilio = (await import("twilio")).default;
         const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);

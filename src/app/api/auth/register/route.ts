@@ -7,6 +7,7 @@ import { apiSuccess, apiError } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import { countActiveShops, resolvePublicShop } from "@/lib/public-shop";
 import { enterShop } from "@/lib/tenant";
+import { staffSeatError } from "@/lib/plan-limits";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -54,6 +55,10 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
   enterShop(shop.id);
+  if (role !== "CUSTOMER") {
+    const seatError = await staffSeatError(shop.id);
+    if (seatError) return apiError(seatError, 402);
+  }
 
   // For customers: create a Customer record linked to this account.
   //
