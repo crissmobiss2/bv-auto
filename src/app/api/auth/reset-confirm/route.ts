@@ -29,17 +29,13 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      passwordHash,
-      resetToken: null,
-      resetTokenExpiry: null,
-      passwordChangedAt: new Date(),
-      // Invalidate all existing sessions on password change
-      sessions: { deleteMany: {} },
-    },
+  // Claim the token in the same write, so two simultaneous confirmations can't both succeed.
+  const { count } = await prisma.user.updateMany({
+    where: { id: user.id, resetToken: hashResetToken(token) },
+    data: { passwordHash, resetToken: null, resetTokenExpiry: null, passwordChangedAt: new Date() },
   });
+  if (count === 0) return apiError("Invalid or expired reset link", 400);
+  await prisma.session.deleteMany({ where: { userId: user.id } });
 
   return apiSuccess({ reset: true });
 }
