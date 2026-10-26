@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireRole(["ADMIN", "DISPATCHER"]);
+  const { error } = await requireRole(["ADMIN"]);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
