@@ -29,7 +29,7 @@ describe("requireRole", () => {
   it("denies access when role doesn't match", async () => {
     const { auth } = await import("@/lib/auth");
     (auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      user: { id: "t", role: "TECHNICIAN", email: "t@t.com" },
+      user: { id: "t", role: "TECHNICIAN", email: "t@t.com", shopId: "shop_1" },
     });
 
     const { requireRole } = await import("@/lib/api-helpers");

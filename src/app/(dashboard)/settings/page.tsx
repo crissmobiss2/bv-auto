@@ -1,3 +1,5 @@
+import { resolveShopId } from "@/lib/api-helpers";
+import { enterShop } from "@/lib/tenant";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +12,10 @@ import { TeamMembers } from "./team-members";
 
 export default async function SettingsPage() {
   const session = await auth();
+  if (session?.user) {
+    const shopId = await resolveShopId(session.user);
+    if (shopId) enterShop(shopId);
+  }
   if (!session) redirect("/login");
   if (!["ADMIN", "ACCOUNTANT"].includes((session.user.role || "").toUpperCase())) redirect("/dashboard");
 

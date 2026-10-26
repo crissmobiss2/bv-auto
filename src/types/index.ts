@@ -90,11 +90,13 @@ export type SessionUser = {
   name: string;
   role: string;
   image?: string | null;
+  shopId?: string | null;
 };
 
 declare module "next-auth" {
   interface User {
     role?: string;
+    shopId?: string | null;
   }
   interface Session {
     user: SessionUser;

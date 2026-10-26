@@ -155,30 +155,30 @@ model User {
   phone         String?
   signature     String?
   shopId        String?
-  customerId    String?   // links CUSTOMER role users to their Customer record
+  customerId    String? // links CUSTOMER role users to their Customer record
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   accounts        Account[]
   sessions        Session[]
-  jobs            Job[]            @relation("AssignedTechnician")
-  createdJobs     Job[]            @relation("CreatedByUser")
+  jobs            Job[]                @relation("AssignedTechnician")
+  createdJobs     Job[]                @relation("CreatedByUser")
   notes           Note[]
   auditLogs       AuditLog[]
   notifications   Notification[]
   jobPhotos       JobPhoto[]
   createdQuotes   Quote[]
   createdInvoices Invoice[]
-  timeLogs        TimeLog[]        @relation("TechTimeLog")
-  shop            Shop?            @relation(fields: [shopId], references: [id])
+  timeLogs        TimeLog[]            @relation("TechTimeLog")
+  shop            Shop?                @relation(fields: [shopId], references: [id])
   payrollRate     PayrollRate?
-  payrollPayouts PayrollPayout[]
+  payrollPayouts  PayrollPayout[]
   locations       TechnicianLocation[]
   pushTokens      PushToken[]
 
   // MFA / TOTP
-  totpSecret       String?
-  totpEnabled      Boolean   @default(false)
+  totpSecret  String?
+  totpEnabled Boolean @default(false)
 
   // Password reset
   resetToken       String?   @unique
@@ -228,42 +228,42 @@ model VerificationToken {
 // ─── CRM / CUSTOMERS ──────────────────────────────────────────────────────────
 
 model Customer {
-  id           String       @id @default(cuid())
-  type         CustomerType @default(INDIVIDUAL)
-  firstName    String
-  lastName     String
-  company      String?
-  email        String?
-  phone        String
-  altPhone     String?
-  address      String?
-  city         String?
-  state        String?
-  zip          String?
-  leadSource   LeadSource   @default(OTHER)
-  referredBy   String?
-  taxExempt    Boolean      @default(false)
-  taxExemptId  String?
-  notes        String?
-  tags         String[]
-  isActive     Boolean      @default(true)
+  id              String       @id @default(cuid())
+  type            CustomerType @default(INDIVIDUAL)
+  firstName       String
+  lastName        String
+  company         String?
+  email           String?
+  phone           String
+  altPhone        String?
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  leadSource      LeadSource   @default(OTHER)
+  referredBy      String?
+  taxExempt       Boolean      @default(false)
+  taxExemptId     String?
+  notes           String?
+  tags            String[]
+  isActive        Boolean      @default(true)
   // Set by an inbound STOP (cleared by START); blocks every SMS to this customer.
-  smsOptOut       Boolean   @default(false)
+  smsOptOut       Boolean      @default(false)
   smsOptOutAt     DateTime?
   smsConsentAt    DateTime?
   // "Do not market": excluded from campaigns, sequences, review and maintenance nudges.
-  marketingOptOut Boolean   @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  marketingOptOut Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  portalToken    String?      @unique
-  vehicles       Vehicle[]
-  jobs           Job[]
-  quotes         Quote[]
-  invoices       Invoice[]
-  customerNotes  Note[]
-  communications Communication[]
-  followUps      FollowUp[]
+  portalToken      String?           @unique
+  vehicles         Vehicle[]
+  jobs             Job[]
+  quotes           Quote[]
+  invoices         Invoice[]
+  customerNotes    Note[]
+  communications   Communication[]
+  followUps        FollowUp[]
   smsMessages      SmsMessage[]
   reviewRequests   ReviewRequest[]
   serviceRequests  ServiceRequest[]
@@ -271,9 +271,12 @@ model Customer {
   warranties       Warranty[]
   enrollments      CommEnrollment[]
 
+  shopId String?
+
   @@index([phone])
   @@index([email])
   @@index([lastName])
+  @@index([shopId])
 }
 
 // ─── VEHICLES ─────────────────────────────────────────────────────────────────
@@ -306,9 +309,12 @@ model Vehicle {
   declinedServices     DeclinedService[]
   warranties           Warranty[]
 
+  shopId String?
+
   @@index([vin])
   @@index([plate])
   @@index([customerId])
+  @@index([shopId])
 }
 
 // ─── CARFAX INTEGRATION ───────────────────────────────────────────────────────
@@ -338,28 +344,28 @@ model CarfaxRecord {
 // ─── JOBS / REPAIR ORDERS ─────────────────────────────────────────────────────
 
 model Job {
-  id              String    @id @default(cuid())
-  jobNumber       String    @unique
-  customerId      String
-  vehicleId       String
-  technicianId    String?
-  createdById     String
-  status          JobStatus @default(ESTIMATE)
-  title           String
-  description     String?
-  serviceLocation String?
-  scheduledAt     DateTime?
-  startedAt       DateTime?
-  completedAt     DateTime?
-  estimatedHours  Decimal?
-  actualHours     Decimal?
-  mileageIn       Int?
-  mileageOut      Int?
-  internalNotes   String?
-  customerNotes   String?
-  checklist       Json?
-  requiresReturn  Boolean   @default(false)
-  warrantyJobId   String?
+  id                 String    @id @default(cuid())
+  jobNumber          String    @unique
+  customerId         String
+  vehicleId          String
+  technicianId       String?
+  createdById        String
+  status             JobStatus @default(ESTIMATE)
+  title              String
+  description        String?
+  serviceLocation    String?
+  scheduledAt        DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  estimatedHours     Decimal?
+  actualHours        Decimal?
+  mileageIn          Int?
+  mileageOut         Int?
+  internalNotes      String?
+  customerNotes      String?
+  checklist          Json?
+  requiresReturn     Boolean   @default(false)
+  warrantyJobId      String?
   fleetAccountId     String?
   fleetPoNumber      String?
   vehicleHealthScore Int?
@@ -367,19 +373,19 @@ model Job {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  customer      Customer       @relation(fields: [customerId], references: [id])
-  vehicle       Vehicle        @relation(fields: [vehicleId], references: [id])
-  technician    User?          @relation("AssignedTechnician", fields: [technicianId], references: [id])
-  createdBy     User           @relation("CreatedByUser", fields: [createdById], references: [id])
-  fleetAccount  FleetAccount?  @relation(fields: [fleetAccountId], references: [id])
-  shop          Shop?          @relation(fields: [shopId], references: [id])
-  quote         Quote?
-  invoice       Invoice?
-  parts         JobPart[]
-  photos        JobPhoto[]
-  jobNotes      Note[]
-  carfaxRecords CarfaxRecord[]
-  signatures    Signature[]
+  customer         Customer             @relation(fields: [customerId], references: [id])
+  vehicle          Vehicle              @relation(fields: [vehicleId], references: [id])
+  technician       User?                @relation("AssignedTechnician", fields: [technicianId], references: [id])
+  createdBy        User                 @relation("CreatedByUser", fields: [createdById], references: [id])
+  fleetAccount     FleetAccount?        @relation(fields: [fleetAccountId], references: [id])
+  shop             Shop?                @relation(fields: [shopId], references: [id])
+  quote            Quote?
+  invoice          Invoice?
+  parts            JobPart[]
+  photos           JobPhoto[]
+  jobNotes         Note[]
+  carfaxRecords    CarfaxRecord[]
+  signatures       Signature[]
   timeLogs         TimeLog[]
   reviewRequest    ReviewRequest?
   declinedServices DeclinedService[]
@@ -401,91 +407,97 @@ model Job {
 // ─── QUOTES ───────────────────────────────────────────────────────────────────
 
 model Quote {
-  id             String      @id @default(cuid())
-  quoteNumber    String      @unique
-  jobId          String      @unique
-  customerId     String
-  createdById    String
-  status         QuoteStatus @default(DRAFT)
-  title          String?
-  notes          String?
-  internalNotes  String?
-  validUntil     DateTime?
-  sentAt         DateTime?
-  viewedAt       DateTime?
-  approvedAt     DateTime?
-  declinedAt     DateTime?
-  declineReason  String?
-  approvedBy     String?
-  approvalMethod String?
-  subtotal       Decimal     @default(0)
-  taxRate        Decimal     @default(0)
-  taxAmount      Decimal     @default(0)
-  discountAmount Decimal     @default(0)
-  totalAmount    Decimal     @default(0)
-  depositRequired Decimal?
-  depositPaid    Decimal?
-  depositExternalId String?  @unique
-  depositPaidAt  DateTime?
-  approvalToken  String?     @unique
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  quoteNumber       String      @unique
+  jobId             String      @unique
+  customerId        String
+  createdById       String
+  status            QuoteStatus @default(DRAFT)
+  title             String?
+  notes             String?
+  internalNotes     String?
+  validUntil        DateTime?
+  sentAt            DateTime?
+  viewedAt          DateTime?
+  approvedAt        DateTime?
+  declinedAt        DateTime?
+  declineReason     String?
+  approvedBy        String?
+  approvalMethod    String?
+  subtotal          Decimal     @default(0)
+  taxRate           Decimal     @default(0)
+  taxAmount         Decimal     @default(0)
+  discountAmount    Decimal     @default(0)
+  totalAmount       Decimal     @default(0)
+  depositRequired   Decimal?
+  depositPaid       Decimal?
+  depositExternalId String?     @unique
+  depositPaidAt     DateTime?
+  approvalToken     String?     @unique
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  job       Job      @relation(fields: [jobId], references: [id])
-  customer  Customer @relation(fields: [customerId], references: [id])
-  createdBy User     @relation(fields: [createdById], references: [id])
+  job       Job        @relation(fields: [jobId], references: [id])
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  createdBy User       @relation(fields: [createdById], references: [id])
   lineItems LineItem[]
+
+  shopId String?
 
   @@index([customerId])
   @@index([status])
   @@index([quoteNumber])
+  @@index([shopId])
 }
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
 
 model Invoice {
-  id             String        @id @default(cuid())
-  invoiceNumber  String        @unique
-  jobId          String        @unique
-  customerId     String
-  createdById    String
-  status         InvoiceStatus @default(DRAFT)
-  notes          String?
-  internalNotes  String?
-  dueDate        DateTime?
-  sentAt         DateTime?
-  viewedAt       DateTime?
-  paidAt         DateTime?
-  voidedAt          DateTime?
-  voidReason        String?
-  stripeSessionId   String?
-  stripePaymentUrl  String?
-  lastReminderAt    DateTime?
-  reminderCount     Int           @default(0)
-  subtotal          Decimal       @default(0)
-  taxRate        Decimal       @default(0)
-  taxAmount      Decimal       @default(0)
-  discountAmount Decimal       @default(0)
-  totalAmount    Decimal       @default(0)
-  amountPaid     Decimal       @default(0)
-  amountDue      Decimal       @default(0)
-  qbSyncedAt     DateTime?
-  qbInvoiceId    String?
-  xeroSyncedAt   DateTime?
-  xeroInvoiceId  String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  jobId            String        @unique
+  customerId       String
+  createdById      String
+  status           InvoiceStatus @default(DRAFT)
+  notes            String?
+  internalNotes    String?
+  dueDate          DateTime?
+  sentAt           DateTime?
+  viewedAt         DateTime?
+  paidAt           DateTime?
+  voidedAt         DateTime?
+  voidReason       String?
+  stripeSessionId  String?
+  stripePaymentUrl String?
+  lastReminderAt   DateTime?
+  reminderCount    Int           @default(0)
+  subtotal         Decimal       @default(0)
+  taxRate          Decimal       @default(0)
+  taxAmount        Decimal       @default(0)
+  discountAmount   Decimal       @default(0)
+  totalAmount      Decimal       @default(0)
+  amountPaid       Decimal       @default(0)
+  amountDue        Decimal       @default(0)
+  qbSyncedAt       DateTime?
+  qbInvoiceId      String?
+  xeroSyncedAt     DateTime?
+  xeroInvoiceId    String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  job           Job      @relation(fields: [jobId], references: [id])
-  customer      Customer @relation(fields: [customerId], references: [id])
-  createdBy     User     @relation(fields: [createdById], references: [id])
-  lineItems     LineItem[]
-  payments      Payment[]
-  installments  PaymentPlanInstallment[]
+  job          Job                      @relation(fields: [jobId], references: [id])
+  customer     Customer                 @relation(fields: [customerId], references: [id])
+  createdBy    User                     @relation(fields: [createdById], references: [id])
+  lineItems    LineItem[]
+  payments     Payment[]
+  installments PaymentPlanInstallment[]
+
+  shopId String?
 
   @@index([customerId])
   @@index([status])
   @@index([invoiceNumber])
+  @@index([shopId])
 }
 
 // ─── LINE ITEMS ───────────────────────────────────────────────────────────────
@@ -538,8 +550,11 @@ model Payment {
   refundOf Payment?  @relation("PaymentRefunds", fields: [refundOfId], references: [id])
   refunds  Payment[] @relation("PaymentRefunds")
 
+  shopId String?
+
   @@index([invoiceId])
   @@index([receivedAt])
+  @@index([shopId])
 }
 
 // ─── PARTS ────────────────────────────────────────────────────────────────────
@@ -564,43 +579,46 @@ model PartsVendor {
   parts          JobPart[]
   purchaseOrders PurchaseOrder[]
 
+  shopId String?
+
   @@index([name])
+  @@index([shopId])
 }
 
 model JobPart {
-  id              String     @id @default(cuid())
-  jobId           String
-  vendorId        String?
-  purchaseOrderId String?
-  status          PartStatus @default(REQUESTED)
-  partNumber   String?
-  description  String
-  quantity     Decimal    @default(1)
-  unitCost     Decimal?
-  unitPrice    Decimal?
-  markup       Decimal?
-  totalCost    Decimal?
-  totalPrice   Decimal?
-  requestedAt  DateTime   @default(now())
-  quotedAt     DateTime?
-  orderedAt    DateTime?
-  shippedAt    DateTime?
-  receivedAt   DateTime?
-  installedAt  DateTime?
-  returnedAt   DateTime?
-  creditedAt   DateTime?
-  creditAmount Decimal?
-  returnReason String?
-  notes        String?
-  poNumber     String?
-  coreReturn   Boolean    @default(false)
-  coreCharge   Decimal?
+  id                 String     @id @default(cuid())
+  jobId              String
+  vendorId           String?
+  purchaseOrderId    String?
+  status             PartStatus @default(REQUESTED)
+  partNumber         String?
+  description        String
+  quantity           Decimal    @default(1)
+  unitCost           Decimal?
+  unitPrice          Decimal?
+  markup             Decimal?
+  totalCost          Decimal?
+  totalPrice         Decimal?
+  requestedAt        DateTime   @default(now())
+  quotedAt           DateTime?
+  orderedAt          DateTime?
+  shippedAt          DateTime?
+  receivedAt         DateTime?
+  installedAt        DateTime?
+  returnedAt         DateTime?
+  creditedAt         DateTime?
+  creditAmount       Decimal?
+  returnReason       String?
+  notes              String?
+  poNumber           String?
+  coreReturn         Boolean    @default(false)
+  coreCharge         Decimal?
   // Stock this part is drawn from; issuedQty tracks what the ledger has taken.
   inventoryItemId    String?
   inventoryIssuedQty Int        @default(0)
   quantityReceived   Decimal    @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
   inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
   job           Job            @relation(fields: [jobId], references: [id])
@@ -617,25 +635,28 @@ model JobPart {
 // ─── PURCHASE ORDERS ──────────────────────────────────────────────────────────
 
 model PurchaseOrder {
-  id             String     @id @default(cuid())
-  poNumber       String     @unique
+  id             String    @id @default(cuid())
+  poNumber       String    @unique
   vendorId       String
-  status         POStatus   @default(DRAFT)
+  status         POStatus  @default(DRAFT)
   notes          String?
-  estimatedTotal Decimal    @default(0)
+  estimatedTotal Decimal   @default(0)
   createdBy      String
   orderedAt      DateTime?
   expectedAt     DateTime?
   receivedAt     DateTime?
   cancelledAt    DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   vendor PartsVendor @relation(fields: [vendorId], references: [id])
   items  JobPart[]
 
+  shopId String?
+
   @@index([vendorId])
   @@index([status])
+  @@index([shopId])
 }
 
 enum POStatus {
@@ -718,7 +739,10 @@ model Communication {
 
   customer Customer @relation(fields: [customerId], references: [id])
 
+  shopId String?
+
   @@index([customerId])
+  @@index([shopId])
 }
 
 // ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
@@ -755,8 +779,11 @@ model FollowUp {
 
   customer Customer @relation(fields: [customerId], references: [id])
 
+  shopId String?
+
   @@index([customerId])
   @@index([dueAt])
+  @@index([shopId])
 }
 
 // ─── AUDIT LOG ────────────────────────────────────────────────────────────────
@@ -776,9 +803,12 @@ model AuditLog {
 
   user User? @relation(fields: [userId], references: [id])
 
+  shopId String?
+
   @@index([entity, entityId])
   @@index([userId])
   @@index([createdAt])
+  @@index([shopId])
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
@@ -815,8 +845,11 @@ model ServiceRequest {
   customer      Customer? @relation(fields: [customerId], references: [id])
   createdAt     DateTime  @default(now())
 
+  shopId String?
+
   @@index([status])
   @@index([customerId])
+  @@index([shopId])
 }
 
 // ─── MAINTENANCE INTERVALS ────────────────────────────────────────────────────
@@ -854,7 +887,10 @@ model SmsMessage {
 
   customer Customer @relation(fields: [customerId], references: [id])
 
+  shopId String?
+
   @@index([customerId])
+  @@index([shopId])
 }
 
 // ─── TIME LOGS ────────────────────────────────────────────────────────────────
@@ -897,8 +933,11 @@ model InventoryItem {
   movements InventoryMovement[]
   jobParts  JobPart[]
 
+  shopId String?
+
   @@index([category])
   @@index([location])
+  @@index([shopId])
 }
 
 enum InventoryMovementType {
@@ -944,7 +983,10 @@ model ReviewRequest {
   job      Job      @relation(fields: [jobId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
 
+  shopId String?
+
   @@index([customerId])
+  @@index([shopId])
 }
 
 // ─── PAYMENT PLAN INSTALLMENTS ────────────────────────────────────────────────
@@ -987,27 +1029,33 @@ model FleetAccount {
 
   jobs Job[]
 
+  shopId String?
+
   @@index([name])
   @@index([isActive])
+  @@index([shopId])
 }
 
 // ─── MARKETING CAMPAIGNS ──────────────────────────────────────────────────────
 
 model MarketingCampaign {
-  id           String    @id @default(cuid())
-  name         String
-  type         String
-  triggerType  String
-  triggerValue String?
+  id              String    @id @default(cuid())
+  name            String
+  type            String
+  triggerType     String
+  triggerValue    String?
   messageTemplate String
-  isActive     Boolean   @default(true)
-  sentCount    Int       @default(0)
-  lastRunAt    DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isActive        Boolean   @default(true)
+  sentCount       Int       @default(0)
+  lastRunAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shopId String?
 
   @@index([type])
   @@index([isActive])
+  @@index([shopId])
 }
 
 // ─── LABOR TIME CACHE ─────────────────────────────────────────────────────────
@@ -1044,30 +1092,33 @@ model CannedService {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  shopId String?
+
   @@index([category])
   @@index([isActive])
+  @@index([shopId])
 }
 
 // ─── SHOPS / LOCATIONS ────────────────────────────────────────────────────────
 
 model Shop {
-  id          String   @id @default(cuid())
-  name        String
-  address     String?
-  city        String?
-  state       String?
-  zip         String?
-  phone       String?
-  email       String?
-  taxRate     Decimal  @default(0) @db.Decimal(5, 4)
-  laborRate   Decimal  @default(0) @db.Decimal(10, 2)
-  partsMarkup Decimal  @default(40) @db.Decimal(5, 2)
-  logoUrl     String?
+  id              String   @id @default(cuid())
+  name            String
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  phone           String?
+  email           String?
+  taxRate         Decimal  @default(0) @db.Decimal(5, 4)
+  laborRate       Decimal  @default(0) @db.Decimal(10, 2)
+  partsMarkup     Decimal  @default(40) @db.Decimal(5, 2)
+  logoUrl         String?
   googleReviewUrl String?
-  isActive    Boolean  @default(true)
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive        Boolean  @default(true)
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   jobs  Job[]
   users User[]
@@ -1094,43 +1145,49 @@ model DeclinedService {
   customer Customer @relation(fields: [customerId], references: [id])
   vehicle  Vehicle  @relation(fields: [vehicleId], references: [id])
 
+  shopId String?
+
   @@index([customerId])
   @@index([vehicleId])
   @@index([followedUp])
   @@index([followUpAt])
+  @@index([shopId])
 }
 
 // ─── WARRANTIES ───────────────────────────────────────────────────────────────
 
 model Warranty {
-  id              String        @id @default(cuid())
-  jobId           String
-  customerId      String
-  vehicleId       String
-  type            WarrantyType  @default(PARTS)
-  description     String
-  partNumber      String?
-  laborCode       String?
-  startDate       DateTime      @default(now())
-  expiryDate      DateTime?
+  id               String         @id @default(cuid())
+  jobId            String
+  customerId       String
+  vehicleId        String
+  type             WarrantyType   @default(PARTS)
+  description      String
+  partNumber       String?
+  laborCode        String?
+  startDate        DateTime       @default(now())
+  expiryDate       DateTime?
   mileageAtService Int?
-  mileageLimit    Int?
-  durationDays    Int?
-  status          WarrantyStatus @default(ACTIVE)
-  claimedAt       DateTime?
-  claimNotes      String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  mileageLimit     Int?
+  durationDays     Int?
+  status           WarrantyStatus @default(ACTIVE)
+  claimedAt        DateTime?
+  claimNotes       String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   job      Job      @relation(fields: [jobId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
   vehicle  Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  shopId String?
 
   @@index([customerId])
   @@index([vehicleId])
   @@index([jobId])
   @@index([status])
   @@index([expiryDate])
+  @@index([shopId])
 }
 
 enum WarrantyType {
@@ -1159,17 +1216,20 @@ model CommSequence {
   steps       CommSequenceStep[]
   enrollments CommEnrollment[]
 
+  shopId String?
+
   @@index([triggerEvent])
   @@index([isActive])
+  @@index([shopId])
 }
 
 model CommSequenceStep {
-  id           String   @id @default(cuid())
-  sequenceId   String
-  stepNumber   Int
-  delayHours   Int      @default(0)
+  id              String @id @default(cuid())
+  sequenceId      String
+  stepNumber      Int
+  delayHours      Int    @default(0)
   messageTemplate String
-  channel      String   @default("SMS")
+  channel         String @default("SMS")
 
   sequence CommSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
 
@@ -1177,15 +1237,15 @@ model CommSequenceStep {
 }
 
 model CommEnrollment {
-  id           String    @id @default(cuid())
-  sequenceId   String
-  customerId   String
-  jobId        String?
-  currentStep  Int       @default(0)
-  status       String    @default("ACTIVE")
-  nextStepAt   DateTime?
-  completedAt  DateTime?
-  createdAt    DateTime  @default(now())
+  id          String    @id @default(cuid())
+  sequenceId  String
+  customerId  String
+  jobId       String?
+  currentStep Int       @default(0)
+  status      String    @default("ACTIVE")
+  nextStepAt  DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
 
   sequence CommSequence @relation(fields: [sequenceId], references: [id])
   customer Customer     @relation(fields: [customerId], references: [id])
@@ -1199,46 +1259,49 @@ model CommEnrollment {
 // ─── INSURANCE CLAIMS ─────────────────────────────────────────────────────────
 
 model InsuranceClaim {
-  id                String   @id @default(cuid())
-  jobId             String   @unique
-  claimNumber       String?
-  insuranceCompany  String
-  adjusterName      String?
-  adjusterPhone     String?
-  adjusterEmail     String?
-  deductible        Decimal  @default(0) @db.Decimal(10, 2)
-  approvedAmount    Decimal? @db.Decimal(10, 2)
-  paidAmount        Decimal  @default(0) @db.Decimal(10, 2)
-  status            String   @default("PENDING")
-  notes             String?
-  submittedAt       DateTime?
-  approvedAt        DateTime?
-  paidAt            DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String    @id @default(cuid())
+  jobId            String    @unique
+  claimNumber      String?
+  insuranceCompany String
+  adjusterName     String?
+  adjusterPhone    String?
+  adjusterEmail    String?
+  deductible       Decimal   @default(0) @db.Decimal(10, 2)
+  approvedAmount   Decimal?  @db.Decimal(10, 2)
+  paidAmount       Decimal   @default(0) @db.Decimal(10, 2)
+  status           String    @default("PENDING")
+  notes            String?
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   job Job @relation(fields: [jobId], references: [id])
 
+  shopId String?
+
   @@index([status])
   @@index([claimNumber])
+  @@index([shopId])
 }
 
 // ─── SUBLETS ──────────────────────────────────────────────────────────────────
 
 model Sublet {
-  id           String   @id @default(cuid())
-  jobId        String
-  vendorName   String
-  description  String
+  id            String    @id @default(cuid())
+  jobId         String
+  vendorName    String
+  description   String
   vendorInvoice String?
-  ourCost      Decimal  @default(0) @db.Decimal(10, 2)
-  ourCharge    Decimal  @default(0) @db.Decimal(10, 2)
-  markup       Decimal  @default(0) @db.Decimal(5, 2)
-  status       String   @default("PENDING")
-  completedAt  DateTime?
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  ourCost       Decimal   @default(0) @db.Decimal(10, 2)
+  ourCharge     Decimal   @default(0) @db.Decimal(10, 2)
+  markup        Decimal   @default(0) @db.Decimal(5, 2)
+  status        String    @default("PENDING")
+  completedAt   DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   job Job @relation(fields: [jobId], references: [id])
 
@@ -1249,14 +1312,14 @@ model Sublet {
 // ─── PAYROLL RATES ────────────────────────────────────────────────────────────
 
 model PayrollRate {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  rateType   String   @default("HOURLY")
-  hourlyRate Decimal? @db.Decimal(10, 2)
-  flatRateMul Decimal @default(1.0) @db.Decimal(5, 2)
-  commissionPct Decimal @default(0) @db.Decimal(5, 2)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  rateType      String   @default("HOURLY")
+  hourlyRate    Decimal? @db.Decimal(10, 2)
+  flatRateMul   Decimal  @default(1.0) @db.Decimal(5, 2)
+  commissionPct Decimal  @default(0) @db.Decimal(5, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 }
@@ -1290,18 +1353,21 @@ model PayrollRun {
   approvedById String?
   approvedAt   DateTime @default(now())
 
-  @@unique([periodStart, periodEnd])
+  shopId String?
+
+  @@unique([shopId, periodStart, periodEnd])
+  @@index([shopId])
 }
 
 // ─── VEHICLE SPECS DATABASE ───────────────────────────────────────────────────
 
 model VehicleSpec {
-  id        String  @id @default(cuid())
-  year      Int
-  make      String
-  model     String
-  trim      String? // null = applies to all trims
-  engine    String? // "2.5L 4-cyl", "5.0L V8"
+  id     String  @id @default(cuid())
+  year   Int
+  make   String
+  model  String
+  trim   String? // null = applies to all trims
+  engine String? // "2.5L 4-cyl", "5.0L V8"
 
   // Engine
   engineDisplacement String?
@@ -1309,21 +1375,21 @@ model VehicleSpec {
   compressionRatio   String?
   firingOrder        String?
   timingType         String? // "chain" | "belt" | "gear"
-  timingBeltMiles    Int?    // miles if belt
+  timingBeltMiles    Int? // miles if belt
 
   // Oil
-  oilType            String? // "0W-20", "5W-30 Full Synthetic"
-  oilCapacityQts     Float?  // with filter
-  oilFilterPN        String?
+  oilType        String? // "0W-20", "5W-30 Full Synthetic"
+  oilCapacityQts Float? // with filter
+  oilFilterPN    String?
 
   // Coolant
   coolantType        String? // "Toyota Pink SLLC", "Dex-Cool", "Green IAT"
   coolantCapacityQts Float?
 
   // Transmission
-  transType          String? // "CVT", "6-Speed Auto", "10-Speed Auto"
-  transFluidType     String? // "ATF WS", "Mercon LV", "ZF Lifeguard 8"
-  transFluidQts      Float?
+  transType      String? // "CVT", "6-Speed Auto", "10-Speed Auto"
+  transFluidType String? // "ATF WS", "Mercon LV", "ZF Lifeguard 8"
+  transFluidQts  Float?
 
   // Other fluids
   brakeFluidType     String? // "DOT 3", "DOT 4"
@@ -1336,45 +1402,45 @@ model VehicleSpec {
   transferCaseQts    Float?
 
   // Battery
-  batteryGroup       String? // "35", "24F", "H6 (48)", "H7 (94R)"
-  batteryCCA         Int?
-  batteryRC          Int?    // reserve capacity minutes
+  batteryGroup String? // "35", "24F", "H6 (48)", "H7 (94R)"
+  batteryCCA   Int?
+  batteryRC    Int? // reserve capacity minutes
 
   // Tires
-  tireSizeFront      String? // "225/50R17"
-  tireSizeRear       String?
-  tirePressureFront  Int?    // PSI
-  tirePressureRear   Int?
-  spareTireSize      String?
+  tireSizeFront     String? // "225/50R17"
+  tireSizeRear      String?
+  tirePressureFront Int? // PSI
+  tirePressureRear  Int?
+  spareTireSize     String?
 
   // Brakes
-  frontRotorDia      Float?  // inches
+  frontRotorDia      Float? // inches
   rearRotorDia       Float?
-  frontRotorMinMM    Float?  // minimum thickness mm
+  frontRotorMinMM    Float? // minimum thickness mm
   rearRotorMinMM     Float?
-  frontPadMinMM      Float?  // minimum pad thickness mm
+  frontPadMinMM      Float? // minimum pad thickness mm
   rearPadMinMM       Float?
-  wheelNutTorque     Int?    // ft-lbs
-  frontCaliperTorque Int?    // ft-lbs
+  wheelNutTorque     Int? // ft-lbs
+  frontCaliperTorque Int? // ft-lbs
   rearCaliperTorque  Int?
 
   // Spark plugs
-  sparkPlugPN        String? // "NGK ILTR5A-13G"
-  sparkPlugGapIn     Float?  // inches
-  sparkPlugMiles     Int?    // replacement interval
+  sparkPlugPN    String? // "NGK ILTR5A-13G"
+  sparkPlugGapIn Float? // inches
+  sparkPlugMiles Int? // replacement interval
 
   // A/C
-  refrigerantType    String? // "R-134a", "R-1234yf"
-  refrigerantOz      Float?
-  acOilType          String? // "PAG 46", "PAG 100"
+  refrigerantType String? // "R-134a", "R-1234yf"
+  refrigerantOz   Float?
+  acOilType       String? // "PAG 46", "PAG 100"
 
   // ADAS
-  adasFeatures       String[] // ["Forward Collision Warning", "Lane Keep Assist"]
-  adasCalRequired    String[] // events that require recalibration
+  adasFeatures    String[] // ["Forward Collision Warning", "Lane Keep Assist"]
+  adasCalRequired String[] // events that require recalibration
 
   // Emissions
-  obd2Protocol       String? // "CAN", "ISO 9141-2"
-  evapSystemType     String? // "Enhanced EVAP", "Standard EVAP"
+  obd2Protocol   String? // "CAN", "ISO 9141-2"
+  evapSystemType String? // "Enhanced EVAP", "Standard EVAP"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1394,7 +1460,7 @@ model PatternFailure {
   engine       String?
   dtcCodes     String[] // ["P0420", "P0171"]
   symptoms     String[] // ["rough idle", "check engine light"]
-  confirmedFix String   // "Replaced upstream O2 sensor Bank 1"
+  confirmedFix String // "Replaced upstream O2 sensor Bank 1"
   partNumbers  String[] // ["234-4209"]
   laborHours   Float?
   successCount Int      @default(1)
@@ -1422,8 +1488,8 @@ model TechnicianLocation {
   speed     Float?
   createdAt DateTime @default(now())
 
-  user User  @relation(fields: [userId], references: [id])
-  job  Job?  @relation(fields: [jobId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  job  Job? @relation(fields: [jobId], references: [id])
 
   @@index([userId])
   @@index([jobId])

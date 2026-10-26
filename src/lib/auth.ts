@@ -42,7 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email: parsed.data.email },
           select: {
             id: true, email: true, name: true, role: true, image: true,
-            passwordHash: true, isActive: true, totpEnabled: true, totpSecret: true,
+            passwordHash: true, isActive: true, shopId: true, totpEnabled: true, totpSecret: true,
           },
         });
 
@@ -58,7 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (!verifyTotpCode(user.totpSecret, code)) return null;
         }
 
-        return { id: user.id, email: user.email, name: user.name, role: user.role, image: user.image };
+        return { id: user.id, email: user.email, name: user.name, role: user.role, image: user.image, shopId: user.shopId };
       },
     }),
   ],
@@ -67,16 +67,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
+        token.shopId = (user as { shopId?: string | null }).shopId ?? null;
         token.checkedAt = Date.now();
         return token;
       }
       if (token.id && Date.now() - ((token.checkedAt as number | undefined) ?? 0) > 60_000) {
         const current = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, isActive: true },
+          select: { role: true, isActive: true, shopId: true },
         });
         if (!current?.isActive) return null;
         token.role = current.role;
+        token.shopId = current.shopId;
         token.checkedAt = Date.now();
       }
       return token;
@@ -85,6 +87,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.shopId = (token.shopId as string | null | undefined) ?? null;
       }
       return session;
     },

@@ -1,14 +1,25 @@
+import { enterShop } from "@/lib/tenant";
 import { redactAuditPayload } from "@/lib/audit-redact";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { AuditAction } from "@prisma/client";
 
+/** The shop a signed-in user works in; tokens issued before multi-shop fall back to the DB. */
+export async function resolveShopId(user: { id: string; shopId?: string | null }) {
+  if (user.shopId) return user.shopId;
+  const row = await prisma.user.findUnique({ where: { id: user.id }, select: { shopId: true } });
+  return row?.shopId ?? null;
+}
+
 export async function requireAuth() {
   const session = await auth();
   if (!session?.user) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }), session: null };
   }
+  const shopId = await resolveShopId(session.user);
+  if (!shopId) return { error: NextResponse.json({ error: "No shop for this account" }, { status: 403 }), session: null };
+  enterShop(shopId);
   return { error: null, session };
 }
 

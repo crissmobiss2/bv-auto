@@ -1,3 +1,4 @@
+import { shopSettingKey } from "@/lib/tenant";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/api-helpers";
@@ -60,9 +61,9 @@ export async function GET(req: NextRequest) {
     } catch {}
 
     await prisma.settings.upsert({
-      where: { key: "quickbooks_connection" },
+      where: { key: shopSettingKey("quickbooks_connection") },
       create: {
-        key: "quickbooks_connection",
+        key: shopSettingKey("quickbooks_connection"),
         value: {
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token,
