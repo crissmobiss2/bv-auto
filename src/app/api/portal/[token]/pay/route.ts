@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { enterShop } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit } from "@/lib/rate-limit";
@@ -20,8 +21,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return apiError("invoiceId or quoteId is required", 400);
 
-  const customer = await prisma.customer.findUnique({ where: { portalToken: token }, select: { id: true, email: true } });
+  const customer = await prisma.customer.findUnique({ where: { portalToken: token }, select: { shopId: true, id: true, email: true } });
   if (!customer) return apiError("Portal link not found", 404);
+  if (customer.shopId) enterShop(customer.shopId);
 
   if ("quoteId" in parsed.data) {
     const quote = await prisma.quote.findFirst({ where: { id: parsed.data.quoteId, customerId: customer.id } });

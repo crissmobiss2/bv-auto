@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { enterShop } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess, requireAuth } from "@/lib/api-helpers";
 import crypto from "crypto";
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   });
 
   if (!customer) return apiError("Portal link not found", 404);
+  if (customer.shopId) enterShop(customer.shopId);
 
   // Strip internal fields
   const { notes: _n, ...safe } = customer as typeof customer & { notes?: string };
