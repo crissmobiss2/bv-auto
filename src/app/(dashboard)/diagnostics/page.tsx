@@ -366,7 +366,10 @@ function DiagnosticsPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...vehicle, symptoms, dtcCodes: dtcList, priorRepairs, stream: true, jobId: diagJobId || undefined }),
       });
-      if (!res.ok) throw new Error("Diagnosis failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Diagnosis failed (HTTP ${res.status}). Please try again.`);
+      }
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -379,15 +382,14 @@ function DiagnosticsPageInner() {
         buffer = lines.pop() ?? "";
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
-          try {
-            const parsed = JSON.parse(line.slice(6));
-            if (parsed.text) setStreamingText(prev => prev + parsed.text);
-            if (parsed.done && parsed.result) return parsed.result as DiagnosisResult;
-            if (parsed.done && parsed.error) throw new Error(parsed.error);
-          } catch { /* ignore partial chunks */ }
+          let parsed;
+          try { parsed = JSON.parse(line.slice(6)); } catch { continue; }
+          if (parsed.text) setStreamingText(prev => prev + parsed.text);
+          if (parsed.done && parsed.result) return parsed.result as DiagnosisResult;
+          if (parsed.done) throw new Error(parsed.error || "Diagnosis failed. Please try again.");
         }
       }
-      throw new Error("Stream ended without result");
+      throw new Error("The AI returned no diagnosis. Please try again.");
     },
     onSuccess: result => { setAiResult(result); setStreamingText(""); },
     onError: () => setStreamingText(""),
@@ -695,7 +697,7 @@ function DiagnosticsPageInner() {
             </Button>
             {diagnoseMutation.isError && (
               <p className="text-sm text-red-600 bg-red-50 p-3 rounded border border-red-200">
-                {(diagnoseMutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Diagnosis failed. Make sure ANTHROPIC_API_KEY is configured."}
+                {diagnoseMutation.error instanceof Error ? diagnoseMutation.error.message : "Diagnosis failed. Please try again."}
               </p>
             )}
           </div>
