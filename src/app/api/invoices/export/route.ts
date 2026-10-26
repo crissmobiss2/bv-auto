@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/api-helpers";
+import { csvRow } from "@/lib/csv";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
@@ -29,9 +30,9 @@ export async function GET(req: NextRequest) {
 
   for (const inv of invoices) {
     const primaryPayment = inv.payments[0];
-    rows.push([
+    rows.push(csvRow([
       inv.invoiceNumber,
-      `"${inv.customer.firstName} ${inv.customer.lastName}${inv.customer.company ? ` (${inv.customer.company})` : ""}"`,
+      `${inv.customer.firstName} ${inv.customer.lastName}${inv.customer.company ? ` (${inv.customer.company})` : ""}`,
       new Date(inv.createdAt).toLocaleDateString(),
       inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : "",
       inv.status,
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
       Number(inv.amountPaid).toFixed(2),
       Number(inv.amountDue).toFixed(2),
       primaryPayment?.method.replace(/_/g, " ") || "",
-    ].join(","));
+    ]));
   }
 
   const csv = rows.join("\n");

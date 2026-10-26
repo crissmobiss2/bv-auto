@@ -1,3 +1,4 @@
+import { csvCell } from "@/lib/csv";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, apiSuccess } from "@/lib/api-helpers";
@@ -42,14 +43,7 @@ export async function GET(req: NextRequest) {
       take: 10000,
     });
 
-    const escapeCsv = (val: string | null | undefined) => {
-      if (val == null) return "";
-      const str = String(val);
-      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
+    const escapeCsv = (val: string | null | undefined) => csvCell(val ?? "");
 
     const header = ["timestamp", "user", "action", "entity", "entityId", "notes"];
     const rows = logs.map((log) => [
