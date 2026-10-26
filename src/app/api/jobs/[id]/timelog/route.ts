@@ -67,11 +67,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: {
         id: String(logId),
         jobId: id,
+        clockedOut: null,
         ...(session!.user.role === "TECHNICIAN" ? { technicianId: session!.user.id } : {}),
       },
       select: { id: true },
     });
-    if (!existingLog) return apiError("Time log not found for this job", 404);
+    if (!existingLog) return apiError("No open time log found for this job (it may already be clocked out)", 404);
 
     const log = await prisma.timeLog.update({
       where: { id: existingLog.id },
