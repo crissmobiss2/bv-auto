@@ -37,12 +37,8 @@ export async function POST(req: NextRequest) {
   // Try to find existing customer by phone
   const existing = await prisma.customer.findFirst({
     where: { phone: data.phone },
-    select: { id: true, smsConsentAt: true },
+    select: { id: true },
   });
-  // Consent given while booking also covers later texts to the matched customer.
-  if (existing && data.smsConsent && !existing.smsConsentAt) {
-    await prisma.customer.update({ where: { id: existing.id }, data: { smsConsentAt: new Date() } });
-  }
 
   const request = await prisma.serviceRequest.create({
     data: {
