@@ -5,6 +5,8 @@ import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { smsConfigured } from "@/lib/sms";
 
 // Weekly: find vehicles with maintenance intervals due soon (within 500 miles or 14 days)
+const TEXT_PENDING_CONSENT = "(text held: no SMS consent yet)";
+
 export async function GET(req: NextRequest) {
   if (!isCronAuthorized(req)) return apiError("Unauthorized", 401);
 
@@ -44,22 +46,24 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    let created = false;
+    const canText = !!customer.phone && smsConfigured && !customer.smsOptOut && !customer.marketingOptOut;
+    let followUpId = existing?.id ?? null;
     if (!existing) {
-      await prisma.followUp.create({
+      const followUp = await prisma.followUp.create({
         data: {
           customerId: customer.id,
           title: `${interval.serviceName} due — ${vehicleStr}`,
-          notes: `Maintenance interval reminder. Due: ${dueDateStr}`,
+          notes: `Maintenance interval reminder. Due: ${dueDateStr}${canText && !customer.smsConsentAt ? ` ${TEXT_PENDING_CONSENT}` : ""}`,
           dueAt: interval.nextDueDate || in14Days,
         },
       });
-      created = true;
+      followUpId = followUp.id;
     }
 
-    // Only notify when the follow-up is newly created; otherwise every weekly
-    // cron run would re-text the same customer about the same interval.
-    if (created && customer.phone && smsConfigured && !customer.smsOptOut && !customer.marketingOptOut && customer.smsConsentAt) {
+    // Text once per follow-up: when it is created, or later once consent arrives
+    // for one that was held back. Otherwise every weekly run would re-text.
+    const pending = !!existing?.notes?.includes(TEXT_PENDING_CONSENT);
+    if ((!existing || pending) && canText && customer.smsConsentAt && customer.phone) {
       try {
         const twilio = (await import("twilio")).default;
         const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
@@ -69,6 +73,12 @@ export async function GET(req: NextRequest) {
           to: customer.phone,
         });
         notified++;
+        if (pending && followUpId) {
+          await prisma.followUp.update({
+            where: { id: followUpId },
+            data: { notes: existing!.notes!.replace(` ${TEXT_PENDING_CONSENT}`, "") },
+          });
+        }
       } catch (e) {
         console.error("Maintenance SMS error:", e);
       }
