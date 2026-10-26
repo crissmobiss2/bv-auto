@@ -45,5 +45,5 @@ vi.mock("@/lib/prisma", () => ({ prisma: db }));
 
 // Mock auth
 vi.mock("@/lib/auth", () => ({
-  auth: vi.fn(() => Promise.resolve({ user: { id: "test-user", role: "ADMIN", email: "test@test.com" } })),
+  auth: vi.fn(() => Promise.resolve({ user: { id: "test-user", role: "ADMIN", email: "test@test.com", shopId: "shop_1" } })),
 }));

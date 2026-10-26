@@ -1,3 +1,5 @@
+import { resolveShopId } from "@/lib/api-helpers";
+import { enterShop } from "@/lib/tenant";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -84,6 +86,10 @@ async function getDashboardData() {
 
 export default async function DashboardPage() {
   const session = await auth();
+  if (session?.user) {
+    const shopId = await resolveShopId(session.user);
+    if (shopId) enterShop(shopId);
+  }
 
   const customerCount = await prisma.customer.count();
   if (customerCount === 0) redirect("/onboarding");

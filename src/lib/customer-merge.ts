@@ -1,3 +1,4 @@
+import { currentShopId } from "@/lib/tenant";
 // CRM-008: duplicate-customer detection and merge.
 import type { Prisma, PrismaClient } from "@prisma/client";
 
@@ -15,9 +16,11 @@ export async function findDuplicateCustomers(
   const p = phoneKey(phone);
   const e = (email ?? "").trim().toLowerCase();
   if (p.length < 7 && !e) return [];
+  const shopId = currentShopId();
   return db.$queryRaw<DuplicateCustomer[]>`
     SELECT "id", "firstName", "lastName", "phone", "email" FROM "Customer"
     WHERE "isActive" = true
+      AND (${shopId}::text IS NULL OR "shopId" = ${shopId})
       AND "id" <> ${excludeId ?? ""}
       AND (
         (${p.length >= 7} AND right(regexp_replace(coalesce("phone", ''), '\\D', '', 'g'), 10) = ${p})

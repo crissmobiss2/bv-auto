@@ -1,3 +1,4 @@
+import { shopSettingKey } from "@/lib/tenant";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, apiError, apiSuccess } from "@/lib/api-helpers";
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   const { platform, invoiceIds } = await req.json();
   if (!["quickbooks", "xero"].includes(platform)) return apiError("Invalid platform");
 
-  const setting = await prisma.settings.findUnique({ where: { key: `${platform}_connection` } });
+  const setting = await prisma.settings.findUnique({ where: { key: shopSettingKey(`${platform}_connection`) } });
   let conn = setting?.value as Record<string, unknown> | null;
 
   if (!conn?.accessToken) {
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
   }
 
   await prisma.settings.update({
-    where: { key: `${platform}_connection` },
+    where: { key: shopSettingKey(`${platform}_connection`) },
     data: { value: { ...conn, lastSync: new Date().toISOString() } },
   });
 

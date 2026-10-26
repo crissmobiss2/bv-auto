@@ -1,3 +1,4 @@
+import { shopSettingKey } from "@/lib/tenant";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/api-helpers";
@@ -60,9 +61,9 @@ export async function GET(req: NextRequest) {
     } catch {}
 
     await prisma.settings.upsert({
-      where: { key: "xero_connection" },
+      where: { key: shopSettingKey("xero_connection") },
       create: {
-        key: "xero_connection",
+        key: shopSettingKey("xero_connection"),
         value: {
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token,

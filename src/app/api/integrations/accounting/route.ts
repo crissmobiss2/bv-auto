@@ -1,3 +1,4 @@
+import { shopSettingKey } from "@/lib/tenant";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
@@ -8,8 +9,8 @@ export async function GET() {
   if (error) return error;
 
   const [qbSetting, xeroSetting] = await Promise.all([
-    prisma.settings.findUnique({ where: { key: "quickbooks_connection" } }),
-    prisma.settings.findUnique({ where: { key: "xero_connection" } }),
+    prisma.settings.findUnique({ where: { key: shopSettingKey("quickbooks_connection") } }),
+    prisma.settings.findUnique({ where: { key: shopSettingKey("xero_connection") } }),
   ]);
 
   const qb = qbSetting?.value as Record<string, unknown> | null;
@@ -44,6 +45,6 @@ export async function DELETE(req: NextRequest) {
   const { platform } = await req.json();
   if (!["quickbooks", "xero"].includes(platform)) return apiError("Invalid platform");
 
-  await prisma.settings.deleteMany({ where: { key: `${platform}_connection` } });
+  await prisma.settings.deleteMany({ where: { key: shopSettingKey(`${platform}_connection`) } });
   return apiSuccess({ disconnected: true });
 }

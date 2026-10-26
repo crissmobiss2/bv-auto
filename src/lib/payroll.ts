@@ -168,7 +168,7 @@ export const periodDay = (v: string, endOfDay = false) =>
 export type PayrollSnapshot = { technicians: TechPayroll[]; summary: ReturnType<typeof summarizePayroll> };
 
 export function findApprovedRun(start: string, end: string) {
-  return prisma.payrollRun.findUnique({
-    where: { periodStart_periodEnd: { periodStart: periodKey(start), periodEnd: periodKey(end) } },
+  return prisma.payrollRun.findFirst({
+    where: { periodStart: periodKey(start), periodEnd: periodKey(end) },
   });
 }
