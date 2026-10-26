@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, apiSuccess } from "@/lib/api-helpers";
+import {
+  PERIOD_DATE,
+  buildPayroll,
+  findApprovedRun,
+  summarizePayroll,
+  type PayrollSnapshot,
+  type TechPayroll,
+} from "@/lib/payroll";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
@@ -22,64 +30,15 @@ export async function GET(req: NextRequest) {
   const to = parseDateParam(toParam, true) ?? new Date();
   const format = searchParams.get("format");
 
-  const staff = await prisma.user.findMany({
-    where: { role: { in: ["TECHNICIAN", "ADMIN"] }, isActive: true },
-    include: {
-      payrollRate: true,
-      timeLogs: {
-        where: { clockedIn: { gte: from }, clockedOut: { lte: to } },
-        include: { job: { select: { id: true, jobNumber: true, title: true, invoice: { select: { totalAmount: true } } } } },
-      },
-    },
-  });
-
-  const technicians = staff.map((tech) => {
-    const logs = tech.timeLogs;
-    const rate = tech.payrollRate;
-    const payType = rate?.rateType || "HOURLY";
-    const rateValue = payType === "COMMISSION"
-      ? Number(rate?.commissionPct || 0)
-      : Number(rate?.hourlyRate || 0);
-    const flatRateMul = Number(rate?.flatRateMul || 1.0);
-
-    let grossPay = 0;
-    const details = logs
-      .flatMap((l) => {
-        const clockedOut = l.clockedOut;
-        if (!clockedOut) return [];
-        const minutes = Math.round((clockedOut.getTime() - l.clockedIn.getTime()) / 60000);
-        const hours = minutes / 60;
-        let pay = 0;
-        if (payType === "HOURLY") pay = hours * rateValue;
-        else if (payType === "FLAT_RATE") pay = hours * flatRateMul * (rateValue || 25);
-        else if (payType === "COMMISSION") pay = Number(l.job?.invoice?.totalAmount || 0) * (rateValue / 100);
-        pay = Math.round(pay * 100) / 100;
-        grossPay += pay;
-        return [{
-          jobId: l.jobId,
-          jobTitle: l.job?.title || "Untitled job",
-          hours: Math.round(hours * 100) / 100,
-          pay,
-          type: payType,
-        }];
-      });
-
-    return {
-      userId: tech.id,
-      name: tech.name,
-      email: tech.email,
-      role: tech.role,
-      payType,
-      rate: rateValue,
-      totalHours: Math.round((logs.reduce((s, l) => {
-        if (!l.clockedOut) return s;
-        return s + (new Date(l.clockedOut).getTime() - new Date(l.clockedIn).getTime()) / 3600000;
-      }, 0)) * 100) / 100,
-      totalJobs: new Set(logs.map((l) => l.jobId)).size,
-      grossPay: Math.round(grossPay * 100) / 100,
-      details,
-    };
-  });
+  // An approved period is served from its frozen snapshot (FIN-006).
+  const run =
+    fromParam && toParam && PERIOD_DATE.test(fromParam) && PERIOD_DATE.test(toParam)
+      ? await findApprovedRun(fromParam, toParam)
+      : null;
+  const technicians: TechPayroll[] = run
+    ? (run.snapshot as unknown as PayrollSnapshot).technicians
+    : await buildPayroll(from, to);
+  const runInfo = run ? { id: run.id, status: run.status, approvedAt: run.approvedAt } : null;
 
   if (format === "csv") {
     // Neutralize spreadsheet formulas and always quote/escape text cells.
@@ -90,7 +49,7 @@ export async function GET(req: NextRequest) {
       const safe = typeof value === "string" && /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
       return `"${safe.replace(/"/g, '""')}"`;
     };
-    const rows = ["Name,Role,Rate Type,Rate,Total Hours,Gross Pay,Job Count"];
+    const rows = ["Name,Role,Rate Type,Rate,Total Hours,Overtime Hours,Gross Pay,Job Count"];
     for (const p of technicians) {
       rows.push([
         p.name,
@@ -98,6 +57,7 @@ export async function GET(req: NextRequest) {
         p.payType,
         p.rate,
         p.totalHours,
+        p.overtimeHours ?? 0,
         p.grossPay,
         p.totalJobs,
       ].map(csvCell).join(","));
@@ -115,25 +75,21 @@ export async function GET(req: NextRequest) {
         ].map(csvCell).join(","));
       }
     }
+    rows.push("", csvCell(run
+      ? `APPROVED payroll run ${run.id} (${run.approvedAt.toISOString()})`
+      : "ESTIMATE - period not approved; amounts may still change"));
     return new NextResponse(rows.join("\n"), {
       headers: {
         "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="payroll-${from.toISOString().slice(0, 10)}-to-${to.toISOString().slice(0, 10)}.csv"`,
+        "Content-Disposition": `attachment; filename="payroll-${from.toISOString().slice(0, 10)}-to-${to.toISOString().slice(0, 10)}-${run ? "approved" : "estimate"}.csv"`,
       },
     });
   }
 
-  const totalGross = technicians.reduce((s, p) => s + p.grossPay, 0);
-  const totalHours = technicians.reduce((s, p) => s + p.totalHours, 0);
-
   return apiSuccess({
     technicians,
-    summary: {
-      techCount: technicians.length,
-      totalPayroll: Math.round(totalGross * 100) / 100,
-      totalHours: Math.round(totalHours * 100) / 100,
-      avgPay: technicians.length ? Math.round((totalGross / technicians.length) * 100) / 100 : 0,
-    },
+    summary: summarizePayroll(technicians),
+    run: runInfo,
     period: { from, to },
   });
 }

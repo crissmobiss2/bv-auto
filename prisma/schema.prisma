@@ -1275,6 +1275,21 @@ model PayrollPayout {
   @@index([userId])
 }
 
+// Approved payroll period: the computed pay is frozen in `snapshot` so later
+// rate, time-log or invoice changes cannot silently rewrite historical pay.
+model PayrollRun {
+  id           String   @id @default(cuid())
+  periodStart  DateTime
+  periodEnd    DateTime
+  status       String   @default("APPROVED")
+  snapshot     Json
+  totalGross   Decimal  @db.Decimal(12, 2)
+  approvedById String?
+  approvedAt   DateTime @default(now())
+
+  @@unique([periodStart, periodEnd])
+}
+
 // ─── VEHICLE SPECS DATABASE ───────────────────────────────────────────────────
 
 model VehicleSpec {
