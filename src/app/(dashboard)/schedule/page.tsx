@@ -53,7 +53,15 @@ export default function SchedulePage() {
 
   const { data: unscheduled = [] } = useQuery<Job[]>({
     queryKey: ["schedule-unscheduled"],
-    queryFn: () => axios.get("/api/jobs?unscheduled=1&limit=200").then((r) => r.data.jobs || []),
+    queryFn: async () => {
+      const all: Job[] = [];
+      for (let page = 1; ; page++) {
+        const { data } = await axios.get(`/api/jobs?unscheduled=1&limit=100&page=${page}`);
+        const batch: Job[] = data.jobs || [];
+        all.push(...batch);
+        if (batch.length < 100 || all.length >= (data.total ?? 0)) return all;
+      }
+    },
   });
 
   const { data: techList = [] } = useQuery<Tech[]>({
