@@ -1,4 +1,4 @@
-import { enterShop } from "@/lib/tenant";
+import { openShopScope } from "@/lib/tenant";
 import { redactAuditPayload } from "@/lib/audit-redact";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -12,14 +12,16 @@ export async function resolveShopId(user: { id: string; shopId?: string | null }
   return row?.shopId ?? null;
 }
 
+/** Binds the caller to the user's shop; await it before any tenant query. */
 export async function requireAuth() {
+  const scope = openShopScope();
   const session = await auth();
   if (!session?.user) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }), session: null };
   }
   const shopId = await resolveShopId(session.user);
   if (!shopId) return { error: NextResponse.json({ error: "No shop for this account" }, { status: 403 }), session: null };
-  enterShop(shopId);
+  scope.shopId = shopId;
   return { error: null, session };
 }
 
