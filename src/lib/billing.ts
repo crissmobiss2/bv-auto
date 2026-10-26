@@ -50,3 +50,8 @@ export async function isShopLocked(shopId: string) {
   cache.set(shopId, { locked, at: Date.now() });
   return locked;
 }
+
+/** The shop of a user whose sign-in token predates shop ids. */
+export async function shopIdForUser(userId: string) {
+  return (await prisma.user.findUnique({ where: { id: userId }, select: { shopId: true } }))?.shopId ?? null;
+}
