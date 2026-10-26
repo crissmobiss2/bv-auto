@@ -14,7 +14,8 @@ export function formatCurrency(amount: number | string | null | undefined): stri
 }
 
 // Dates render in the shop's timezone, not the viewer's device timezone (UX-011).
-const DISPLAY_TZ = process.env.NEXT_PUBLIC_SHOP_TIMEZONE || "America/Los_Angeles";
+const DISPLAY_TZ =
+  process.env.NEXT_PUBLIC_SHOP_TIMEZONE || process.env.SHOP_TIMEZONE || "America/Los_Angeles";
 
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
