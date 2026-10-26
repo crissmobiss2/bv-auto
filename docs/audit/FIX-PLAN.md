@@ -70,11 +70,6 @@ Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
 - **PORT-011 / FLOW-003**: a public booking now sends a confirmation SMS and/or email (best-effort, so a provider failure never loses the booking), creates an in-app notification plus a push for ADMIN/DISPATCHER/SERVICE_ADVISOR users, and shows the customer a `BR-XXXXXX` reference.
 - Not exercised against live Twilio/Resend (no keys in this environment).
 
-## Status updates — audit-log retention and review clicks (branch `devin/*-audit-retention`)
-
-- **DATA-010 (fixed)**: `logAudit` passes `before`/`after` through `redactAuditPayload`. That replaces the values of password/hash/token/secret/API-key/OTP/card/signature keys at any depth with `[redacted]`. The daily `/api/cron/health-check` deletes audit rows older than `AUDIT_RETENTION_DAYS` (default 365, minimum 30). `GET /api/audit` is ADMIN-only, matching the sidebar; previously DISPATCHER could read it too. Names, emails and phones in audit diffs are kept for accountability.
-- **PORT-012 (fixed)**: `/api/review/[token]` no longer sets `clickedAt` for non-GET requests, a missing user-agent, or link-preview/mail-scanner user-agents (Slackbot, facebookexternalhit, WhatsApp, Proofpoint/SafeLinks, curl, headless…). The redirect still works for them.
-
 ## Phase 1 — P1 workflow/data integrity (OPEN)
 | ID | Fix | Why now | Effort | Files |
 |---|---|---|---|---|
