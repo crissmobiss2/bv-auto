@@ -21,7 +21,7 @@ export default function ApproveQuotePage() {
 
   const { data: shopInfo } = useQuery({
     queryKey: ["shop-info"],
-    queryFn: () => axios.get("/api/shop-info").then((r) => r.data),
+    queryFn: () => axios.get(`/api/shop-info?quote=${encodeURIComponent(token)}`).then((r) => r.data),
     staleTime: 10 * 60 * 1000,
   });
   const shopPhone = shopInfo?.phone as string | null | undefined;

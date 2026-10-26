@@ -51,11 +51,9 @@ describe("booking SMS consent", () => {
     expect(prisma.serviceRequest.create).not.toHaveBeenCalled();
   });
 
-  it("silently drops bot submissions (honeypot or instant submit)", async () => {
-    for (const extra of [{ website: "http://spam.example" }, { elapsedMs: 500 }]) {
-      const res = await post(extra);
-      expect(res.status).toBe(201);
-    }
+  it("silently drops honeypot bots and asks instant submits to resubmit", async () => {
+    expect((await post({ website: "http://spam.example" })).status).toBe(201);
+    expect((await post({ elapsedMs: 500 })).status).toBe(400);
     expect(prisma.serviceRequest.create).not.toHaveBeenCalled();
   });
 });
