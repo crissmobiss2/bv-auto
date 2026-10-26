@@ -2,7 +2,7 @@
   "name": "B&V Mobile Auto",
   "short_name": "BV Auto",
   "description": "Mobile auto repair — service history, invoices, and scheduling at your fingertips",
-  "start_url": "/",
+  "start_url": "/login",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "background_color": "#1e40af",

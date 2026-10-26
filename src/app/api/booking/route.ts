@@ -24,6 +24,8 @@ const bookingSchema = z.object({
   preferredDate: z.string().optional(),
   smsConsent: z.boolean().optional(),
   shop: z.string().max(80).optional(),
+  website: z.string().max(200).optional(),
+  elapsedMs: z.number().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -36,6 +38,11 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError("Invalid data", 400);
 
   const data = parsed.data;
+
+  // Spam bots fill the hidden "website" field or submit instantly; answer as if it worked so they don't adapt.
+  if (data.website || (data.elapsedMs !== undefined && data.elapsedMs < 3000)) {
+    return apiSuccess({ received: true }, 201);
+  }
 
   // Bookings belong to the shop named in the link (?shop=slug); links without one go to the original shop.
   const shop = await resolvePublicShop(data.shop);

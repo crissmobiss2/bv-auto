@@ -14,13 +14,15 @@ import { APP_NAME } from "@/lib/app-name";
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} — Business Operating System`,
-  description: "CRM, quoting, invoicing, parts, and dispatch for mobile auto repair",
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app"),
+  title: { default: `${APP_NAME} — Shop management software for auto repair`, template: `%s | ${APP_NAME}` },
+  description: "Jobs, estimates, invoices, booking, customer texts, parts and payroll for independent auto repair shops.",
+  openGraph: { type: "website", siteName: APP_NAME },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "BV Auto",
+    title: APP_NAME,
   },
   icons: {
     icon: "/icons/icon.svg",

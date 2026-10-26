@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,9 @@ export default function BookPage() {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", smsConsent: false,
     vehicleYear: "", vehicleMake: "", vehicleModel: "",
-    serviceType: "", description: "", preferredDate: "",
+    serviceType: "", description: "", preferredDate: "", website: "",
   });
+  const openedAt = useRef(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [reference, setReference] = useState("");
@@ -41,6 +42,7 @@ export default function BookPage() {
   const [shopPhone, setShopPhone] = useState<string | null>(null);
   const [shopName, setShopName] = useState("");
   useEffect(() => {
+    openedAt.current = Date.now();
     fetch(`/api/shop-info${shopParam() ? `?shop=${encodeURIComponent(shopParam()!)}` : ""}`).then(r => r.json()).then(d => { setShopPhone(d.phone || null); setShopName(d.name || ""); }).catch(() => {});
   }, []);
 
@@ -55,6 +57,7 @@ export default function BookPage() {
       const res = await axios.post("/api/booking", {
         ...form,
         shop: shopParam() || undefined,
+        elapsedMs: Date.now() - openedAt.current,
         vehicleYear: form.vehicleYear ? parseInt(form.vehicleYear) : undefined,
       });
       setReference(res.data?.reference ?? "");
@@ -154,6 +157,17 @@ export default function BookPage() {
             <Input type="date" value={form.preferredDate} onChange={(e) => setForm({ ...form, preferredDate: e.target.value })} />
           </div>
 
+          {/* Hidden from people; bots that fill every field reveal themselves here. */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute -left-[9999px] h-0 w-0 opacity-0"
+            value={form.website}
+            onChange={(e) => setForm({ ...form, website: e.target.value })}
+          />
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <label className="flex items-start gap-2 text-xs text-gray-600">

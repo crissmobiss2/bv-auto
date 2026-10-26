@@ -24,6 +24,8 @@ const PUBLIC_API_PREFIXES = [
 // Pages that are intentionally public. The booking POST is public, but the
 // booking list is staff-only and is handled separately below.
 const PUBLIC_PAGE_PREFIXES = [
+  "/robots.txt",
+  "/sitemap.xml",
   "/privacy",
   "/terms",
   "/approve",
@@ -156,7 +158,12 @@ export default async function proxy(req: NextRequest) {
   }
 
   if (pathname === "/") {
-    if (!session) return NextResponse.redirect(new URL("/login", req.url));
+    if (!session) {
+      // The Android and desktop app shells open "/" and should land on sign-in, not the marketing page.
+      const ua = req.headers.get("user-agent") ?? "";
+      if (/; wv\)|Electron/.test(ua)) return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.next();
+    }
     return NextResponse.redirect(new URL(roleDest(role), req.url));
   }
 
