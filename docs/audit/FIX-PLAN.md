@@ -70,10 +70,6 @@ Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
 - **PORT-011 / FLOW-003**: a public booking now sends a confirmation SMS and/or email (best-effort, so a provider failure never loses the booking), creates an in-app notification plus a push for ADMIN/DISPATCHER/SERVICE_ADVISOR users, and shows the customer a `BR-XXXXXX` reference.
 - Not exercised against live Twilio/Resend (no keys in this environment).
 
-## Status updates — accounting sync (branch `devin/*-accounting-sync`)
-
-- **FIN-007 (fixed for QuickBooks)**: before creating an invoice, the sync looks up `DocNumber` in QuickBooks. If the invoice already exists, it sparse-updates it using `Id` + `SyncToken`, so retries never create duplicates. A per-invoice Postgres advisory lock makes a second, simultaneous sync skip invoices already being pushed. Customers are matched by `DisplayName` and created when missing; the old payload sent a name where QuickBooks needs a customer id. Expired access tokens are refreshed with the stored refresh token. Sync is limited to ADMIN/ACCOUNTANT and now includes PARTIAL and OVERDUE invoices. Not verified against a real QuickBooks company (no credentials here). Xero push is still "coming soon", and payments are not pushed.
-
 ## Phase 1 — P1 workflow/data integrity (OPEN)
 | ID | Fix | Why now | Effort | Files |
 |---|---|---|---|---|
