@@ -1,73 +1,33 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiError, apiSuccess } from "@/lib/api-helpers";
+import { pushInvoiceToQuickBooks, refreshQuickBooksToken, type QbSyncInvoice, type QbTokens } from "@/lib/quickbooks";
 import { InvoiceStatus } from "@prisma/client";
 
-type SyncInvoice = {
-  id: string;
-  invoiceNumber: string;
-  totalAmount: unknown;
-  taxAmount: unknown;
-  createdAt: Date;
-  dueDate: Date | null;
-  qbInvoiceId: string | null;
-  customer: { firstName: string; lastName: string; email: string | null; company: string | null };
-  lineItems: Array<{ description: string; quantity: unknown; unitPrice: unknown; total: unknown; type: string }>;
-};
+const syncLockKey = (invoiceId: string) => `accounting-sync:${invoiceId}`;
 
-async function syncToQuickBooks(invoices: SyncInvoice[], tokens: { accessToken: string; realmId: string }) {
-  const results = { synced: 0, failed: 0, errors: [] as string[] };
+async function syncToQuickBooks(invoices: (QbSyncInvoice & { id: string })[], tokens: QbTokens) {
+  const results = { synced: 0, failed: 0, skipped: 0, errors: [] as string[] };
 
   for (const inv of invoices) {
     try {
-      const qbInvoice = {
-        DocNumber: inv.invoiceNumber,
-        TxnDate: inv.createdAt.toISOString().slice(0, 10),
-        DueDate: inv.dueDate?.toISOString().slice(0, 10) || undefined,
-        CustomerRef: { name: `${inv.customer.firstName} ${inv.customer.lastName}` },
-        Line: inv.lineItems.map((li) => ({
-          DetailType: "SalesItemLineDetail",
-          Amount: Number(li.total),
-          Description: li.description,
-          SalesItemLineDetail: { Qty: Number(li.quantity), UnitPrice: Number(li.unitPrice) },
-        })),
-        TxnTaxDetail: { TotalTax: Number(inv.taxAmount) },
-      };
-
-      const url = `https://quickbooks.api.intuit.com/v3/company/${tokens.realmId}/invoice`;
-      const body = inv.qbInvoiceId
-        ? { ...qbInvoice, Id: inv.qbInvoiceId, sparse: true }
-        : qbInvoice;
-
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokens.accessToken}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
+      // Per-invoice lock: a second sync running at the same time skips this invoice
+      // instead of racing it into a duplicate QuickBooks invoice.
+      const outcome = await prisma.$transaction(
+        async (tx) => {
+          const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
+            SELECT pg_try_advisory_xact_lock(hashtext(${syncLockKey(inv.id)})) AS locked`;
+          if (!locked) return "skipped" as const;
+          const qbId = await pushInvoiceToQuickBooks(inv, tokens);
+          await tx.invoice.update({ where: { id: inv.id }, data: { qbSyncedAt: new Date(), qbInvoiceId: qbId } });
+          return "synced" as const;
         },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.text();
-        results.failed++;
-        results.errors.push(`${inv.invoiceNumber}: ${res.status} ${errBody.slice(0, 100)}`);
-        continue;
-      }
-
-      const data = await res.json();
-      const qbId = data?.Invoice?.Id as string | undefined;
-
-      await prisma.invoice.update({
-        where: { id: inv.id },
-        data: { qbSyncedAt: new Date(), qbInvoiceId: qbId || inv.qbInvoiceId },
-      });
-
-      results.synced++;
+        { timeout: 30_000, maxWait: 10_000 },
+      );
+      results[outcome]++;
     } catch (err) {
       results.failed++;
-      results.errors.push(`${inv.invoiceNumber}: ${String(err).slice(0, 100)}`);
+      results.errors.push(`${inv.invoiceNumber}: ${String(err instanceof Error ? err.message : err).slice(0, 160)}`);
     }
   }
 
@@ -75,14 +35,14 @@ async function syncToQuickBooks(invoices: SyncInvoice[], tokens: { accessToken: 
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
 
   const { platform, invoiceIds } = await req.json();
   if (!["quickbooks", "xero"].includes(platform)) return apiError("Invalid platform");
 
   const setting = await prisma.settings.findUnique({ where: { key: `${platform}_connection` } });
-  const conn = setting?.value as Record<string, unknown> | null;
+  let conn = setting?.value as Record<string, unknown> | null;
 
   if (!conn?.accessToken) {
     return apiError(`${platform === "quickbooks" ? "QuickBooks" : "Xero"} is not connected. Configure in Settings > Integrations.`);
@@ -90,7 +50,10 @@ export async function POST(req: NextRequest) {
 
   const where = invoiceIds?.length
     ? { id: { in: invoiceIds as string[] } }
-    : { status: { in: [InvoiceStatus.SENT, InvoiceStatus.PAID] }, qbSyncedAt: null };
+    : {
+        status: { in: [InvoiceStatus.SENT, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE, InvoiceStatus.PAID] },
+        qbSyncedAt: null,
+      };
 
   const invoices = await prisma.invoice.findMany({
     where,
@@ -106,6 +69,8 @@ export async function POST(req: NextRequest) {
   let results;
 
   if (platform === "quickbooks") {
+    conn = await refreshQuickBooksToken(conn);
+    if (!conn) return apiError("QuickBooks session expired. Reconnect it in Settings > Integrations.", 401);
     results = await syncToQuickBooks(invoices, {
       accessToken: conn.accessToken as string,
       realmId: conn.realmId as string,

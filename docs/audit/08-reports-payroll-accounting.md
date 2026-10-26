@@ -23,7 +23,7 @@
 | Labor times | Page/API | PASS | Tech time logs feed payroll. |
 | Dashboard revenue | API | PASS | Payment-based; shop timezone. |
 | Reports revenue | API | PARTIAL | Invoice-based; partial invoices counted fully. |
-| Accounting sync (QBO/Xero) | Integration | PARTIAL | Push exists; no idempotency key. |
+| Accounting sync (QBO/Xero) | Integration | PARTIAL | QuickBooks push is idempotent by DocNumber with per-invoice locking (FIN-007 fixed); Xero push and payment sync not implemented. |
 | Period close/lock | Workflow | FAIL | No lock. |
 | Shop scoping | Data | FAIL | See DATA-001. |
 
