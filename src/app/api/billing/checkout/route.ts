@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
     ? Math.floor(shop.trialEndsAt.getTime() / 1000)
     : undefined;
 
+  // A checkout finished moments ago may not have reached our webhook yet.
+  const live = await platformStripe.subscriptions.list({ customer, status: "all", limit: 20 });
+  if (live.data.some((s) => ["active", "trialing", "past_due", "incomplete"].includes(s.status))) {
+    return apiError("You already have a subscription. Use Manage billing to change it.", 409);
+  }
+
   // Only one checkout may be open at a time, so finishing two tabs can't create two subscriptions.
   const open = await platformStripe.checkout.sessions.list({ customer, status: "open", limit: 20 });
   await Promise.all(open.data.map((s) => platformStripe!.checkout.sessions.expire(s.id)));
