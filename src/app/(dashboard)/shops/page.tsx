@@ -47,11 +47,6 @@ export default function ShopsPage() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["shops"] }); setEditing(null); },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => axios.delete(`/api/shops/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shops"] }),
-  });
-
   const setDefaultMutation = useMutation({
     mutationFn: (id: string) => axios.patch(`/api/shops/${id}`, { isDefault: true }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shops"] }),
@@ -79,9 +74,9 @@ export default function ShopsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Building2 className="h-6 w-6 text-indigo-600" /> Shops & Locations</h1>
-          <p className="text-sm text-gray-500">Manage your shop locations, labor rates, and tax rates</p>
+          <p className="text-sm text-gray-500">Your shop details, labor rate, and tax rate</p>
         </div>
-        {canManage && <Button onClick={() => setShowAdd(true)} className="bg-indigo-600 hover:bg-indigo-700"><Plus className="h-4 w-4 mr-2" /> Add Shop</Button>}
+        {canManage && !isLoading && shops.length === 0 && <Button onClick={() => setShowAdd(true)} className="bg-indigo-600 hover:bg-indigo-700"><Plus className="h-4 w-4 mr-2" /> Add Shop</Button>}
       </div>
 
       {isLoading ? <div className="text-center py-8 text-gray-500">Loading...</div> : (
@@ -129,7 +124,6 @@ export default function ShopsPage() {
                 {canManage && !shop.isDefault && (
                   <div className="flex gap-2 pt-2">
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => setDefaultMutation.mutate(shop.id)}>Set Default</Button>
-                    <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-50" onClick={() => deleteMutation.mutate(shop.id)}>Remove</Button>
                   </div>
                 )}
               </CardContent>

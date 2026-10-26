@@ -57,7 +57,13 @@ export default function OnboardingPage() {
     if (!shopName.trim()) { setError("Shop name is required"); return; }
     setLoading(true); setError("");
     try {
-      await axios.post("/api/shops", { name: shopName, phone: shopPhone, email: shopEmail, address: shopAddress });
+      const shopData = { name: shopName, phone: shopPhone, email: shopEmail, address: shopAddress };
+      try {
+        await axios.post("/api/shops", shopData);
+      } catch (e) {
+        // Single-shop install: the shop already exists, so keep its saved details (edit them on the Shops page).
+        if (!axios.isAxiosError(e) || e.response?.status !== 409) throw e;
+      }
       setStep(2);
     } catch (e: unknown) {
       setError(axios.isAxiosError(e) ? e.response?.data?.error : "Failed to save shop");

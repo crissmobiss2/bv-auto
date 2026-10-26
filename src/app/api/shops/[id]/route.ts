@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 import { z } from "zod";
+import { ONLY_SHOP_MESSAGE } from "@/lib/shop";
 
 const updateShopSchema = z.object({
   name: z.string().min(1).optional(),
@@ -29,6 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!parsed.success) return apiError(parsed.error.issues[0].message, 400);
 
   const { taxRate, email, ...rest } = parsed.data;
+  if (rest.isActive === false) return apiError(ONLY_SHOP_MESSAGE, 409);
   if (rest.isDefault) {
     await prisma.shop.updateMany({ data: { isDefault: false } });
   }
@@ -46,9 +48,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireRole(["ADMIN"]);
   if (error) return error;
-  const { id } = await params;
-  await prisma.shop.update({ where: { id }, data: { isActive: false } });
-  return apiSuccess({ ok: true });
+  await params;
+  return apiError(ONLY_SHOP_MESSAGE, 409);
 }
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
