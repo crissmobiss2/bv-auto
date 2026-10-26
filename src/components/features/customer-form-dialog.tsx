@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,8 +73,11 @@ export function CustomerFormDialog({ open, onOpenChange, customer, onSuccess }: 
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const mutation = useMutation({
-    mutationFn: (data: CustomerFormValues) => {
+    // 409 duplicates are shown inline below, so keep the global error toast out of it.
+    onError: () => {},
+    mutationFn: ({ allowDuplicate, ...data }: CustomerFormValues & { allowDuplicate?: boolean }) => {
       const payload = {
+        allowDuplicate: allowDuplicate || undefined,
         ...data,
         email: data.email || undefined,
         altPhone: data.altPhone || undefined,
@@ -98,6 +102,9 @@ export function CustomerFormDialog({ open, onOpenChange, customer, onSuccess }: 
       onOpenChange(false);
     },
   });
+
+  const duplicates: { id: string; firstName: string; lastName: string; phone: string; email: string | null }[] =
+    (axios.isAxiosError(mutation.error) && mutation.error.response?.status === 409 && mutation.error.response.data?.duplicates) || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -183,7 +190,25 @@ export function CustomerFormDialog({ open, onOpenChange, customer, onSuccess }: 
             <Textarea rows={2} value={form.notes} onChange={set("notes")} />
           </div>
         </div>
-        {mutation.isError && (
+        {duplicates.length > 0 && (
+          <div className="text-sm bg-amber-50 border border-amber-200 rounded p-2 space-y-1" role="alert">
+            <p className="font-medium text-amber-900">Possible duplicate — this phone or email is already on file:</p>
+            <ul className="list-disc pl-5">
+              {duplicates.map((d) => (
+                <li key={d.id}>
+                  <Link href={`/customers/${d.id}`} className="text-blue-700 underline" onClick={() => onOpenChange(false)}>
+                    {d.firstName} {d.lastName}
+                  </Link>{" "}
+                  <span className="text-gray-600">{d.phone}{d.email ? ` · ${d.email}` : ""}</span>
+                </li>
+              ))}
+            </ul>
+            <Button size="sm" variant="outline" onClick={() => mutation.mutate({ ...form, allowDuplicate: true })} disabled={mutation.isPending}>
+              Create anyway
+            </Button>
+          </div>
+        )}
+        {mutation.isError && duplicates.length === 0 && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
             {(mutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to save customer."}
           </p>
