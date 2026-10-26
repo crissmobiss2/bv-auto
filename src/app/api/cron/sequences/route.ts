@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   const due = await prisma.commEnrollment.findMany({
-    where: { status: "ACTIVE", nextStepAt: { lte: now } },
+    // Customers without recorded consent stay ACTIVE and resume once consent is recorded.
+    where: { status: "ACTIVE", nextStepAt: { lte: now }, customer: { smsConsentAt: { not: null } } },
     include: {
       sequence: { include: { steps: { orderBy: { stepNumber: "asc" } } } },
       customer: { select: { firstName: true, lastName: true, phone: true, smsOptOut: true, marketingOptOut: true, smsConsentAt: true } },
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    if (!enrollment.customer.phone || enrollment.customer.smsOptOut || enrollment.customer.marketingOptOut || !enrollment.customer.smsConsentAt) {
+    if (!enrollment.customer.phone || enrollment.customer.smsOptOut || enrollment.customer.marketingOptOut) {
       // Keep the enrollment but stop retrying a customer we cannot reach or who opted out.
       await prisma.commEnrollment.update({
         where: { id: enrollment.id },
