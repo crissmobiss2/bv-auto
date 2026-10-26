@@ -94,6 +94,7 @@ export async function GET(req: Request) {
       select: {
         amountPaid: true,
         totalAmount: true,
+        taxAmount: true,
         job: { select: { parts: { select: { totalCost: true } } } },
       },
     }),
@@ -155,9 +156,11 @@ export async function GET(req: Request) {
       // Collected revenue, not invoiced total: a partial payment must not be
       // reported as if the whole invoice was paid.
       // Parts cost is matched to the collected share so a 50% payment carries 50% of COGS.
-      const revenue = Number(inv.amountPaid);
+      const paid = Number(inv.amountPaid);
       const total = Number(inv.totalAmount);
-      const collectedShare = total > 0 ? Math.min(revenue / total, 1) : 1;
+      const collectedShare = total > 0 ? Math.min(paid / total, 1) : 1;
+      // Sales tax collected is owed to the state, not profit.
+      const revenue = paid - Number(inv.taxAmount ?? 0) * collectedShare;
       const partsCost = (inv.job?.parts || []).reduce((s, p) => s + (p.totalCost ? Number(p.totalCost) : 0), 0);
       const cogs = partsCost * collectedShare;
       acc.revenue += revenue;

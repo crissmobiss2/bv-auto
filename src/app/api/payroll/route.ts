@@ -1,3 +1,4 @@
+import { csvCell } from "@/lib/csv";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, apiSuccess } from "@/lib/api-helpers";
@@ -41,14 +42,6 @@ export async function GET(req: NextRequest) {
   const runInfo = run ? { id: run.id, status: run.status, approvedAt: run.approvedAt } : null;
 
   if (format === "csv") {
-    // Neutralize spreadsheet formulas and always quote/escape text cells.
-    // A technician or job title beginning with =, +, -, or @ must not execute
-    // when an accountant opens the export in Excel/Sheets.
-    const csvCell = (value: unknown) => {
-      const text = String(value ?? "");
-      const safe = typeof value === "string" && /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
-      return `"${safe.replace(/"/g, '""')}"`;
-    };
     const rows = ["Name,Role,Rate Type,Rate,Total Hours,Overtime Hours,Gross Pay,Job Count"];
     for (const p of technicians) {
       rows.push([
