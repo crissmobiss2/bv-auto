@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enterShop } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { sendPaymentReceiptEmail } from "@/lib/email";
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     if (existingPayment) return NextResponse.json({ received: true, duplicate: true });
 
     let result: {
-      invoice: { invoiceNumber: string; customer: { firstName: string; lastName: string; email: string | null; phone: string } };
+      invoice: { shopId: string | null; invoiceNumber: string; customer: { firstName: string; lastName: string; email: string | null; phone: string } };
       amountPaid: number;
     } | null = null;
 
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!result) return NextResponse.json({ received: true });
+    if (result.invoice.shopId) enterShop(result.invoice.shopId);
 
     const amountStr = formatCurrency(result.amountPaid);
     const customerName = `${result.invoice.customer.firstName} ${result.invoice.customer.lastName}`;

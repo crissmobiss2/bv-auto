@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { enterShop } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { getBranding } from "@/lib/shop";
@@ -16,6 +17,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   });
 
   if (!quote) return apiError("Quote not found or link has expired", 404);
+  if (quote.shopId) enterShop(quote.shopId);
   if (quote.status === "CONVERTED" || quote.status === "EXPIRED") {
     return apiError("This quote link is no longer active", 410);
   }
@@ -55,6 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   });
 
   if (!quote) return apiError("Quote not found", 404);
+  if (quote.shopId) enterShop(quote.shopId);
   if (["APPROVED", "DECLINED", "CONVERTED"].includes(quote.status)) {
     return apiError("This quote has already been responded to", 409);
   }

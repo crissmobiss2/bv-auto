@@ -7,6 +7,8 @@ vi.mock("@/lib/sms", () => ({ smsConfigured: true, ...sms }));
 vi.mock("@/lib/email", () => ({ emailConfigured: false, sendBookingConfirmationEmail: vi.fn() }));
 vi.mock("@/lib/push", () => ({ sendPushToUser: vi.fn(() => Promise.resolve()) }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => true), getIP: vi.fn(() => "1.1.1.1") }));
+const shops = vi.hoisted(() => ({ resolvePublicShop: vi.fn() }));
+vi.mock("@/lib/public-shop", () => shops);
 
 import { POST } from "@/app/api/booking/route";
 
@@ -23,6 +25,7 @@ describe("booking SMS consent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     m(prisma.customer.findFirst).mockResolvedValue(null);
+    shops.resolvePublicShop.mockResolvedValue({ id: "shop_1" });
     m(prisma.serviceRequest.create).mockImplementation(({ data }: { data: object }) => Promise.resolve({ id: "req_abcdef123", ...data }));
     m(prisma.user.findMany).mockResolvedValue([]);
   });
@@ -38,5 +41,13 @@ describe("booking SMS consent", () => {
     await post({ smsConsent: true });
     expect(sms.sendBookingConfirmationSMS).toHaveBeenCalledOnce();
     expect(m(prisma.serviceRequest.create).mock.calls[0][0].data.smsConsentAt).toBeInstanceOf(Date);
+  });
+
+  it("rejects a booking link for an unknown shop", async () => {
+    shops.resolvePublicShop.mockResolvedValue(null);
+    const res = await post({ shop: "no-such-shop" });
+    expect(res.status).toBe(404);
+    expect(shops.resolvePublicShop).toHaveBeenCalledWith("no-such-shop");
+    expect(prisma.serviceRequest.create).not.toHaveBeenCalled();
   });
 });

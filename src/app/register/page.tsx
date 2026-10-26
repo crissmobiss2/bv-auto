@@ -55,6 +55,8 @@ const ROLES: RoleOption[] = [
   },
 ];
 
+const shopParam = () => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("shop"));
+
 export default function RegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState<"role" | "details">("role");
@@ -82,6 +84,7 @@ export default function RegisterPage() {
         password: form.password,
         role: selectedRole,
         inviteCode: form.inviteCode || undefined,
+        shop: shopParam() || undefined,
       });
       setDone(true);
     } catch (err: unknown) {

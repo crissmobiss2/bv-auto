@@ -1,5 +1,6 @@
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest } from "next/server";
+import { enterShop } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { emailConfigured, emailFrom, escapeHtml } from "@/lib/email";
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
   let sent = 0;
 
   for (const job of jobs) {
+    if (job.shopId) enterShop(job.shopId);
     const request = await prisma.reviewRequest.create({
       data: {
         jobId: job.id,
