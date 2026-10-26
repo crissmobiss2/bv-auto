@@ -25,19 +25,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const byId = new Map(po.items.map((p) => [p.id, p]));
+  const requested = new Map<string, number>();
   for (const line of parsed.data.items) {
-    const part = byId.get(line.partId);
+    requested.set(line.partId, (requested.get(line.partId) ?? 0) + line.quantity);
+  }
+  for (const [partId, quantity] of requested) {
+    const part = byId.get(partId);
     if (!part) return apiError("Part is not on this purchase order", 400);
     const remaining = Number(part.quantity) - Number(part.quantityReceived);
-    if (line.quantity > remaining + 1e-9) {
+    if (quantity > remaining + 1e-9) {
       return apiError(`Received quantity exceeds what is outstanding for ${part.description} (${remaining})`, 400);
     }
   }
 
   const now = new Date();
   const receivedById = new Map(po.items.map((p) => [p.id, Number(p.quantityReceived)]));
-  for (const line of parsed.data.items) {
-    receivedById.set(line.partId, receivedById.get(line.partId)! + line.quantity);
+  for (const [partId, quantity] of requested) {
+    receivedById.set(partId, receivedById.get(partId)! + quantity);
   }
   // Open = units still outstanding, regardless of line status (a line can be
   // INSTALLED before every unit has arrived).
@@ -48,8 +52,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   ).length;
 
   const updated = await prisma.$transaction(async (tx) => {
-    for (const line of parsed.data.items) {
-      const part = byId.get(line.partId)!;
+    for (const partId of requested.keys()) {
+      const part = byId.get(partId)!;
       const received = receivedById.get(part.id)!;
       const complete = received >= Number(part.quantity) - 1e-9;
       await tx.jobPart.update({
