@@ -199,8 +199,8 @@ function JobsContent() {
                       </TableCell>
                       <TableCell className="text-right pr-3">
                         <Link href={`/jobs/${job.id}`}>
-                          <Button variant="ghost" size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600">
+                          <Button aria-label="Open job" variant="ghost" size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-blue-600">
                             <ArrowRight className="h-3.5 w-3.5" />
                           </Button>
                         </Link>

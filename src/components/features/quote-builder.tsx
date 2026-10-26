@@ -336,7 +336,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
                 {formatCurrency(item.total)}
               </div>
               <div className="col-span-2 sm:col-span-1 flex justify-end">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeItem(i)}>
+                <Button aria-label="Delete" variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeItem(i)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

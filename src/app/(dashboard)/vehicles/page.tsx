@@ -128,7 +128,7 @@ function VehiclesContent() {
                     </TableCell>
                     <TableCell>
                       <Link href={`/vehicles/${v.id}`}>
-                        <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+                        <Button aria-label="View" variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
                       </Link>
                     </TableCell>
                   </TableRow>

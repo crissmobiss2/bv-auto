@@ -132,7 +132,7 @@ export function PartsTab({ job }: { job: { id: string; parts: Part[] } }) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
+                    <Button aria-label="Delete"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-red-400"

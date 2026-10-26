@@ -85,7 +85,7 @@ export default function DashboardInspectionPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Link href={`/jobs/${id}`}>
-            <Button variant="ghost" size="icon">
+            <Button aria-label="Back" variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -136,7 +136,7 @@ export default function DashboardInspectionPage() {
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href={`/jobs/${id}`}>
-          <Button variant="ghost" size="icon">
+          <Button aria-label="Back" variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
