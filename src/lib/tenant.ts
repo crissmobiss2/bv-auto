@@ -121,22 +121,30 @@ const ids = (v: unknown): string[] =>
 const list = (v: unknown): Data[] => (Array.isArray(v) ? v : [v]).filter(isObj);
 
 /** Every tenant record a write payload links to, including through nested relation writes. */
-export function nestedReferencedIds(model: string, data: Data): [string, string][] {
-  const refs = referencedIds(model, data);
+// A third element `true` marks a connectOrCreate target that may not exist yet.
+type Ref = [string, string] | [string, string, true];
+
+export function nestedReferencedIds(model: string, data: Data): Ref[] {
+  const refs: Ref[] = referencedIds(model, data);
   for (const f of relationFields(model)) {
     const ops = data[f.name];
     if (!isObj(ops) || !isTenant(f.type) || f.type === "Shop") continue;
     const t = f.type;
     for (const id of [...ids(ops.connect), ...ids(ops.set)]) refs.push([t, id]);
     for (const c of list(ops.connectOrCreate)) {
-      for (const id of ids(c.where)) refs.push([t, id]);
+      for (const id of ids(c.where)) refs.push([t, id, true]);
       if (isObj(c.create)) refs.push(...nestedReferencedIds(t, c.create));
     }
     for (const d of list(ops.create)) refs.push(...nestedReferencedIds(t, d));
     if (isObj(ops.createMany)) for (const d of list(ops.createMany.data)) refs.push(...nestedReferencedIds(t, d));
-    for (const u of list(ops.update)) refs.push(...nestedReferencedIds(t, isObj(u.data) ? u.data : u));
+    for (const id of ids(ops.delete)) refs.push([t, id]);
+    for (const u of list(ops.update)) {
+      for (const id of ids(u.where)) refs.push([t, id]);
+      refs.push(...nestedReferencedIds(t, isObj(u.data) ? u.data : u));
+    }
     for (const u of list(ops.updateMany)) if (isObj(u.data)) refs.push(...nestedReferencedIds(t, u.data));
     for (const u of list(ops.upsert)) {
+      for (const id of ids(u.where)) refs.push([t, id, true]);
       if (isObj(u.create)) refs.push(...nestedReferencedIds(t, u.create));
       if (isObj(u.update)) refs.push(...nestedReferencedIds(t, u.update));
     }
@@ -173,14 +181,16 @@ const READ_OPS = new Set([
 type Counter = (model: string, id: string) => Promise<number>;
 
 /** Rewrite query args for the current shop; throws CrossShopError for writes that reference another shop's rows. */
-export async function scopeArgs(model: string, operation: string, args: Data, shopId: string, count: Counter, created: Set<string>) {
+export async function scopeArgs(model: string, operation: string, args: Data, shopId: string, count: Counter, created: Set<string>, exists: Counter = count) {
   const filter = scopeFilter(model, shopId);
   if (!filter) return args;
   const next: Data = { ...args };
   const check = async (data: Data) => {
-    for (const [target, id] of nestedReferencedIds(model, data)) {
+    for (const [target, id, mayCreate] of nestedReferencedIds(model, data)) {
       if (created.has(id)) continue;
-      if ((await count(target, id)) === 0) throw new CrossShopError(target);
+      if ((await count(target, id)) > 0) continue;
+      if (mayCreate && (await exists(target, id)) === 0) continue;
+      throw new CrossShopError(target);
     }
   };
   if (READ_OPS.has(operation) || operation === "upsert") next.where = andWhere(next.where, filter);

@@ -53,7 +53,8 @@ function createPrismaClient() {
           }
           if (!scopeFilter(model, shopId)) return query(args);
           const next = await scopeArgs(model, operation, (args ?? {}) as Record<string, unknown>, shopId,
-            (target, id) => delegate(target).count({ where: { id } }), createdIds());
+            (target, id) => delegate(target).count({ where: { id } }), createdIds(),
+            (target, id) => (base as unknown as Record<string, { count: (a: object) => Promise<number> }>)[target[0].toLowerCase() + target.slice(1)].count({ where: { id } }));
           const result = await query(next as typeof args);
           if (operation === "create" || operation === "upsert") rememberCreated(result);
           return result;

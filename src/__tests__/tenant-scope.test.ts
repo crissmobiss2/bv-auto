@@ -57,4 +57,18 @@ describe("tenant scoping", () => {
     const linked = stampCreate("Job", { title: "x", shop: { connect: { id: "s2" } }, customer: { connect: { id: "c1" } } }, "s1");
     expect(linked.shop).toEqual({ connect: { id: "s1" } });
   });
+
+  it("allows connectOrCreate of a new id but not of another shop's record", async () => {
+    const data = { data: { photos: { connectOrCreate: [{ where: { id: "p9" }, create: { url: "u" } }] } } };
+    await expect(scopeArgs("Job", "update", { where: { id: "j1" }, ...data }, "s1", none, new Set(), none)).resolves.toBeTruthy();
+    await expect(scopeArgs("Job", "update", { where: { id: "j1" }, ...data }, "s1", none, new Set(), one))
+      .rejects.toBeInstanceOf(CrossShopError);
+  });
+
+  it("checks the selector of nested updates and deletes", async () => {
+    await expect(scopeArgs("Job", "update", { where: { id: "j1" }, data: { photos: { update: [{ where: { id: "p2" }, data: { url: "u" } }] } } }, "s1", none, new Set()))
+      .rejects.toBeInstanceOf(CrossShopError);
+    await expect(scopeArgs("Job", "update", { where: { id: "j1" }, data: { photos: { delete: [{ id: "p2" }] } } }, "s1", none, new Set()))
+      .rejects.toBeInstanceOf(CrossShopError);
+  });
 });
