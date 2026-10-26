@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CreditCard,
   LayoutDashboard, Users, Car, FileText, Receipt, Package, BarChart3,
   Settings, Wrench, Bell, LogOut, ChevronLeft, ChevronRight, Shield,
   Smartphone, Boxes, CalendarCheck, Brain, BookOpen, CalendarDays,
@@ -96,6 +97,7 @@ const SECTIONS: NavSection[] = [
     icon: Settings,
     items: [
       { name: "Shops",         href: "/shops",         icon: MapPin,    roles: ["ADMIN"] },
+      { name: "Billing",       href: "/billing",       icon: CreditCard, roles: ["ADMIN"] },
       { name: "Notifications", href: "/notifications", icon: Bell,      roles: null },
       { name: "Tech View",     href: "/tech",          icon: Smartphone,roles: null },
       { name: "Audit Log",     href: "/audit",         icon: Shield,    roles: ["ADMIN"] },

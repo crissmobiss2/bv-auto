@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { rateLimit } from "@/lib/rate-limit";
+import { isShopLocked } from "@/lib/billing";
 
 const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
@@ -13,6 +14,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/signup",
   "/api/approve",
   "/api/stripe/webhook",
+  "/api/billing/webhook",
   "/api/sms/webhook",
   "/api/review",
   "/api/portal",
@@ -90,6 +92,7 @@ const TECH_BLOCKED_PAGE_PREFIXES = [
   "/sequences",
   "/reviews",
   "/shops",
+  "/billing",
   "/audit",
   "/quotes",
   "/invoices",
@@ -162,6 +165,15 @@ export default async function proxy(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, req.url));
+  }
+
+  // A shop whose trial or subscription has ended can still read its data but not change it.
+  const shopId = (session as { shopId?: string | null }).shopId;
+  if (
+    shopId && role !== "CUSTOMER" && pathname.startsWith("/api/") && MUTATING_METHODS.has(req.method) &&
+    !matchesPrefix(pathname, ["/api/billing"]) && (await isShopLocked(shopId))
+  ) {
+    return NextResponse.json({ error: "Your subscription has ended. Choose a plan on the Billing page to keep making changes." }, { status: 402 });
   }
 
   // Customers are confined to the customer app. This covers /dashboard, /tech,

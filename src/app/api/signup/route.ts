@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { getIP, rateLimit } from "@/lib/rate-limit";
 import { uniqueShopSlug } from "@/lib/public-shop";
+import { TRIAL_DAYS } from "@/lib/billing";
 
 const schema = z.object({
   shopName: z.string().trim().min(2).max(80),
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
   try {
     const shop = await prisma.$transaction(async (tx) => {
       const created = await tx.shop.create({
-        data: { name: shopName, slug, phone: phone || null, email, isDefault: true },
+        data: { name: shopName, slug, phone: phone || null, email, isDefault: true, trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000) },
         select: { id: true, slug: true },
       });
       await tx.user.create({
