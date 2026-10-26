@@ -116,7 +116,14 @@ export default function ServiceRequestsPage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Link href={`/jobs/new?name=${encodeURIComponent(r.name)}&phone=${encodeURIComponent(r.phone)}&service=${encodeURIComponent(r.serviceType)}`}>
+                    <Link href={`/jobs/new?${new URLSearchParams({
+                      service: r.serviceType,
+                      description: r.description || "",
+                      name: r.name,
+                      phone: r.phone,
+                      email: r.email || "",
+                      ...(r.customer ? { customerId: r.customer.id } : {}),
+                    })}`}>
                       <Button size="sm" className="w-full" onClick={() => updateMutation.mutate({ id: r.id, status: "SCHEDULED" })}>
                         <CheckCircle className="h-4 w-4 mr-1" /> Schedule
                       </Button>
