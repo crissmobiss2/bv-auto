@@ -1,4 +1,5 @@
-const CACHE_VERSION = "bvauto-v4";
+// Versioned per deploy: the page registers /sw.js?v=<build id>.
+const CACHE_VERSION = `bvauto-${new URL(self.location.href).searchParams.get("v") || "v4"}`;
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const API_CACHE     = `${CACHE_VERSION}-api`;
 

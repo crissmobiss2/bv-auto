@@ -5,6 +5,7 @@ import { AuditAction, JobStatus, WarrantyType } from "@prisma/client";
 import { z } from "zod";
 import twilio from "twilio";
 import { sendPushToUser, sendPushToRole } from "@/lib/push";
+import { transitionError } from "@/lib/job-status";
 
 const updateJobSchema = z.object({
   status: z.nativeEnum(JobStatus).optional(),
@@ -161,6 +162,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  if (input.status && input.status !== existing.status) {
+    const reason = transitionError(existing.status, input.status, session!.user.role);
+    if (reason) return apiError(reason, 409);
+    if (input.status === JobStatus.PAID) {
+      const invoice = await prisma.invoice.findUnique({ where: { jobId: id }, select: { status: true } });
+      if (invoice?.status !== "PAID") return apiError("Record the payment on the invoice; the job is marked paid when the invoice is paid", 409);
+    }
+  }
+
   const updateData: Record<string, unknown> = { ...input };
   if (input.scheduledAt !== undefined) {
     updateData.scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : null;
@@ -175,6 +185,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const updated = await prisma.job.update({ where: { id }, data: updateData });
+
+  // Cancelling stops any running clocks so the time can't keep accruing to payroll.
+  if (input.status === JobStatus.CANCELLED && existing.status !== JobStatus.CANCELLED) {
+    await prisma.timeLog.updateMany({ where: { jobId: id, clockedOut: null }, data: { clockedOut: new Date() } });
+  }
 
   if (input.status && input.status !== existing.status) {
     await logAudit(

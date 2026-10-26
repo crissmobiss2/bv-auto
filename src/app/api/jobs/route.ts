@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { generateJobNumber } from "@/lib/utils";
+import { generateJobNumber, withUniqueRetry } from "@/lib/utils";
 import { z } from "zod";
 import { AuditAction, JobStatus } from "@prisma/client";
 
@@ -119,14 +119,12 @@ export async function POST(req: NextRequest) {
     return apiError("Selected technician is not an active technician", 400);
   }
 
-  const jobNumber = generateJobNumber();
-
-  const job = await prisma.job.create({
+  const job = await withUniqueRetry(() => prisma.job.create({
     data: {
       ...parsed.data,
       customerId: customer.id,
       vehicleId: vehicle.id,
-      jobNumber,
+      jobNumber: generateJobNumber(),
       createdById: session!.user.id,
       scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined,
     },
@@ -134,7 +132,7 @@ export async function POST(req: NextRequest) {
       customer: true,
       vehicle: true,
     },
-  });
+  }));
 
   await logAudit(session!.user.id, AuditAction.CREATE, "Job", job.id, null, job);
 

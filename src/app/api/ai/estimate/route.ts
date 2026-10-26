@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
+import { AI_MODELS, UNTRUSTED_NOTE, aiFailure, extractJson, untrusted } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAuth();
@@ -28,8 +29,10 @@ export async function POST(req: NextRequest) {
 
   const prompt = `You are an expert auto service advisor at a professional repair shop. Labor rate is $${safeLaborRate}/hr.
 
-Vehicle: ${vehicleStr}${mileageStr}${dtcStr}
-Customer complaint: ${complaint}
+${UNTRUSTED_NOTE}
+
+Vehicle: ${untrusted("vehicle", vehicleStr, 200)}${mileageStr}${dtcStr && untrusted("dtc", dtcStr, 500)}
+Customer complaint: ${untrusted("complaint", complaint)}
 
 Generate a detailed repair estimate. Respond ONLY with valid JSON:
 {
@@ -70,16 +73,14 @@ Rules:
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: AI_MODELS.estimate,
       max_tokens: 1200,
       messages: [{ role: "user", content: prompt }],
     });
 
     const text = (msg.content[0] as { text: string }).text;
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return apiError("AI returned invalid response", 500);
-
-    const result = JSON.parse(jsonMatch[0]);
+    const result = extractJson(text) as Record<string, unknown> | null;
+    if (!result || typeof result !== "object") return apiError("The AI returned an unreadable estimate. Please try again.", 502);
     const money = (value: unknown) => {
       const n = Number(value);
       return Number.isFinite(n) ? Math.max(0, Math.round(n * 100) / 100) : 0;
@@ -113,6 +114,6 @@ Rules:
 
     return apiSuccess(result);
   } catch (e: unknown) {
-    return apiError(e instanceof Error ? e.message : "AI estimate failed", 500);
+    return aiFailure(e, "estimate");
   }
 }

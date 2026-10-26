@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { AuditAction } from "@prisma/client";
 import { z } from "zod";
 
 const signatureSchema = z.object({
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       userAgent: req.headers.get("user-agent") || undefined,
     },
   });
+  await logAudit(session!.user.id, AuditAction.CREATE, "Signature", signature.id, null, { jobId: id, signerName: signature.signerName, signerRole: signature.signerRole, ipAddress: ip });
 
   return apiSuccess(signature, 201);
 }

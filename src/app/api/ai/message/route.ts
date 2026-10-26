@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
+import { AI_MODELS, UNTRUSTED_NOTE, aiFailure, untrusted } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAuth();
@@ -23,13 +24,15 @@ export async function POST(req: NextRequest) {
   const prompt = `You are a professional auto shop service advisor drafting a text message to a customer.
 
 Shop name: B&V Mobile Auto
-Customer: ${customerName || "the customer"}
-${vehicleInfo ? `Vehicle: ${vehicleInfo}` : ""}
-${jobInfo ? `Job/Service: ${jobInfo}` : ""}
+${UNTRUSTED_NOTE}
 
-Message type: ${type}
-Tone: ${tone}
-Context/What to communicate: ${context}
+Customer first name: ${customerName ? untrusted("customer", String(customerName).trim().split(/\s+/)[0], 40) : "the customer"}
+${vehicleInfo ? `Vehicle: ${untrusted("vehicle", vehicleInfo, 200)}` : ""}
+${jobInfo ? `Job/Service: ${untrusted("job", jobInfo, 500)}` : ""}
+
+Message type: ${untrusted("type", type, 40)}
+Tone: ${untrusted("tone", tone, 40)}
+Context/What to communicate: ${untrusted("context", context)}
 
 Write a professional, concise SMS message (under 160 characters ideally, 320 max).
 Rules:
@@ -43,14 +46,16 @@ Rules:
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: AI_MODELS.message,
       max_tokens: 200,
       messages: [{ role: "user", content: prompt }],
     });
 
-    const message = (msg.content[0] as { text: string }).text.trim();
+    const raw = msg.content[0]?.type === "text" ? msg.content[0].text : "";
+    const message = raw.trim().replace(/^["']|["']$/g, "").slice(0, 320);
+    if (!message) return apiError("The AI returned an empty message. Please try again.", 502);
     return apiSuccess({ message });
   } catch (e: unknown) {
-    return apiError(e instanceof Error ? e.message : "AI message failed", 500);
+    return aiFailure(e, "message");
   }
 }

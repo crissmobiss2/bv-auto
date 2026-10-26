@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { AuditAction } from "@prisma/client";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
     include: { author: { select: { id: true, name: true } } },
   });
+  await logAudit(session!.user.id, AuditAction.CREATE, "Note", note.id, null, { jobId: id, isInternal: note.isInternal, content: note.content });
 
   return apiSuccess(note, 201);
 }

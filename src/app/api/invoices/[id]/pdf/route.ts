@@ -80,7 +80,7 @@ function generateInvoiceHTML(invoice: {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(invoice.invoiceNumber)}</title>
+<title>invoice-${esc(invoice.invoiceNumber)}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; background: white; padding: 40px; max-width: 800px; margin: 0 auto; }
@@ -103,7 +103,8 @@ function generateInvoiceHTML(invoice: {
   .totals-total { display: flex; justify-content: space-between; padding: 10px 0; font-size: 18px; font-weight: 700; border-top: 2px solid #e5e7eb; margin-top: 8px; }
   .totals-due { display: flex; justify-content: space-between; padding: 6px 0; font-size: 16px; font-weight: 600; color: #d97706; }
   .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af; text-align: center; }
-  @media print { body { padding: 20px; } }
+  @media print { body { padding: 20px; } .no-print { display: none; } }
+  .no-print { position: fixed; top: 16px; right: 16px; padding: 8px 16px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; background: #111; color: #fff; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -202,7 +203,7 @@ ${invoice.notes ? `<div style="margin-top:24px;padding:16px;background:#f9fafb;b
   <p>Thank you for choosing B&V Mobile Auto!${phone ? ` · For questions call ${phone}` : ""}</p>
 </div>
 
-<script>window.onload = function() { window.print(); }</script>
+<button class="no-print" onclick="window.print()">Print / Save as PDF</button>
 </body>
 </html>`;
 }

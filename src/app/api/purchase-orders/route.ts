@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction, PartStatus } from "@prisma/client";
+import { withUniqueRetry } from "@/lib/utils";
 
 function generatePONumber(): string {
   const now = new Date();
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     0
   );
 
-  const po = await prisma.purchaseOrder.create({
+  const po = await withUniqueRetry(() => prisma.purchaseOrder.create({
     data: {
       poNumber: generatePONumber(),
       vendorId,
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
       },
     },
     include: { vendor: true, items: true },
-  });
+  }));
 
   // Stamp parts onto the order
   await prisma.jobPart.updateMany({

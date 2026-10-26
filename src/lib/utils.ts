@@ -65,6 +65,17 @@ export function generateInvoiceNumber(): string {
   return `INV-${year}${month}-${random}`;
 }
 
+/** Re-run a create whose random document number hit a unique-constraint collision. */
+export async function withUniqueRetry<T>(create: () => Promise<T>, attempts = 5): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await create();
+    } catch (e) {
+      if (i >= attempts || (e as { code?: string })?.code !== "P2002") throw e;
+    }
+  }
+}
+
 // LineItem.unitPrice is stored before markup; this is the per-unit price the customer pays.
 export function lineItemSalePrice(unitPrice: number, markup?: number | null): number {
   const price = markup ? unitPrice * (1 + markup / 100) : unitPrice;
