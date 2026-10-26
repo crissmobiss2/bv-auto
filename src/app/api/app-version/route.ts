@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       downloadUrl: downloadUrl.toString(),
       playStoreUrl: "https://play.google.com/store/apps/details?id=com.bvauto.app",
       appStoreUrl: "https://apps.apple.com/app/bv-auto/id0000000000",
-      releaseNotes: "Update button now downloads and opens the installer directly.",
+      releaseNotes: "Security update for the app's phone layer (Capacitor 8.5.3).",
       forceUpdate: false,
     },
     { headers: { "Cache-Control": "no-store" } },
