@@ -20,6 +20,7 @@ const bookingSchema = z.object({
   description: z.string().min(1),
   photoUrl: z.string().optional(),
   preferredDate: z.string().optional(),
+  smsConsent: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
       photoUrl: data.photoUrl || null,
       preferredDate: data.preferredDate || null,
       customerId: existing?.id ?? null,
+      smsConsent: data.smsConsent === true,
+      smsConsentAt: data.smsConsent ? new Date() : null,
     },
   });
 
@@ -64,12 +67,13 @@ export async function POST(req: NextRequest) {
 // Confirmation to the customer plus an in-app + push alert to staff. A provider
 // failure must never lose the booking, so every send is best-effort.
 async function notifyBooking(
-  request: { id: string; name: string; phone: string; email: string | null; serviceType: string; preferredDate: string | null },
+  request: { id: string; name: string; phone: string; email: string | null; serviceType: string; preferredDate: string | null; smsConsent: boolean },
   reference: string,
 ) {
   let customerNotified = false;
   const firstName = request.name.split(" ")[0] || request.name;
-  if (smsConfigured) {
+  // Texts only go to people who ticked the consent box (TCPA / carrier A2P rules).
+  if (smsConfigured && request.smsConsent) {
     try {
       await sendBookingConfirmationSMS({ to: request.phone, customerName: firstName, reference });
       customerNotified = true;

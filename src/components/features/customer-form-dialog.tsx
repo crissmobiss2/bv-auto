@@ -27,6 +27,7 @@ export type CustomerFormValues = {
   type: string;
   leadSource: string;
   notes: string;
+  smsConsent?: boolean;
 };
 
 export const BLANK_CUSTOMER: CustomerFormValues = {
@@ -212,6 +213,17 @@ export function CustomerFormDialog({ open, onOpenChange, customer, onSuccess }: 
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
             {(mutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to save customer."}
           </p>
+        )}
+        {!isEdit && (
+          <label className="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={!!form.smsConsent}
+              onChange={(e) => setForm({ ...form, smsConsent: e.target.checked })}
+            />
+            <span>Customer agreed to receive service text messages (appointment, estimate and invoice updates).</span>
+          </label>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
