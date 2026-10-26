@@ -21,6 +21,8 @@ const createSchema = z.object({
   end: z.string().regex(PERIOD_DATE),
 });
 
+const PAYROLL_RUN_LOCK = 724_001;
+
 export async function GET(req: NextRequest) {
   const { error } = await requireRole(["ADMIN", "ACCOUNTANT"]);
   if (error) return error;
@@ -48,27 +50,33 @@ export async function POST(req: NextRequest) {
   const openLogs = await prisma.timeLog.count({ where: { clockedIn: { gte: from, lte: to }, clockedOut: null } });
   if (openLogs > 0) return apiError(`${openLogs} time log(s) in this period are still clocked in`, 409);
 
-  const overlap = await prisma.payrollRun.findFirst({
-    where: { periodStart: { lte: periodKey(end) }, periodEnd: { gte: periodKey(start) } },
-    select: { periodStart: true, periodEnd: true },
-  });
-  if (overlap) {
-    const d = (x: Date) => x.toISOString().slice(0, 10);
-    return apiError(`Payroll for ${d(overlap.periodStart)} to ${d(overlap.periodEnd)} is already approved and overlaps this period`, 409);
-  }
-
   const technicians = await buildPayroll(from, to);
   const summary = summarizePayroll(technicians);
   try {
-    const run = await prisma.payrollRun.create({
-      data: {
-        periodStart: periodKey(start),
-        periodEnd: periodKey(end),
-        snapshot: { technicians, summary } as unknown as Prisma.InputJsonValue,
-        totalGross: summary.totalPayroll,
-        approvedById: session!.user.id,
-      },
+    // Approvals are serialized so two overlapping periods can't both pass the overlap check.
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${PAYROLL_RUN_LOCK})`;
+      const overlap = await tx.payrollRun.findFirst({
+        where: { periodStart: { lte: periodKey(end) }, periodEnd: { gte: periodKey(start) } },
+        select: { periodStart: true, periodEnd: true },
+      });
+      if (overlap) return { overlap, run: null };
+      const run = await tx.payrollRun.create({
+        data: {
+          periodStart: periodKey(start),
+          periodEnd: periodKey(end),
+          snapshot: { technicians, summary } as unknown as Prisma.InputJsonValue,
+          totalGross: summary.totalPayroll,
+          approvedById: session!.user.id,
+        },
+      });
+      return { overlap: null, run };
     });
+    const { overlap, run } = result;
+    if (!run) {
+      const d = (x: Date) => x.toISOString().slice(0, 10);
+      return apiError(`Payroll for ${d(overlap!.periodStart)} to ${d(overlap!.periodEnd)} is already approved and overlaps this period`, 409);
+    }
     await logAudit(session!.user.id, AuditAction.CREATE, "PayrollRun", run.id, null, { start, end, totalGross: summary.totalPayroll });
     return apiSuccess({ id: run.id, status: run.status, approvedAt: run.approvedAt, totalGross: run.totalGross }, 201);
   } catch (e) {
