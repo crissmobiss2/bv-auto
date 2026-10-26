@@ -7,7 +7,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
-  if (!rateLimit(`track:${getIP(req)}`, 60, 60_000)) {
+  if (!(await rateLimit(`track:${getIP(req)}`, 60, 60_000))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 

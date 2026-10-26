@@ -18,7 +18,7 @@ const schema = z.object({
 const STAFF_ROLES = ["TECHNICIAN", "SERVICE_ADVISOR", "PARTS_COORDINATOR", "DISPATCHER"];
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`register:${getIP(req)}`, 10, 10 * 60_000)) {
+  if (!(await rateLimit(`register:${getIP(req)}`, 10, 10 * 60_000))) {
     return apiError("Too many requests", 429);
   }
   const body = await req.json().catch(() => null);

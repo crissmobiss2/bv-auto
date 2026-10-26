@@ -53,6 +53,7 @@
 - **Confidence:** Confirmed — fixed in this pass.
 
 ### [PLAT-003] CI does not run on the shipping branch
+- **Status:** Fixed on branch `devin/*-platform` (see FIX-PLAN).
 - **Severity:** P1
 - **Area:** Release safety
 - **Evidence:** `.github/workflows/ci.yml` (`branches: [main, develop]`, `if: github.ref == 'refs/heads/main'`)
@@ -64,6 +65,7 @@
 - **Confidence:** Confirmed.
 
 ### [PLAT-004] Production deploy runs `migrate deploy` with no migrations
+- **Status:** Fixed on branch `devin/*-platform`: catch-up migration added and production baselined (see FIX-PLAN).
 - **Severity:** P1
 - **Area:** Deploy/schema
 - **Evidence:** `.github/workflows/ci.yml` (`npx prisma migrate deploy`), no `prisma/migrations/`
@@ -85,6 +87,7 @@
 - **Confidence:** Confirmed.
 
 ### [PLAT-006] Rate limiting and idempotency are process-local
+- **Status:** Fixed on branch `devin/*-platform`: DB-backed `RateLimit` table (see FIX-PLAN).
 - **Severity:** P2
 - **Area:** Scale
 - **Evidence:** `src/lib/rate-limit.ts:1`

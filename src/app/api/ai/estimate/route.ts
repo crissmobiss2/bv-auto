@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const { error } = await requireAuth();
   if (error) return error;
 
-  if (!rateLimit(`ai-estimate:${getIP(req)}`, 10, 60_000)) {
+  if (!(await rateLimit(`ai-estimate:${getIP(req)}`, 10, 60_000))) {
     return apiError("Too many requests. Please wait a moment.", 429);
   }
 

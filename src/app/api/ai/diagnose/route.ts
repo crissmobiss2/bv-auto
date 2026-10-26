@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   // 10 AI diagnoses per minute per IP
-  if (!rateLimit(`ai:${getIP(req)}`, 10, 60_000)) {
+  if (!(await rateLimit(`ai:${getIP(req)}`, 10, 60_000))) {
     return apiError("Too many requests. Please wait a moment.", 429);
   }
 

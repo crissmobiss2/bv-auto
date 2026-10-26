@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const { error } = await requireAuth();
   if (error) return error;
 
-  if (!rateLimit(`vin:${getIP(req)}`, 30, 60_000)) {
+  if (!(await rateLimit(`vin:${getIP(req)}`, 30, 60_000))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
