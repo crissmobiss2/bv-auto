@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { parseShopDate } from "@/lib/timezone";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
@@ -15,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const updateData: Record<string, unknown> = {};
   if (body.title !== undefined) updateData.title = body.title;
   if (body.notes !== undefined) updateData.notes = body.notes;
-  if (body.dueAt !== undefined) updateData.dueAt = new Date(body.dueAt);
+  if (body.dueAt !== undefined) updateData.dueAt = parseShopDate(String(body.dueAt));
   if (body.isCompleted !== undefined) {
     updateData.isCompleted = body.isCompleted;
     updateData.completedAt = body.isCompleted ? new Date() : null;

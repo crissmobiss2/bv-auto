@@ -6,7 +6,7 @@ import { z } from "zod";
 import { normalizeVin, vinError } from "@/lib/vin";
 
 const updateSchema = z.object({
-  vin: z.string().max(17).optional(),
+  vin: z.string().max(32).optional(),
   plate: z.string().max(16).optional(),
   plateState: z.string().max(2).optional(),
   year: z.number().int().min(1900).max(new Date().getFullYear() + 2).optional(),
@@ -57,16 +57,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await prisma.vehicle.findUnique({ where: { id } });
   if (!existing) return apiError("Vehicle not found", 404);
 
+  const data: Omit<typeof parsed.data, "vin"> & { vin?: string | null } = { ...parsed.data };
   if (parsed.data.vin !== undefined) {
     const vin = normalizeVin(parsed.data.vin);
-    parsed.data.vin = vin || undefined;
+    data.vin = vin || null;
     if (vin) {
       const vinMsg = vinError(vin, parsed.data.year ?? existing.year);
       if (vinMsg) return apiError(vinMsg, 400);
     }
   }
 
-  const updated = await prisma.vehicle.update({ where: { id }, data: parsed.data });
+  const updated = await prisma.vehicle.update({ where: { id }, data });
   await logAudit(session!.user.id, AuditAction.UPDATE, "Vehicle", id, existing, updated);
 
   return apiSuccess(updated);

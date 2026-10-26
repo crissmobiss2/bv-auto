@@ -6,6 +6,8 @@ const isDev = process.env.NODE_ENV !== "production";
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BUILD_ID: (process.env.VERCEL_GIT_COMMIT_SHA || String(Date.now())).slice(0, 12),
+    NEXT_PUBLIC_SHOP_TIMEZONE:
+      process.env.NEXT_PUBLIC_SHOP_TIMEZONE || process.env.SHOP_TIMEZONE || "America/Los_Angeles",
   },
 
   images: {
