@@ -90,6 +90,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!photo) return apiError("Photo not found", 404);
 
   await prisma.jobPhoto.delete({ where: { id: photo.id } });
-  await logAudit(session!.user.id, AuditAction.DELETE, "JobPhoto", photo.id, { jobId, caption: photo.caption, url: photo.url }, null);
+  await logAudit(session!.user.id, AuditAction.DELETE, "JobPhoto", photo.id, { jobId, caption: photo.caption }, null);
   return apiSuccess({ deleted: true });
 }
