@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   // A checkout finished moments ago may not have reached our webhook yet.
   const live = await platformStripe.subscriptions.list({ customer, status: "all", limit: 20 });
-  if (live.data.some((s) => ["active", "trialing", "past_due", "incomplete"].includes(s.status))) {
+  if (live.data.some((s) => ["active", "trialing", "past_due"].includes(s.status))) {
     return apiError("You already have a subscription. Use Manage billing to change it.", 409);
   }
 
