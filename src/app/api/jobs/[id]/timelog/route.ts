@@ -74,9 +74,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
     if (!existingLog) return apiError("No open time log found for this job (it may already be clocked out)", 404);
 
-    const log = await prisma.timeLog.update({
-      where: { id: existingLog.id },
+    // Conditional on still being open, so a concurrent cancellation's end time is never overwritten.
+    const closed = await prisma.timeLog.updateMany({
+      where: { id: existingLog.id, clockedOut: null },
       data: { clockedOut: new Date(), ...(notes && { notes }) },
+    });
+    if (closed.count === 0) return apiError("This time log was already clocked out", 409);
+    const log = await prisma.timeLog.findUniqueOrThrow({
+      where: { id: existingLog.id },
       include: { technician: { select: { id: true, name: true } } },
     });
     await logAudit(session!.user.id, AuditAction.UPDATE, "TimeLog", log.id, { clockedOut: null }, { jobId: id, clockedIn: log.clockedIn, clockedOut: log.clockedOut });
