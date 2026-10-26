@@ -27,7 +27,7 @@ export default function TechLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register(`/sw.js?v=${process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}`).catch(() => {});
     }
     installOfflineQueueListener(sent => {
       setQueued(0);

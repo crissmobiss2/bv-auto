@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { AuditAction } from "@prisma/client";
 import { put } from "@vercel/blob";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         caption: caption || undefined,
       },
     });
+    await logAudit(session!.user.id, AuditAction.CREATE, "JobPhoto", photo.id, null, { jobId: id, caption: photo.caption });
     return apiSuccess(photo, 201);
   }
 
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
   await prisma.jobPhoto.update({ where: { id: photo.id }, data: { url: `/api/photos/${photo.id}` } });
+  await logAudit(session!.user.id, AuditAction.CREATE, "JobPhoto", photo.id, null, { jobId: id, caption: photo.caption });
 
   return apiSuccess({ ...photo, url: `/api/photos/${photo.id}` }, 201);
 }
@@ -87,5 +90,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!photo) return apiError("Photo not found", 404);
 
   await prisma.jobPhoto.delete({ where: { id: photo.id } });
+  await logAudit(session!.user.id, AuditAction.DELETE, "JobPhoto", photo.id, { jobId, caption: photo.caption, url: photo.url }, null);
   return apiSuccess({ deleted: true });
 }

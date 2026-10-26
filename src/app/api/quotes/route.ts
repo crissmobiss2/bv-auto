@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { generateQuoteNumber, calculateLineItemTotal } from "@/lib/utils";
+import { generateQuoteNumber, calculateLineItemTotal, withUniqueRetry } from "@/lib/utils";
 import { z } from "zod";
 import { AuditAction, LineItemType } from "@prisma/client";
 
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     return apiError("Deposit must be between 0 and the quote total", 400);
   }
 
-  const quote = await prisma.quote.create({
+  const quote = await withUniqueRetry(() => prisma.quote.create({
     data: {
       quoteNumber: generateQuoteNumber(),
       jobId: parsed.data.jobId,
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
       },
     },
     include: { lineItems: true },
-  });
+  }));
 
   // Update job status to PENDING_APPROVAL
   await prisma.job.update({

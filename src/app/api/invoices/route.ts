@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { reconcileInvoice } from "@/lib/payments";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { generateInvoiceNumber } from "@/lib/utils";
+import { generateInvoiceNumber, withUniqueRetry } from "@/lib/utils";
 import { AuditAction, InvoiceStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   const quote = job.quote;
 
   // Create invoice from approved quote
-  const invoice = await prisma.invoice.create({
+  const invoice = await withUniqueRetry(() => prisma.invoice.create({
     data: {
       invoiceNumber: generateInvoiceNumber(),
       jobId,
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       },
     },
     include: { lineItems: true, payments: true },
-  });
+  }));
 
   await prisma.job.update({
     where: { id: jobId },

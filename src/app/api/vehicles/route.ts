@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { z } from "zod";
 import { AuditAction } from "@prisma/client";
+import { normalizeVin, vinError } from "@/lib/vin";
 
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     year: typeof body.year === "string" ? parseInt(body.year) : body.year,
     make: body.make,
     model: body.model,
-    vin: str(body.vin),
+    vin: str(body.vin) && normalizeVin(str(body.vin)!),
     plate: str(body.plate),
     plateState: str(body.plateState),
     trim: str(body.trim),
@@ -81,6 +82,10 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => i.message).join(", ");
     return apiError(msg, 400);
+  }
+  if (parsed.data.vin) {
+    const vinMsg = vinError(parsed.data.vin, parsed.data.year);
+    if (vinMsg) return apiError(vinMsg, 400);
   }
 
   const vehicle = await prisma.vehicle.create({ data: parsed.data });

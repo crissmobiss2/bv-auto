@@ -294,6 +294,11 @@ export default function JobDetailPage() {
   const statusMutation = useMutation({
     mutationFn: (status: string) => axios.patch(`/api/jobs/${id}`, { status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["job", id] }),
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      window.alert(msg || "Could not change the job status");
+      queryClient.invalidateQueries({ queryKey: ["job", id] });
+    },
   });
 
   const createInvoiceMutation = useMutation({

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { AuditAction } from "@prisma/client";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error, session } = await requireAuth();
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
       include: { technician: { select: { id: true, name: true } } },
     });
+    await logAudit(session!.user.id, AuditAction.CREATE, "TimeLog", log.id, null, { jobId: id, clockedIn: log.clockedIn });
     return apiSuccess(log, 201);
   }
 
@@ -76,6 +78,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: { clockedOut: new Date(), ...(notes && { notes }) },
       include: { technician: { select: { id: true, name: true } } },
     });
+    await logAudit(session!.user.id, AuditAction.UPDATE, "TimeLog", log.id, { clockedOut: null }, { jobId: id, clockedIn: log.clockedIn, clockedOut: log.clockedOut });
     return apiSuccess(log);
   }
 

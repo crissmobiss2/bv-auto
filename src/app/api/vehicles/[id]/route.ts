@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { AuditAction } from "@prisma/client";
 import { z } from "zod";
+import { normalizeVin, vinError } from "@/lib/vin";
 
 const updateSchema = z.object({
   vin: z.string().max(17).optional(),
@@ -55,6 +56,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const existing = await prisma.vehicle.findUnique({ where: { id } });
   if (!existing) return apiError("Vehicle not found", 404);
+
+  if (parsed.data.vin !== undefined) {
+    const vin = normalizeVin(parsed.data.vin);
+    parsed.data.vin = vin || undefined;
+    if (vin) {
+      const vinMsg = vinError(vin, parsed.data.year ?? existing.year);
+      if (vinMsg) return apiError(vinMsg, 400);
+    }
+  }
 
   const updated = await prisma.vehicle.update({ where: { id }, data: parsed.data });
   await logAudit(session!.user.id, AuditAction.UPDATE, "Vehicle", id, existing, updated);

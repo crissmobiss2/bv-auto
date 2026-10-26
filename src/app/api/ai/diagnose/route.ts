@@ -3,6 +3,7 @@ import { requireAuth, apiError } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Anthropic from "@anthropic-ai/sdk";
+import { AI_MODELS, UNTRUSTED_NOTE, aiFailure, aiFailureMessage, extractJson, untrusted } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   const { error, session } = await requireAuth();
@@ -43,8 +44,10 @@ export async function POST(req: NextRequest) {
 
   const prompt = `You are an expert ASE Master Technician with 20+ years of experience. A customer has brought in their vehicle.
 
-Vehicle: ${vehicleInfo}${mileageInfo}${dtcInfo}${priorInfo}
-Customer-reported symptoms: ${symptoms || "None described"}
+${UNTRUSTED_NOTE}
+
+Vehicle: ${untrusted("vehicle", vehicleInfo, 200)}${mileageInfo}${dtcInfo && untrusted("dtc", dtcInfo, 500)}${priorInfo && untrusted("prior_repairs", priorInfo)}
+Customer-reported symptoms: ${untrusted("symptoms", symptoms || "None described")}
 
 Provide a professional diagnostic assessment. Respond ONLY with valid JSON in this exact format:
 {
@@ -102,7 +105,7 @@ Provide 2-4 diagnoses ranked by probability. Be specific to the ${vehicleInfo} â
       async start(controller) {
         try {
           const stream = client.messages.stream({
-            model: "claude-sonnet-4-6",
+            model: AI_MODELS.diagnose,
             max_tokens: 1500,
             messages: [{ role: "user", content: prompt }],
           });
@@ -121,23 +124,18 @@ Provide 2-4 diagnoses ranked by probability. Be specific to the ${vehicleInfo} â
           }
 
           // Send the final parsed result
-          const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            try {
-              const result = JSON.parse(jsonMatch[0]);
-              await saveToJobNotes(result).catch(() => {});
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ done: true, result })}\n\n`)
-              );
-            } catch {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ done: true, error: "Parse failed" })}\n\n`)
-              );
-            }
+          const result = extractJson(fullText);
+          if (result && typeof result === "object") {
+            await saveToJobNotes(result as Parameters<typeof saveToJobNotes>[0]).catch(() => {});
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, result })}\n\n`));
+          } else {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ done: true, error: "The AI returned an unreadable diagnosis. Please try again." })}\n\n`)
+            );
           }
           controller.close();
         } catch (e) {
-          const msg = e instanceof Error ? e.message : "Stream error";
+          const msg = aiFailureMessage(e, "diagnose-stream");
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ done: true, error: msg })}\n\n`)
           );
@@ -158,20 +156,17 @@ Provide 2-4 diagnoses ranked by probability. Be specific to the ${vehicleInfo} â
   // Non-streaming (default)
   try {
     const msg = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: AI_MODELS.diagnose,
       max_tokens: 1500,
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text = (msg.content[0] as { text: string }).text;
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return apiError("AI returned invalid response", 500);
-
-    const result = JSON.parse(jsonMatch[0]);
-    await saveToJobNotes(result).catch(() => {});
+    const text = msg.content[0]?.type === "text" ? msg.content[0].text : "";
+    const result = extractJson(text);
+    if (!result || typeof result !== "object") return apiError("The AI returned an unreadable diagnosis. Please try again.", 502);
+    await saveToJobNotes(result as Parameters<typeof saveToJobNotes>[0]).catch(() => {});
     return Response.json(result);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "AI diagnosis failed";
-    return apiError(msg, 500);
+    return aiFailure(e, "diagnose");
   }
 }

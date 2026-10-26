@@ -81,6 +81,9 @@ export async function POST(req: NextRequest) {
   }
   markup ??= 0;
   const unitPrice = data.unitPrice ?? (unitCost * (1 + markup / 100));
+  if (unitPrice < unitCost && session!.user.role !== "ADMIN") {
+    return apiError("Sell price is below cost. Ask an admin to price this part at a loss", 400);
+  }
   const totalCost = unitCost * data.quantity;
   const totalPrice = unitPrice * data.quantity;
 

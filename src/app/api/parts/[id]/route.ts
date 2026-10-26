@@ -58,6 +58,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await prisma.jobPart.findUnique({ where: { id } });
   if (!existing) return apiError("Part not found", 404);
 
+  const nextCost = parsed.data.unitCost !== undefined ? parsed.data.unitCost : existing.unitCost;
+  const nextPrice = parsed.data.unitPrice !== undefined ? parsed.data.unitPrice : existing.unitPrice;
+  if (
+    (parsed.data.unitCost !== undefined || parsed.data.unitPrice !== undefined) &&
+    nextCost != null && nextPrice != null && Number(nextPrice) < Number(nextCost) &&
+    session!.user.role !== "ADMIN"
+  ) {
+    return apiError("Sell price is below cost. Ask an admin to price this part at a loss", 400);
+  }
+
   const updateData: Record<string, unknown> = { ...parsed.data };
 
   // Auto-set timestamp when status changes
