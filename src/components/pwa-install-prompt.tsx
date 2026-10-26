@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, X, Smartphone } from "lucide-react";
+import { APP_NAME } from "@/lib/app-name";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -83,7 +84,7 @@ export function PwaInstallPrompt() {
             </p>
           ) : (
             <p className="text-xs text-gray-400 mt-0.5">
-              Install B&V Auto for faster access — works offline too
+              Install {APP_NAME} for faster access — works offline too
             </p>
           )}
           {!isIos && (

@@ -37,7 +37,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             <div className="bg-blue-600 rounded-lg p-1.5">
               <Wrench className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900">B&V Auto</span>
+            <span className="font-bold text-gray-900">{shop?.name}</span>
           </div>
           <div className="flex items-center gap-2">
             {shopPhone && (

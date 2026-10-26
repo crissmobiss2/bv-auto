@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { APP_NAME } from "@/lib/app-name";
 
 interface AppVersionInfo {
   version?: string;
@@ -127,7 +128,7 @@ export function AppUpdateChecker() {
         ? "Tap Install on the Android screen to finish."
         : phase.kind === "browser"
           ? update.reinstall
-            ? "When the download finishes, uninstall the old B&V Auto app, then open app-release.apk and tap Install."
+            ? `When the download finishes, uninstall the old ${APP_NAME} app, then open app-release.apk and tap Install.`
             : "When the download finishes, tap Open, then Install."
           : phase.kind === "error"
             ? phase.message

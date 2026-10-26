@@ -1,5 +1,5 @@
 import twilio from "twilio";
-import { getShopPhone } from "@/lib/shop";
+import { getBranding, getShopPhone } from "@/lib/shop";
 import { assertSmsAllowed } from "@/lib/consent";
 
 const client =
@@ -39,7 +39,7 @@ export async function sendQuoteSMS(opts: {
   const url = `${BASE_URL}/approve/${opts.approvalToken}`;
   return send(
     opts.to,
-    `B&V Auto: Hi ${opts.customerName}, your estimate (${opts.quoteNumber}) for ${opts.totalAmount} is ready. Review & approve: ${url}`
+    `${(await getBranding()).name}: Hi ${opts.customerName}, your estimate (${opts.quoteNumber}) for ${opts.totalAmount} is ready. Review & approve: ${url}`
   );
 }
 
@@ -52,8 +52,8 @@ export async function sendInvoiceSMS(opts: {
 }) {
   const phone = await getShopPhone();
   const body = opts.paymentUrl
-    ? `B&V Auto: Hi ${opts.customerName}, invoice ${opts.invoiceNumber} — ${opts.amountDue} due. Pay now: ${opts.paymentUrl}`
-    : `B&V Auto: Hi ${opts.customerName}, invoice ${opts.invoiceNumber} — ${opts.amountDue} due.${phone ? ` Call ${phone} to pay.` : ""}`;
+    ? `${(await getBranding()).name}: Hi ${opts.customerName}, invoice ${opts.invoiceNumber} — ${opts.amountDue} due. Pay now: ${opts.paymentUrl}`
+    : `${(await getBranding()).name}: Hi ${opts.customerName}, invoice ${opts.invoiceNumber} — ${opts.amountDue} due.${phone ? ` Call ${phone} to pay.` : ""}`;
   return send(opts.to, body);
 }
 
@@ -67,7 +67,7 @@ export async function sendAppointmentReminderSMS(opts: {
   const loc = opts.address ? ` at ${opts.address}` : "";
   return send(
     opts.to,
-    `B&V Auto reminder: Hi ${opts.customerName}, your ${opts.jobTitle}${loc} is scheduled for ${opts.dateTime}. Reply STOP to opt out.`
+    `${(await getBranding()).name} reminder: Hi ${opts.customerName}, your ${opts.jobTitle}${loc} is scheduled for ${opts.dateTime}. Reply STOP to opt out.`
   );
 }
 
@@ -78,7 +78,7 @@ export async function sendPaymentReceivedSMS(opts: {
 }) {
   return send(
     opts.to,
-    `B&V Auto: Hi ${opts.customerName}, we received your payment of ${opts.amountPaid}. Thank you!`
+    `${(await getBranding()).name}: Hi ${opts.customerName}, we received your payment of ${opts.amountPaid}. Thank you!`
   );
 }
 
@@ -86,6 +86,6 @@ export async function sendBookingConfirmationSMS(opts: { to: string; customerNam
   const phone = await getShopPhone();
   return send(
     opts.to,
-    `B&V Auto: Hi ${opts.customerName}, we received your booking request (${opts.reference}). We'll reach out shortly to confirm a time.${phone ? ` Questions? ${phone}` : ""} Reply STOP to opt out.`
+    `${(await getBranding()).name}: Hi ${opts.customerName}, we received your booking request (${opts.reference}). We'll reach out shortly to confirm a time.${phone ? ` Questions? ${phone}` : ""} Reply STOP to opt out.`
   );
 }

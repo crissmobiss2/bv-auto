@@ -155,10 +155,16 @@ export default function PartsPage() {
     });
   };
 
+  const { data: shopInfo } = useQuery({
+    queryKey: ["shop-info"],
+    queryFn: () => axios.get("/api/shop-info").then((r) => r.data as { name?: string }),
+    staleTime: 10 * 60_000,
+  });
+
   const buildOrderText = (po: PurchaseOrder) => {
     const lines = [
       `Purchase Order ${po.poNumber} — ${po.vendor.name}`,
-      `From: B&V Mobile Auto`,
+      ...(shopInfo?.name ? [`From: ${shopInfo.name}`] : []),
       "",
       ...po.items.map((i) => `• ${Number(i.quantity)} × ${i.description}${i.partNumber ? ` (PN: ${i.partNumber})` : ""}`),
       "",

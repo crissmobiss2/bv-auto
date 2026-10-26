@@ -162,7 +162,7 @@ export default function PrivacyPage() {
               Confirm Account Deletion
             </DialogTitle>
             <DialogDescription>
-              This will send a deletion request to B&amp;V Auto. Your data will be permanently removed within 30 days. This cannot be undone.
+              This will send a deletion request to the shop. Your data will be permanently removed within 30 days. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
@@ -175,7 +175,7 @@ export default function PrivacyPage() {
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-red-600"
               />
               <span className="text-sm text-gray-700">
-                I understand this will permanently delete all my data from B&amp;V Auto and cannot be undone.
+                I understand this will permanently delete all my data from the shop and cannot be undone.
               </span>
             </label>
 

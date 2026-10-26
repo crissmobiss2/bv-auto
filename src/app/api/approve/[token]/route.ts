@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
+import { getBranding } from "@/lib/shop";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -32,7 +33,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
     await prisma.quote.update({ where: { id: quote.id }, data: { status: "VIEWED", viewedAt: new Date() } });
   }
 
-  return apiSuccess(quote);
+  return apiSuccess({ ...quote, shopName: (await getBranding()).name });
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {

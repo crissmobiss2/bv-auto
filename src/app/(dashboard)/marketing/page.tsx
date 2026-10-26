@@ -29,13 +29,13 @@ const TRIGGER_TYPES = [
 
 const CAMPAIGN_TYPES = ["SMS", "EMAIL"];
 
-const _TEMPLATE_VARS = ["{firstName}", "{lastName}", "{name}"];
+const _TEMPLATE_VARS = ["{firstName}", "{lastName}", "{name}", "{shopName}"];
 
 const PRESET_TEMPLATES = [
-  { label: "Win-Back", template: "Hi {firstName}! We miss you at B&V Auto. It's been a while since your last service — reply BOOK to schedule your next appointment, or call us anytime. We'd love to take care of you again!" },
-  { label: "Service Reminder", template: "Hi {firstName}, your vehicle is due for service soon! Give us a call or reply to this message to schedule. We'll keep you rolling. — B&V Auto" },
-  { label: "Promotion", template: "Hi {firstName}! B&V Auto is running a special this week. Reply for details or call us to book your appointment. As always, we appreciate your business!" },
-  { label: "Review Request", template: "Hi {firstName}, thank you for trusting us with your vehicle! If you had a great experience, we'd love a quick Google review — it means the world to a small business. Thanks! — B&V Auto" },
+  { label: "Win-Back", template: "Hi {firstName}! We miss you at {shopName}. It's been a while since your last service — reply BOOK to schedule your next appointment, or call us anytime. We'd love to take care of you again!" },
+  { label: "Service Reminder", template: "Hi {firstName}, your vehicle is due for service soon! Give us a call or reply to this message to schedule. We'll keep you rolling. — {shopName}" },
+  { label: "Promotion", template: "Hi {firstName}! {shopName} is running a special this week. Reply for details or call us to book your appointment. As always, we appreciate your business!" },
+  { label: "Review Request", template: "Hi {firstName}, thank you for trusting us with your vehicle! If you had a great experience, we'd love a quick Google review — it means the world to a small business. Thanks! — {shopName}" },
 ];
 
 export default function MarketingPage() {

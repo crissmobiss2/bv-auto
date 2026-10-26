@@ -4,6 +4,7 @@ import { requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 import twilio from "twilio";
 import { NotificationType } from "@prisma/client";
 import { marketableSms } from "@/lib/consent";
+import { getBranding } from "@/lib/shop";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireRole(["ADMIN", "DISPATCHER"]);
@@ -63,6 +64,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     customers = rawCustomers;
   }
 
+  const shopName = (await getBranding()).name;
   let sentCount = 0;
   const errors: string[] = [];
 
@@ -70,7 +72,8 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     const message = campaign.messageTemplate
       .replace(/\{firstName\}/g, customer.firstName)
       .replace(/\{lastName\}/g, customer.lastName)
-      .replace(/\{name\}/g, `${customer.firstName} ${customer.lastName}`);
+      .replace(/\{name\}/g, `${customer.firstName} ${customer.lastName}`)
+      .replace(/\{shopName\}/g, shopName);
 
     try {
       const twilioMsg = await twilioClient.messages.create({ body: message, from: fromNumber, to: customer.phone });

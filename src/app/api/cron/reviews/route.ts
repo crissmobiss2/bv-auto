@@ -2,7 +2,8 @@ import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
-import { emailConfigured, escapeHtml } from "@/lib/email";
+import { emailConfigured, emailFrom, escapeHtml } from "@/lib/email";
+import { getBranding } from "@/lib/shop";
 import { smsConfigured } from "@/lib/sms";
 
 export async function GET(req: NextRequest) {
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
     });
 
     const reviewUrl = `${BASE_URL}/api/review/${request.reviewToken}`;
+    const brand = await getBranding();
     let delivered = false;
 
     // Send email
@@ -48,14 +50,15 @@ export async function GET(req: NextRequest) {
         const { Resend } = await import("resend");
         const resend = new Resend(process.env.RESEND_API_KEY);
         const result = await resend.emails.send({
-          from: "B&V Mobile Auto <noreply@bvmobileauto.com>",
+          from: emailFrom(brand.name),
+          ...(brand.email && { replyTo: brand.email }),
           to: job.customer.email,
           subject: "How did we do? Leave us a review",
           html: `<p>Hi ${escapeHtml(job.customer.firstName)},</p>
-<p>Thank you for choosing B&V Mobile Auto! We hope your service went smoothly.</p>
+<p>Thank you for choosing ${escapeHtml(brand.name)}! We hope your service went smoothly.</p>
 <p>If you have a moment, we'd love a review — it helps other customers find us:</p>
 <p><a href="${reviewUrl}" style="background:#2563eb;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;margin:16px 0">Leave a Google Review</a></p>
-<p>Thank you,<br/>The B&V Mobile Auto Team</p>`,
+<p>Thank you,<br/>The ${escapeHtml(brand.name)} Team</p>`,
         });
         delivered = !result.error;
       } catch (e) {
@@ -69,7 +72,7 @@ export async function GET(req: NextRequest) {
         const twilio = (await import("twilio")).default;
         const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
         await client.messages.create({
-          body: `Hi ${job.customer.firstName}! Thanks for choosing B&V Mobile Auto. Mind leaving us a quick Google review? ${reviewUrl}`,
+          body: `Hi ${job.customer.firstName}! Thanks for choosing ${brand.name}. Mind leaving us a quick Google review? ${reviewUrl}`,
           from: process.env.TWILIO_PHONE_NUMBER!,
           to: job.customer.phone,
         });

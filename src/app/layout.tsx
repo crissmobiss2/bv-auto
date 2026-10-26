@@ -9,11 +9,12 @@ import { AppUpdateChecker } from "@/components/app-update-checker";
 import { PushNotificationSetup } from "@/components/push-notification-setup";
 import { GlobalSearch } from "@/components/global-search";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { APP_NAME } from "@/lib/app-name";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "B&V Mobile Auto — Business Operating System",
+  title: `${APP_NAME} — Business Operating System`,
   description: "CRM, quoting, invoicing, parts, and dispatch for mobile auto repair",
   manifest: "/manifest.json",
   appleWebApp: {

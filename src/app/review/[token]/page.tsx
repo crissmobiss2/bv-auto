@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getBranding } from "@/lib/shop";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
       return null;
     });
   const invalid = !failed && !review;
+  const { name: shopName } = await getBranding();
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="max-w-sm w-full bg-white rounded-2xl shadow p-8 text-center space-y-3">
@@ -20,7 +22,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
             ? "Something went wrong on our end"
             : invalid
               ? "This review link isn't valid"
-              : "Thank you for choosing B&V Mobile Auto!"}
+              : `Thank you for choosing ${shopName}!`}
         </h1>
         <p className="text-sm text-gray-600">
           {failed

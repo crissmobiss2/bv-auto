@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import twilio from "twilio";
 import { parseSmsKeyword, setSmsOptOut } from "@/lib/consent";
-import { getShopPhone } from "@/lib/shop";
+import { getBranding } from "@/lib/shop";
 
 // Twilio sends form-encoded POST to this webhook for inbound SMS
 export async function POST(req: NextRequest) {
@@ -83,8 +83,8 @@ export async function POST(req: NextRequest) {
   }
 
   if (keyword === "HELP") {
-    const phone = await getShopPhone();
-    const help = `B&V Mobile Auto: ${phone ? `call ${phone} for help. ` : ""}Reply STOP to opt out, START to opt back in. Msg&data rates may apply.`;
+    const { name, phone } = await getBranding();
+    const help = `${name}: ${phone ? `call ${phone} for help. ` : ""}Reply STOP to opt out, START to opt back in. Msg&data rates may apply.`;
     return new NextResponse(`<Response><Message>${help.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</Message></Response>`, {
       headers: { "Content-Type": "text/xml" },
     });
