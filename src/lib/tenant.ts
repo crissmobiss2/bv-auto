@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 // (set by requireAuth); the Prisma extension in prisma.ts then scopes every query.
 // Code with no shop context (public token routes, webhooks, crons, login) runs unscoped.
 
-type Store = { shopId: string; created: Set<string> };
+type Store = { shopId: string | null; created: Set<string> };
 const storage = new AsyncLocalStorage<Store>();
 
 export function currentShopId(): string | null {
@@ -15,6 +15,18 @@ export function currentShopId(): string | null {
 /** Bind the rest of the current async flow (e.g. a route handler) to a shop. */
 export function enterShop(shopId: string) {
   storage.enterWith({ shopId, created: new Set() });
+}
+
+/**
+ * Open a shop scope for the caller and fill in `shopId` later. Must run before the
+ * function's first await: `enterWith` after an await only affects that function's own
+ * continuation, so an awaiting caller (every route handler awaiting requireAuth) would
+ * never see the shop and every query would run unscoped.
+ */
+export function openShopScope(): Store {
+  const store: Store = { shopId: null, created: new Set() };
+  storage.enterWith(store);
+  return store;
 }
 
 export function runWithShop<T>(shopId: string, fn: () => T): T {
