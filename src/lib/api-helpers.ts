@@ -1,3 +1,4 @@
+import { redactAuditPayload } from "@/lib/audit-redact";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -38,8 +39,8 @@ export async function logAudit(
       action,
       entity,
       entityId,
-      before: before ? JSON.parse(JSON.stringify(before)) : undefined,
-      after: after ? JSON.parse(JSON.stringify(after)) : undefined,
+      before: before ? redactAuditPayload(JSON.parse(JSON.stringify(before))) : undefined,
+      after: after ? redactAuditPayload(JSON.parse(JSON.stringify(after))) : undefined,
       notes,
     },
   });

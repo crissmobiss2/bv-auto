@@ -1,6 +1,7 @@
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { AUDIT_RETENTION_DAYS } from "@/lib/audit-redact";
 import { Resend } from "resend";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -12,6 +13,11 @@ export async function GET(req: NextRequest) {
   if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // DATA-010 retention: drop audit rows older than AUDIT_RETENTION_DAYS (default 365).
+  await prisma.auditLog
+    .deleteMany({ where: { createdAt: { lt: new Date(Date.now() - AUDIT_RETENTION_DAYS * 86_400_000) } } })
+    .catch((e) => console.error("[cron:health-check] audit retention failed", e));
 
   const now = new Date();
   const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
