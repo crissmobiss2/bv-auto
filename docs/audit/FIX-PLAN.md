@@ -74,7 +74,7 @@ Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
 
 - **UX-010 (partial)**: every `size="icon"` button now has an accessible name:
   - `Button` falls back to `aria-label={title}` for icon buttons that have a tooltip.
-  - The remaining 21 got explicit labels (Back, View, Edit, Delete, Add vehicle, Remove step, Previous/Next week, Mark complete, Open job).
+  - The remaining icon buttons got explicit labels (Back, View, Edit, Delete, Add vehicle, Remove step, Previous/Next week, Mark complete, Open job).
   - The hover-only "Open job" arrow is now visible on keyboard focus.
   - Still open: form-field label association, contrast, and a full screen-reader pass.
 
