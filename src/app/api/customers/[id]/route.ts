@@ -26,6 +26,7 @@ const updateSchema = z.object({
   marketingOptOut: z.boolean().optional(),
   // Staff may record an opt-out; only the customer's START reply re-enables SMS.
   smsOptOut: z.literal(true).optional(),
+  smsConsent: z.boolean().optional(),
 }).partial();
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -82,13 +83,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await prisma.customer.findUnique({ where: { id } });
   if (!existing) return apiError("Customer not found", 404);
 
-  const { email, ...rest } = parsed.data;
+  const { email, smsConsent, ...rest } = parsed.data;
   const updated = await prisma.customer.update({
     where: { id },
     data: {
       ...rest,
       ...(email !== undefined && { email: email || null }),
       ...(rest.smsOptOut && !existing.smsOptOut && { smsOptOutAt: new Date() }),
+      ...(smsConsent !== undefined && { smsConsentAt: smsConsent ? existing.smsConsentAt ?? new Date() : null }),
     },
   });
 
