@@ -81,7 +81,10 @@ const isObj = (v: unknown): v is Data => !!v && typeof v === "object" && !Array.
 export function stampCreate(model: string, data: Data, shopId: string): Data {
   const rels = relationFields(model);
   const out: Data = { ...data };
-  if (ROOT_MODELS.has(model) && out.shopId === undefined && out.shop === undefined) {
+  if (ROOT_MODELS.has(model)) {
+    // The caller's shop always wins over a shopId or shop link in the payload.
+    delete out.shopId;
+    delete out.shop;
     const hasShopRelation = rels.some((f) => f.name === "shop");
     const checked = rels.some((f) => isObj(out[f.name]));
     if (hasShopRelation && checked) out.shop = { connect: { id: shopId } };
@@ -111,6 +114,34 @@ function stampNested(model: string, ops: Data, shopId: string): Data {
     out.upsert = Array.isArray(out.upsert) ? mapped : mapped[0];
   }
   return out;
+}
+
+const ids = (v: unknown): string[] =>
+  (Array.isArray(v) ? v : [v]).flatMap((x) => (isObj(x) && typeof x.id === "string" ? [x.id] : []));
+const list = (v: unknown): Data[] => (Array.isArray(v) ? v : [v]).filter(isObj);
+
+/** Every tenant record a write payload links to, including through nested relation writes. */
+export function nestedReferencedIds(model: string, data: Data): [string, string][] {
+  const refs = referencedIds(model, data);
+  for (const f of relationFields(model)) {
+    const ops = data[f.name];
+    if (!isObj(ops) || !isTenant(f.type) || f.type === "Shop") continue;
+    const t = f.type;
+    for (const id of [...ids(ops.connect), ...ids(ops.set)]) refs.push([t, id]);
+    for (const c of list(ops.connectOrCreate)) {
+      for (const id of ids(c.where)) refs.push([t, id]);
+      if (isObj(c.create)) refs.push(...nestedReferencedIds(t, c.create));
+    }
+    for (const d of list(ops.create)) refs.push(...nestedReferencedIds(t, d));
+    if (isObj(ops.createMany)) for (const d of list(ops.createMany.data)) refs.push(...nestedReferencedIds(t, d));
+    for (const u of list(ops.update)) refs.push(...nestedReferencedIds(t, isObj(u.data) ? u.data : u));
+    for (const u of list(ops.updateMany)) if (isObj(u.data)) refs.push(...nestedReferencedIds(t, u.data));
+    for (const u of list(ops.upsert)) {
+      if (isObj(u.create)) refs.push(...nestedReferencedIds(t, u.create));
+      if (isObj(u.update)) refs.push(...nestedReferencedIds(t, u.update));
+    }
+  }
+  return refs;
 }
 
 /** Foreign keys on a write payload that point at tenant records: [targetModel, id]. */
@@ -147,7 +178,7 @@ export async function scopeArgs(model: string, operation: string, args: Data, sh
   if (!filter) return args;
   const next: Data = { ...args };
   const check = async (data: Data) => {
-    for (const [target, id] of referencedIds(model, data)) {
+    for (const [target, id] of nestedReferencedIds(model, data)) {
       if (created.has(id)) continue;
       if ((await count(target, id)) === 0) throw new CrossShopError(target);
     }

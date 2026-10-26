@@ -42,4 +42,19 @@ describe("tenant scoping", () => {
     expect(referencedIds("Payment", { invoiceId: "i1" })).toContainEqual(["Invoice", "i1"]);
     expect(referencedIds("Job", { customer: { connect: { id: "c1" } } })).toContainEqual(["Customer", "c1"]);
   });
+
+  it("rejects nested connects and nested foreign keys that point at another shop", async () => {
+    await expect(scopeArgs("Job", "update", { where: { id: "j1" }, data: { photos: { connect: [{ id: "p2" }] } } }, "s1", none, new Set()))
+      .rejects.toBeInstanceOf(CrossShopError);
+    await expect(scopeArgs("Customer", "update", { where: { id: "c1" }, data: { jobs: { create: [{ title: "x", fleetAccountId: "f2" }] } } }, "s1", none, new Set()))
+      .rejects.toBeInstanceOf(CrossShopError);
+    await expect(scopeArgs("Job", "update", { where: { id: "j1" }, data: { photos: { connect: [{ id: "p1" }] } } }, "s1", one, new Set()))
+      .resolves.toBeTruthy();
+  });
+
+  it("ignores a shopId or shop link supplied on create", () => {
+    expect(stampCreate("Customer", { firstName: "A", shopId: "s2" }, "s1")).toMatchObject({ shopId: "s1" });
+    const linked = stampCreate("Job", { title: "x", shop: { connect: { id: "s2" } }, customer: { connect: { id: "c1" } } }, "s1");
+    expect(linked.shop).toEqual({ connect: { id: "s1" } });
+  });
 });
