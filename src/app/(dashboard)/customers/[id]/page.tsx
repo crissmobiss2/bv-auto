@@ -21,6 +21,7 @@ import { AddVehicleDialog } from "@/components/features/add-vehicle-dialog";
 import { CustomerFormDialog } from "@/components/features/customer-form-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toaster";
 
 function SmsThread({ customerId, customerName }: { customerId: string; customerName: string }) {
   const queryClient = useQueryClient();
@@ -42,7 +43,7 @@ function SmsThread({ customerId, customerName }: { customerId: string; customerN
       setMessage("");
     },
     onError: (e) =>
-      alert(axios.isAxiosError(e) ? e.response?.data?.error ?? "Text failed to send" : "Text failed to send"),
+      toast(axios.isAxiosError(e) ? e.response?.data?.error ?? "Text failed to send" : "Text failed to send"),
   });
 
   const draftWithAi = async () => {
@@ -304,7 +305,7 @@ export default function CustomerDetailPage() {
           const res = await axios.post(`/api/portal/${id}`);
           if (res.data.portalUrl) {
             await navigator.clipboard.writeText(res.data.portalUrl);
-            alert("Portal link copied to clipboard!");
+            toast("Portal link copied to clipboard!");
           }
         }}>
           <Link2 className="h-4 w-4 mr-1" /> Portal Link

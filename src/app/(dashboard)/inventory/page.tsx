@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge";
 import { Plus, AlertTriangle, Package, Search, Minus } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { toast } from "@/components/ui/toaster";
 
 interface InventoryItem {
   id: string; name: string; partNumber?: string; description?: string;
@@ -55,7 +56,7 @@ export default function InventoryPage() {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-movements", v.id] });
     },
-    onError: (e) => alert((axios.isAxiosError(e) && e.response?.data?.error) || "Stock change failed"),
+    onError: (e) => toast.error((axios.isAxiosError(e) && e.response?.data?.error) || "Stock change failed"),
   });
   const [historyFor, setHistoryFor] = useState<string | null>(null);
 

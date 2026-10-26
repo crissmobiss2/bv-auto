@@ -14,6 +14,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { AddVehicleDialog } from "@/components/features/add-vehicle-dialog";
 import { CustomerFormDialog } from "@/components/features/customer-form-dialog";
+import { CustomerCombobox } from "@/components/features/customer-combobox";
 
 function NewJobForm() {
   const router = useRouter();
@@ -36,11 +37,6 @@ function NewJobForm() {
   });
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
-
-  const { data: customers } = useQuery({
-    queryKey: ["customers-list"],
-    queryFn: () => axios.get("/api/customers?limit=200").then((r) => r.data.customers),
-  });
 
   const { data: vehicles, refetch: refetchVehicles } = useQuery({
     queryKey: ["vehicles", form.customerId],
@@ -92,21 +88,19 @@ function NewJobForm() {
             </div>
 
             <div className="space-y-2">
-              <Label>Customer *</Label>
+              <Label htmlFor="customer">Customer *</Label>
               <div className="flex gap-2">
-                <Select value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v, vehicleId: "" })}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select customer..." /></SelectTrigger>
-                  <SelectContent>
-                    {customers?.map((c: { id: string; firstName: string; lastName: string }) => (
-                      <SelectItem key={c.id} value={c.id}>{`${c.firstName} ${c.lastName}`}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomerCombobox
+                  id="customer"
+                  value={form.customerId}
+                  onChange={(v) => setForm({ ...form, customerId: v, vehicleId: "" })}
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   title="New customer"
+                  aria-label="New customer"
                   className="shrink-0 text-blue-600 border-blue-300 hover:bg-blue-50"
                   onClick={() => setShowAddCustomer(true)}
                 >
@@ -234,7 +228,7 @@ function NewJobForm() {
         open={showAddCustomer}
         onOpenChange={setShowAddCustomer}
         onSuccess={(customer) => {
-          queryClient.invalidateQueries({ queryKey: ["customers-list"] });
+          queryClient.invalidateQueries({ queryKey: ["customer-search"] });
           setForm((f) => ({ ...f, customerId: customer.id, vehicleId: "" }));
         }}
       />

@@ -15,6 +15,7 @@ import { Eye, Download, DollarSign, Send, Plus, Loader2, FileText } from "lucide
 import Link from "next/link";
 import { formatCurrency, formatDate, INVOICE_STATUS_COLORS } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "@/components/ui/toaster";
 
 const PAYMENT_METHODS = ["CASH", "CHECK", "CREDIT_CARD", "DEBIT_CARD", "VENMO", "ZELLE", "ACH", "OTHER"];
 
@@ -91,7 +92,7 @@ function InvoicesContent() {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       if (res.data?.paymentUrl) {
         navigator.clipboard?.writeText(res.data.paymentUrl).catch(() => null);
-        alert(`Invoice sent! Payment link copied to clipboard:\n${res.data.paymentUrl}`);
+        toast(`Invoice sent! Payment link copied to clipboard:\n${res.data.paymentUrl}`);
       }
     },
     onError: () => setSendingId(null),

@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Megaphone, Plus, Play, Pause, Send, Users, Clock, CheckCircle, Zap } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { toast } from "@/components/ui/toaster";
 
 interface Campaign {
   id: string; name: string; type: string; triggerType: string; triggerValue?: string;
@@ -69,7 +70,7 @@ export default function MarketingPage() {
   const sendMutation = useMutation({
     mutationFn: (id: string) => axios.post(`/api/marketing/campaigns/${id}/send`).then(r => r.data),
     onSuccess: (data) => { setSendResult(data); setSendingId(null); },
-    onError: (e) => alert(axios.isAxiosError(e) ? e.response?.data?.error ?? "Campaign failed to send" : "Campaign failed to send"),
+    onError: (e) => toast.error(axios.isAxiosError(e) ? e.response?.data?.error ?? "Campaign failed to send" : "Campaign failed to send"),
     onSettled: () => { queryClient.invalidateQueries({ queryKey: ["campaigns"] }); setSendingId(null); },
   });
 

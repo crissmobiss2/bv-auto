@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, AlertCircle, AlertTriangle, MinusCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toaster";
 
 const CONDITIONS = [
   { value: "GOOD", label: "Good", icon: CheckCircle, color: "text-green-600 bg-green-50 border-green-200" },
@@ -85,9 +86,9 @@ export function InspectionChecklist({ job }: { job: { id: string; mileageIn?: nu
 
   const sendReportMutation = useMutation({
     mutationFn: () => axios.post(`/api/jobs/${job.id}/inspection/send`),
-    onSuccess: () => alert("Inspection report sent to customer."),
+    onSuccess: () => toast("Inspection report sent to customer."),
     onError: (e) =>
-      alert(
+      toast.error(
         (axios.isAxiosError(e) && e.response?.data?.error) || "Could not send the inspection report.",
       ),
   });
