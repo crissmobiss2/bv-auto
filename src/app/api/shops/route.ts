@@ -18,9 +18,8 @@ export async function POST(req: NextRequest) {
 
   const shop = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SINGLE_SHOP_LOCK})`;
-    if ((await tx.shop.count()) > 0) return null;
-    return tx.shop.create({
-    data: {
+    if ((await tx.shop.count({ where: { isActive: true } })) > 0) return null;
+    const data = {
       name: body.name,
       address: body.address,
       city: body.city,
@@ -33,8 +32,12 @@ export async function POST(req: NextRequest) {
       partsMarkup: body.partsMarkup != null ? Number(body.partsMarkup) : 40,
       googleReviewUrl: body.googleReviewUrl,
       isDefault: true,
-    },
-    });
+    };
+    // A shop deactivated before the lock is hidden from GET, so reuse it instead of blocking setup forever.
+    const dormant = await tx.shop.findFirst({ orderBy: { createdAt: "asc" } });
+    return dormant
+      ? tx.shop.update({ where: { id: dormant.id }, data: { ...data, isActive: true } })
+      : tx.shop.create({ data });
   });
   if (!shop) return apiError(SINGLE_SHOP_MESSAGE, 409);
   return apiSuccess(shop, 201);
