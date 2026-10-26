@@ -160,7 +160,7 @@ export default function BookPage() {
               onChange={(e) => setForm({ ...form, smsConsent: e.target.checked })}
             />
             <span>
-              Text me about this appointment (confirmations, reminders, estimates and invoices). Message frequency
+              Text me about this appointment (confirmations, reminders, estimates and invoices) and send occasional maintenance reminders and offers. Message frequency
               varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Consent is not required to
               book. See our <Link href="/privacy" className="underline">Privacy Policy</Link> and{" "}
               <Link href="/terms" className="underline">Terms</Link>.

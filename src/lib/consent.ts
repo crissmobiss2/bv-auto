@@ -51,4 +51,4 @@ export async function assertSmsAllowed(phone: string) {
 }
 
 /** Prisma filter for customers who may receive marketing texts. */
-export const marketableSms = { isActive: true, smsOptOut: false, marketingOptOut: false } as const;
+export const marketableSms = { isActive: true, smsOptOut: false, marketingOptOut: false, smsConsentAt: { not: null } } as const;

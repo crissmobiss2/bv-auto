@@ -35,6 +35,7 @@ type MergeCustomer = {
   notes: string | null;
   smsOptOut: boolean;
   smsOptOutAt: Date | null;
+  smsConsentAt?: Date | null;
   marketingOptOut: boolean;
   taxExempt: boolean;
 } & Partial<Record<(typeof FILL_FIELDS)[number], string | null>>;
@@ -49,6 +50,7 @@ export function mergedFields(target: MergeCustomer, source: MergeCustomer) {
     data.smsOptOut = true;
     data.smsOptOutAt = source.smsOptOutAt ?? new Date();
   }
+  if (source.smsConsentAt && !target.smsConsentAt) data.smsConsentAt = source.smsConsentAt;
   if (source.marketingOptOut) data.marketingOptOut = true;
   if (source.taxExempt) data.taxExempt = true;
   return data;
