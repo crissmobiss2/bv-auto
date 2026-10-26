@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
 import { smsConfigured } from "@/lib/sms";
+import { takeSmsQuota } from "@/lib/plan-limits";
 
 export async function GET(req: NextRequest) {
   if (!isCronAuthorized(req)) {
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
     where: { status: "ACTIVE", nextStepAt: { lte: now }, customer: { smsConsentAt: { not: null } } },
     include: {
       sequence: { include: { steps: { orderBy: { stepNumber: "asc" } } } },
-      customer: { select: { firstName: true, lastName: true, phone: true, smsOptOut: true, marketingOptOut: true, smsConsentAt: true } },
+      customer: { select: { shopId: true, firstName: true, lastName: true, phone: true, smsOptOut: true, marketingOptOut: true, smsConsentAt: true } },
     },
     take: 50,
   });
@@ -47,6 +48,9 @@ export async function GET(req: NextRequest) {
       });
       continue;
     }
+
+    // Over the allowance this step waits for the next run that has texts left.
+    if (!(await takeSmsQuota(enrollment.customer.shopId))) continue;
 
     try {
       const twilio = (await import("twilio")).default;

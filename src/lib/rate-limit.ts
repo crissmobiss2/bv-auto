@@ -42,8 +42,9 @@ export function rateLimitLocal(key: string, limit: number, windowMs: number): bo
  * @param key      Unique identifier (e.g. `ai:${ip}`)
  * @param limit    Max requests per window
  * @param windowMs Window size in milliseconds
+ * @param opts.durable Refuse when the shared counter is unavailable instead of counting per instance
  */
-export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+export async function rateLimit(key: string, limit: number, windowMs: number, opts: { durable?: boolean } = {}): Promise<boolean> {
   try {
     const rows = await prisma.$queryRaw<{ count: number }[]>`
       INSERT INTO "RateLimit" ("key", "count", "resetAt")
@@ -59,6 +60,8 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
     }
     return count <= limit;
   } catch {
+    // A per-instance count can't enforce a shop-wide allowance, so durable callers refuse instead.
+    if (opts.durable) return false;
     return rateLimitLocal(key, limit, windowMs);
   }
 }

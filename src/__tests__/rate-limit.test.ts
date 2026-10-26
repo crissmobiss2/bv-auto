@@ -24,6 +24,12 @@ describe("rateLimit", () => {
     expect(await rateLimit("block-key", 2, 60_000)).toBe(false);
   });
 
+  it("refuses durable allowances when the shared counter is unavailable", async () => {
+    vi.mocked(prisma.$queryRaw).mockRejectedValue(new Error("db down"));
+    const { rateLimit } = await import("@/lib/rate-limit");
+    expect(await rateLimit("durable-key", 5, 60_000, { durable: true })).toBe(false);
+  });
+
   it("isolates different keys", async () => {
     vi.mocked(prisma.$queryRaw).mockRejectedValue(new Error("db down"));
     const { rateLimit } = await import("@/lib/rate-limit");

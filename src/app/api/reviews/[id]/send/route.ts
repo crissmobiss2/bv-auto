@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
 import { smsConfigured } from "@/lib/sms";
 import { getBranding } from "@/lib/shop";
+import { SMS_LIMIT_MESSAGE, takeSmsQuota } from "@/lib/plan-limits";
 
 export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireAuth();
@@ -13,7 +14,7 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
 
   const job = await prisma.job.findUnique({
     where: { id },
-    include: { customer: { select: { id: true, phone: true, email: true, firstName: true, lastName: true } } },
+    include: { customer: { select: { id: true, phone: true, email: true, firstName: true, lastName: true, smsOptOut: true } } },
   });
   if (!job) return apiError("Job not found", 404);
 
@@ -30,6 +31,10 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
   if (!smsConfigured) {
     return apiError("SMS is not configured (missing Twilio credentials or phone number)", 503);
   }
+  if (job.customer.smsOptOut) {
+    return apiError("This customer replied STOP. They must text START before you can message them.", 409);
+  }
+  if (!(await takeSmsQuota())) return apiError(SMS_LIMIT_MESSAGE, 429);
 
   let smsSent = false;
   try {
