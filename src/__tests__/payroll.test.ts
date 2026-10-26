@@ -45,4 +45,30 @@ describe("computeTechPay", () => {
     expect(p.totalHours).toBe(0);
     expect(p.grossPay).toBe(0);
   });
+
+  it("counts earlier days of a split workweek toward the overtime threshold", () => {
+    // Mon-Wed (30h) fall in the previous pay period; Thu 15h is paid now: 5h over 40.
+    const logs = [
+      log("a", "j1", "2026-10-05T06:00:00", 10),
+      log("b", "j1", "2026-10-06T06:00:00", 10),
+      log("c", "j1", "2026-10-07T06:00:00", 10),
+      log("d", "j2", "2026-10-08T06:00:00", 15),
+    ];
+    const p = computeTechPay(tech("HOURLY", logs, { hourlyRate: 20 }), new Date("2026-10-08T00:00:00"));
+    expect(p.totalHours).toBe(15);
+    expect(p.overtimeHours).toBe(5);
+    expect(p.grossPay).toBe(10 * 20 + 5 * 30);
+    expect(p.details).toHaveLength(1);
+  });
+
+  it("splits an overnight shift that crosses into Monday between the two weeks", () => {
+    // 38h in the week, then Sun 20:00 to Mon 04:00: 4h land in week 1 (2h OT), 4h in week 2.
+    const logs = [
+      log("a", "j1", "2026-10-05T06:00:00", 19),
+      log("b", "j1", "2026-10-07T06:00:00", 19),
+      log("c", "j2", "2026-10-11T20:00:00", 8),
+    ];
+    const p = computeTechPay(tech("HOURLY", logs, { hourlyRate: 20 }));
+    expect(p.overtimeHours).toBe(2);
+  });
 });

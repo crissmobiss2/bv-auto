@@ -25,22 +25,54 @@ export type PayrollStaff = {
 
 export type TechPayroll = ReturnType<typeof computeTechPay>;
 
-function weekKey(d: Date) {
+export function weekStart(d: Date) {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
-  return x.toDateString();
+  return x;
 }
 
-export function computeTechPay(tech: PayrollStaff) {
+/** Hours of [start, end) per workweek, split at Monday 00:00 so overnight shifts count in both weeks. */
+function weekSegments(start: Date, end: Date) {
+  const out: { week: string; hours: number }[] = [];
+  let s = start;
+  while (s < end) {
+    const ws = weekStart(s);
+    const next = new Date(ws);
+    next.setDate(next.getDate() + 7);
+    const e = next < end ? next : end;
+    out.push({ week: ws.toDateString(), hours: (e.getTime() - s.getTime()) / 3600000 });
+    s = e;
+  }
+  return out;
+}
+
+/**
+ * `periodStart`: logs before it only count toward that week's 40-hour threshold
+ * (a workweek split across two pay periods); they are not paid again.
+ */
+export function computeTechPay(tech: PayrollStaff, periodStart?: Date) {
   const rate = tech.payrollRate;
   const payType = rate?.rateType || "HOURLY";
   const rateValue = payType === "COMMISSION" ? Number(rate?.commissionPct || 0) : Number(rate?.hourlyRate || 0);
   const flatRateMul = Number(rate?.flatRateMul || 1.0);
 
-  const logs = tech.timeLogs
+  const all = tech.timeLogs
     .filter((l) => l.clockedOut)
     .sort((a, b) => a.clockedIn.getTime() - b.clockedIn.getTime());
   const weekHours = new Map<string, number>();
+  const addWeekHours = (l: PayrollLog) => {
+    let ot = 0;
+    for (const seg of weekSegments(l.clockedIn, l.clockedOut!)) {
+      const before = weekHours.get(seg.week) ?? 0;
+      weekHours.set(seg.week, before + seg.hours);
+      ot += Math.max(0, before + seg.hours - Math.max(before, OT_THRESHOLD_HOURS));
+    }
+    return ot;
+  };
+  const logs = periodStart ? all.filter((l) => l.clockedIn >= periodStart) : all;
+  if (payType === "HOURLY" && periodStart) {
+    for (const l of all) if (l.clockedIn < periodStart) addWeekHours(l);
+  }
   const commissionedJobs = new Set<string>();
   let grossPay = 0;
   let totalHours = 0;
@@ -52,10 +84,7 @@ export function computeTechPay(tech: PayrollStaff) {
     let pay = 0;
     let ot = 0;
     if (payType === "HOURLY") {
-      const wk = weekKey(l.clockedIn);
-      const before = weekHours.get(wk) ?? 0;
-      weekHours.set(wk, before + hours);
-      ot = Math.max(0, before + hours - Math.max(before, OT_THRESHOLD_HOURS));
+      ot = Math.min(hours, Math.round(addWeekHours(l) * 60) / 60);
       pay = (hours - ot) * rateValue + ot * rateValue * OT_MULTIPLIER;
     } else if (payType === "FLAT_RATE") {
       pay = hours * flatRateMul * (rateValue || 25);
@@ -96,6 +125,8 @@ export function computeTechPay(tech: PayrollStaff) {
 /** Everyone who is paid: technicians/admins, anyone with a pay profile, or anyone who logged time (FIN-010). */
 export async function buildPayroll(from: Date, to: Date) {
   const window = { clockedIn: { gte: from }, clockedOut: { lte: to } };
+  // Earlier days of the first workweek count toward its overtime threshold.
+  const logWindow = { clockedIn: { gte: weekStart(from) }, clockedOut: { lte: to } };
   const staff = await prisma.user.findMany({
     where: {
       isActive: true,
@@ -108,12 +139,12 @@ export async function buildPayroll(from: Date, to: Date) {
     include: {
       payrollRate: true,
       timeLogs: {
-        where: window,
+        where: logWindow,
         include: { job: { select: { id: true, jobNumber: true, title: true, invoice: { select: { totalAmount: true } } } } },
       },
     },
   });
-  return staff.map(computeTechPay);
+  return staff.map((s) => computeTechPay(s, from));
 }
 
 export function summarizePayroll(technicians: TechPayroll[]) {
