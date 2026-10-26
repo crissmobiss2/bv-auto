@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const unscheduled = searchParams.get("unscheduled") === "1";
   const vehicleId = searchParams.get("vehicleId");
 
   const where: Record<string, unknown> = {};
@@ -56,7 +57,10 @@ export async function GET(req: NextRequest) {
   }
   if (customerId) where.customerId = customerId;
   if (vehicleId) where.vehicleId = vehicleId;
-  if (from || to) {
+  if (unscheduled) {
+    where.scheduledAt = null;
+    if (!status) where.status = { notIn: [JobStatus.COMPLETED, JobStatus.INVOICED, JobStatus.PAID, JobStatus.CANCELLED] };
+  } else if (from || to) {
     where.scheduledAt = {
       ...(from ? { gte: new Date(from) } : {}),
       ...(to ? { lt: new Date(to) } : {}),

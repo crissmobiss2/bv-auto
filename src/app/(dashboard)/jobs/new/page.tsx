@@ -27,7 +27,7 @@ function NewJobForm() {
     vehicleId: "",
     technicianId: "",
     title: searchParams.get("service") || "",
-    description: "",
+    description: searchParams.get("description") || "",
     serviceLocation: "",
     scheduledAt: "",
     estimatedHours: "",
@@ -37,6 +37,15 @@ function NewJobForm() {
   });
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const requestName = searchParams.get("name") || "";
+  const requestPhone = searchParams.get("phone") || "";
+  const [requestFirst, ...requestRest] = requestName.trim().split(/\s+/);
+  const requestCustomer = {
+    firstName: requestFirst || "",
+    lastName: requestRest.join(" "),
+    phone: requestPhone,
+    email: searchParams.get("email") || "",
+  };
 
   const { data: vehicles, refetch: refetchVehicles } = useQuery({
     queryKey: ["vehicles", form.customerId],
@@ -107,6 +116,12 @@ function NewJobForm() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              {requestName && !form.customerId && (
+                <p className="text-xs text-blue-600">
+                  Service request from {requestName}{requestPhone ? ` (${requestPhone})` : ""}: search for them above or{" "}
+                  <button type="button" className="underline" onClick={() => setShowAddCustomer(true)}>add them as a new customer</button>.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -227,6 +242,7 @@ function NewJobForm() {
       <CustomerFormDialog
         open={showAddCustomer}
         onOpenChange={setShowAddCustomer}
+        initial={requestName ? requestCustomer : undefined}
         onSuccess={(customer) => {
           queryClient.invalidateQueries({ queryKey: ["customer-search"] });
           setForm((f) => ({ ...f, customerId: customer.id, vehicleId: "" }));

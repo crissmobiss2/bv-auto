@@ -51,6 +51,19 @@ export default function SchedulePage() {
       axios.get(`/api/jobs?from=${from}&to=${to}&limit=200`).then((r) => r.data.jobs || []),
   });
 
+  const { data: unscheduled = [] } = useQuery<Job[]>({
+    queryKey: ["schedule-unscheduled"],
+    queryFn: async () => {
+      const all: Job[] = [];
+      for (let page = 1; ; page++) {
+        const { data } = await axios.get(`/api/jobs?unscheduled=1&limit=100&page=${page}`);
+        const batch: Job[] = data.jobs || [];
+        all.push(...batch);
+        if (batch.length < 100 || all.length >= (data.total ?? 0)) return all;
+      }
+    },
+  });
+
   const { data: techList = [] } = useQuery<Tech[]>({
     queryKey: ["technicians"],
     queryFn: () => axios.get("/api/users?role=TECHNICIAN").then(r => r.data),
@@ -77,6 +90,7 @@ export default function SchedulePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedule-jobs", from] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-unscheduled"] });
       setScheduling(null);
     },
   });
@@ -94,7 +108,6 @@ export default function SchedulePage() {
   const jobsForDay = (day: Date) =>
     jobs.filter((j) => j.scheduledAt && isSameDay(parseISO(j.scheduledAt), day));
 
-  const unscheduled = jobs.filter((j) => !j.scheduledAt);
   const today = new Date();
 
   return (

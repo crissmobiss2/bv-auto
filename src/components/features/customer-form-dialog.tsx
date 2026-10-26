@@ -51,6 +51,8 @@ export function customerToForm(c: {
 }
 
 interface Props {
+  /** Prefill for a new customer (ignored when editing). */
+  initial?: Partial<CustomerFormValues>;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   /** When provided, edits that customer (PATCH). When omitted, creates a new one (POST). */
@@ -59,7 +61,7 @@ interface Props {
   onSuccess?: (customer: { id: string; firstName: string; lastName: string; phone: string }) => void;
 }
 
-export function CustomerFormDialog({ open, onOpenChange, customer, onSuccess }: Props) {
+export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSuccess }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!customer;
   const [form, setForm] = useState<CustomerFormValues>(BLANK_CUSTOMER);
@@ -68,7 +70,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer, onSuccess }: 
   // Prefill/reset whenever the dialog opens
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) setForm(customer ? customerToForm(customer) : BLANK_CUSTOMER);
+    if (open) setForm(customer ? customerToForm(customer) : { ...BLANK_CUSTOMER, ...initial });
   }
 
   const set = (key: keyof CustomerFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>

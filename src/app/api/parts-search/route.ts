@@ -124,7 +124,19 @@ export async function GET(req: NextRequest) {
     ];
   }
 
+  if (!process.env.PARTSTECH_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    return apiSuccess({
+      results: [],
+      query,
+      vehicle: { year, make, model },
+      live: false,
+      configured: false,
+      note: "Parts search isn't set up yet. Add PARTSTECH_API_KEY (live catalog) or ANTHROPIC_API_KEY (estimates) to turn it on.",
+    });
+  }
+
   return apiSuccess({
+    configured: true,
     results,
     query,
     vehicle: { year, make, model },

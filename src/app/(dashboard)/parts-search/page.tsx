@@ -38,6 +38,7 @@ export default function PartsSearchPage() {
   const [results, setResults] = useState<PartResult[]>([]);
   const [cartItems, setCartItems] = useState<PartResult[]>([]);
   const [note, setNote] = useState("");
+  const [configured, setConfigured] = useState(true);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [orderDone, setOrderDone] = useState(false);
 
@@ -61,6 +62,7 @@ export default function PartsSearchPage() {
     onSuccess: (data) => {
       setResults(data.results || []);
       setNote(data.note || "");
+      setConfigured(data.configured !== false);
     },
   });
 
@@ -168,7 +170,9 @@ export default function PartsSearchPage() {
           )}
 
           {!searchMutation.isPending && results.length === 0 && searchMutation.isSuccess && (
-            <Card><CardContent className="p-8 text-center text-gray-500">No parts found. Try a different search term.</CardContent></Card>
+            <Card><CardContent className="p-8 text-center text-gray-500">
+              {configured ? "No parts found. Try a different search term." : note}
+            </CardContent></Card>
           )}
 
           {searchMutation.isIdle && (

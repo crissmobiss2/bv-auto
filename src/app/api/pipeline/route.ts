@@ -77,6 +77,9 @@ export async function GET() {
   return apiSuccess({
     summary: {
       openQuotes: openQuotes.length,
+      totalPipeline: Math.round(openQuotes.reduce((s, q) => s + Number(q.totalAmount), 0)),
+      weightedPipeline: Math.round(quotePipeline),
+      scheduledRevenue: Math.round(scheduledRevenue30),
       quotePipelineValue: Math.round(quotePipeline),
       scheduledJobs30: scheduledJobs.filter(j => new Date(j.scheduledAt!) <= in30).length,
       activeJobs: activeJobs.length,
@@ -89,7 +92,7 @@ export async function GET() {
       avgMonthlyRevenue: Math.round(avgMonthly),
     },
     quotes: weightedQuotes.slice(0, 15),
-    scheduledJobs: scheduledJobs.slice(0, 20),
+    scheduledJobs: scheduledJobs.slice(0, 20).map(j => ({ ...j, estimatedTotal: Math.round(Number(j.estimatedHours || 2) * laborRate) })),
     fleetAccounts,
     monthlyTrend: Object.entries(monthlyRevenue)
       .sort(([a], [b]) => a.localeCompare(b))
