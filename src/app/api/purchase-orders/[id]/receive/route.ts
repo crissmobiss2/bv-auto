@@ -35,22 +35,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const now = new Date();
+  const receivedById = new Map(po.items.map((p) => [p.id, Number(p.quantityReceived)]));
+  for (const line of parsed.data.items) {
+    receivedById.set(line.partId, receivedById.get(line.partId)! + line.quantity);
+  }
+  // Open = units still outstanding, regardless of line status (a line can be
+  // INSTALLED before every unit has arrived).
+  const open = po.items.filter(
+    (p) =>
+      p.status !== PartStatus.RETURNED && p.status !== PartStatus.CREDITED &&
+      receivedById.get(p.id)! < Number(p.quantity) - 1e-9,
+  ).length;
+
   const updated = await prisma.$transaction(async (tx) => {
     for (const line of parsed.data.items) {
       const part = byId.get(line.partId)!;
-      const received = Number(part.quantityReceived) + line.quantity;
+      const received = receivedById.get(part.id)!;
       const complete = received >= Number(part.quantity) - 1e-9;
       await tx.jobPart.update({
         where: { id: part.id },
         data: {
           quantityReceived: received,
-          ...(complete ? { status: PartStatus.RECEIVED, receivedAt: now } : {}),
+          ...(complete ? { receivedAt: now, ...(part.status === PartStatus.INSTALLED ? {} : { status: PartStatus.RECEIVED }) } : {}),
         },
       });
     }
-    const open = await tx.jobPart.count({
-      where: { purchaseOrderId: id, status: { in: [PartStatus.ORDERED, PartStatus.SHIPPED, PartStatus.PICKED_UP, PartStatus.QUOTED, PartStatus.REQUESTED] } },
-    });
     return tx.purchaseOrder.update({
       where: { id },
       data: open === 0 ? { status: "RECEIVED", receivedAt: now } : { status: "CONFIRMED" },
