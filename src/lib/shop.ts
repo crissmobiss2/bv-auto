@@ -1,5 +1,13 @@
 import { prisma } from "@/lib/prisma";
 
+// AUTH-010 / DATA-001 (option B): records carry no shopId, so a second shop would see
+// every other shop's customers and invoices. Until real tenant scoping exists, the app
+// runs exactly one shop.
+export const SINGLE_SHOP_LOCK = 724_002;
+export const SINGLE_SHOP_MESSAGE =
+  "This app runs a single shop. Edit the existing shop instead of adding another.";
+export const ONLY_SHOP_MESSAGE = "The shop can't be deactivated: it is the only shop.";
+
 export async function getDefaultShop() {
   return prisma.shop.findFirst({
     where: { isActive: true },
