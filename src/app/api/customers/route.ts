@@ -23,6 +23,7 @@ const createSchema = z.object({
   taxExemptId: z.string().optional(),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  smsConsent: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -122,9 +123,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const { smsConsent, ...fields } = parsed.data;
   const customer = await prisma.customer.create({
     data: {
-      ...parsed.data,
+      ...fields,
+      smsConsentAt: smsConsent ? new Date() : null,
       email: parsed.data.email || null,
       tags: parsed.data.tags || [],
     },

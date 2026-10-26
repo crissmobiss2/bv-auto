@@ -249,6 +249,12 @@ export default function LoginPage() {
             </Link>
           </p>
 
+          <p className="text-center text-xs text-gray-400">
+            <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+            {" · "}
+            <Link href="/terms" className="hover:underline">Terms</Link>
+          </p>
+
           {process.env.NODE_ENV !== "production" && (
             <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
               <p className="text-xs font-semibold text-amber-800 mb-1">Dev credentials</p>

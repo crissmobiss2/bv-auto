@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import { getShopPhone } from "@/lib/shop";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = "B&V Mobile Auto <service@bvauto.com>";
+const FROM = process.env.RESEND_FROM_EMAIL || "B&V Mobile Auto <service@bvauto.com>";
 const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";
 
 export const emailConfigured = !!resend;

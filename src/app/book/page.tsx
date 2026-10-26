@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ const SERVICE_TYPES = [
 
 export default function BookPage() {
   const [form, setForm] = useState({
-    name: "", phone: "", email: "",
+    name: "", phone: "", email: "", smsConsent: false,
     vehicleYear: "", vehicleMake: "", vehicleModel: "",
     serviceType: "", description: "", preferredDate: "",
   });
@@ -151,6 +152,20 @@ export default function BookPage() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
+          <label className="flex items-start gap-2 text-xs text-gray-600">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={form.smsConsent}
+              onChange={(e) => setForm({ ...form, smsConsent: e.target.checked })}
+            />
+            <span>
+              Text me about this appointment (confirmations, reminders, estimates and invoices). Message frequency
+              varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Consent is not required to
+              book. See our <Link href="/privacy" className="underline">Privacy Policy</Link> and{" "}
+              <Link href="/terms" className="underline">Terms</Link>.
+            </span>
+          </label>
           <Button className="w-full" size="lg" onClick={handleSubmit} disabled={submitting}>
             {submitting ? "Submitting..." : "Submit Request"}
           </Button>

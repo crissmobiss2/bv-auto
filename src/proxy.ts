@@ -21,6 +21,8 @@ const PUBLIC_API_PREFIXES = [
 // Pages that are intentionally public. The booking POST is public, but the
 // booking list is staff-only and is handled separately below.
 const PUBLIC_PAGE_PREFIXES = [
+  "/privacy",
+  "/terms",
   "/approve",
   "/portal",
   "/book",
