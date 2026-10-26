@@ -2,10 +2,13 @@
 
 const SENSITIVE_KEY = /pass(word)?|hash|token|secret|api[_-]?key|^otp|totp|ssn|card(number)?|cvv|signature(data|url)?$/i;
 
-export const AUDIT_RETENTION_DAYS = Math.max(30, Number(process.env.AUDIT_RETENTION_DAYS) || 365);
+const retentionEnv = Number(process.env.AUDIT_RETENTION_DAYS);
+export const AUDIT_RETENTION_DAYS =
+  process.env.AUDIT_RETENTION_DAYS && Number.isFinite(retentionEnv) ? Math.max(30, retentionEnv) : 365;
 
 export function redactAuditPayload<T>(value: T, depth = 0): T {
-  if (depth > 6 || value === null || typeof value !== "object") return value;
+  if (value === null || typeof value !== "object") return value;
+  if (depth > 20) return "[truncated]" as T;
   if (Array.isArray(value)) return value.map((v) => redactAuditPayload(v, depth + 1)) as T;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
