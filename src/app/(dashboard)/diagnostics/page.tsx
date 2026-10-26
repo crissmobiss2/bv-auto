@@ -470,7 +470,7 @@ function DiagnosticsPageInner() {
       if (patternVehicle.make) p.set("make", patternVehicle.make);
       if (patternVehicle.model) p.set("model", patternVehicle.model);
       if (patternCode) p.set("code", patternCode);
-      return axios.get(`/api/pattern-failures?${p}`).then(r => r.data.failures || []);
+      return axios.get(`/api/pattern-failures?${p}`).then(r => (Array.isArray(r.data) ? r.data : r.data?.failures) || []);
     },
     enabled: patternTrigger && !!patternVehicle.make,
   });
