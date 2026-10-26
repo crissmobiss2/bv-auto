@@ -46,6 +46,13 @@ describe("PO partial receive", () => {
     expect(db.purchaseOrder.update.mock.calls[0][0].data).toMatchObject({ status: "RECEIVED" });
   });
 
+  it("counts a part listed twice against what is outstanding", async () => {
+    db.purchaseOrder.findUnique.mockResolvedValue({ id: "po1", status: "SENT", items: [line("a", "ORDERED", 2, 1)] });
+    const res = await receive([{ partId: "a", quantity: 1 }, { partId: "a", quantity: 1 }]);
+    expect(res.status).toBe(400);
+    expect(db.jobPart.update).not.toHaveBeenCalled();
+  });
+
   it("refuses more than is outstanding", async () => {
     db.purchaseOrder.findUnique.mockResolvedValue({ id: "po1", status: "SENT", items: [line("a", "ORDERED", 2, 1)] });
     const res = await receive([{ partId: "a", quantity: 2 }]);
