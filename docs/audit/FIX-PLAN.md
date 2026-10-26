@@ -70,14 +70,6 @@ Fixed in code, with unit tests in `src/__tests__/consent.test.ts`:
 - **PORT-011 / FLOW-003**: a public booking now sends a confirmation SMS and/or email (best-effort, so a provider failure never loses the booking), creates an in-app notification plus a push for ADMIN/DISPATCHER/SERVICE_ADVISOR users, and shows the customer a `BR-XXXXXX` reference.
 - Not exercised against live Twilio/Resend (no keys in this environment).
 
-## Status updates — icon-button labels (branch `devin/*-a11y`)
-
-- **UX-010 (partial)**: every `size="icon"` button now has an accessible name:
-  - `Button` falls back to `aria-label={title}` for icon buttons that have a tooltip.
-  - The remaining icon buttons got explicit labels (Back, View, Edit, Delete, Add vehicle, Remove step, Previous/Next week, Mark complete, Open job).
-  - The hover-only "Open job" arrow is now visible on keyboard focus.
-  - Still open: form-field label association, contrast, and a full screen-reader pass.
-
 ## Phase 1 — P1 workflow/data integrity (OPEN)
 | ID | Fix | Why now | Effort | Files |
 |---|---|---|---|---|
