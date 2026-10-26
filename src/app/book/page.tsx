@@ -62,8 +62,9 @@ export default function BookPage() {
       });
       setReference(res.data?.reference ?? "");
       setSubmitted(true);
-    } catch {
-      setError("Something went wrong. Please try again or call us.");
+    } catch (e) {
+      const msg = axios.isAxiosError(e) && e.response?.status === 400 ? (e.response.data as { error?: string })?.error : null;
+      setError(msg || "Something went wrong. Please try again or call us.");
     } finally {
       setSubmitting(false);
     }

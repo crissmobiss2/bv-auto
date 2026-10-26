@@ -39,9 +39,11 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  // Spam bots fill the hidden "website" field or submit instantly; answer as if it worked so they don't adapt.
-  if (data.website || (data.elapsedMs !== undefined && data.elapsedMs < 3000)) {
-    return apiSuccess({ received: true }, 201);
+  // Spam bots fill the hidden "website" field; answer as if it worked so they don't adapt.
+  if (data.website) return apiSuccess({ received: true }, 201);
+  // An instant submit is almost always a bot, but say so instead of dropping a real customer's request.
+  if (data.elapsedMs !== undefined && data.elapsedMs < 3000) {
+    return apiError("That was quick! Please check your details and press Submit again.", 400);
   }
 
   // Bookings belong to the shop named in the link (?shop=slug); links without one go to the original shop.
