@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, apiSuccess, apiError } from "@/lib/api-helpers";
 import { z } from "zod";
+import { findApprovedRun, type PayrollSnapshot } from "@/lib/payroll";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -52,8 +53,25 @@ export async function POST(req: NextRequest) {
     return apiError(`Already paid for ${d(overlap.periodStart)} to ${d(overlap.periodEnd)}, which overlaps this period`, 409);
   }
 
+  // When the period is approved, the payout must match the frozen snapshot.
+  let paidHours = hours;
+  let paidAmount = amount;
+  const run = await findApprovedRun(start, end);
+  if (run) {
+    const line = (run.snapshot as unknown as PayrollSnapshot).technicians.find((t) => t.userId === userId);
+    if (!line) return apiError("This person is not in the approved payroll for this period", 400);
+    paidHours = line.totalHours;
+    paidAmount = line.grossPay;
+  } else {
+    const approvedOverlap = await prisma.payrollRun.findFirst({
+      where: { periodStart: { lte: periodEnd }, periodEnd: { gte: periodStart } },
+      select: { id: true },
+    });
+    if (approvedOverlap) return apiError("Pay out using the exact dates of the approved payroll period", 409);
+  }
+
   const payout = await prisma.payrollPayout.create({
-    data: { userId, periodStart, periodEnd, hours, amount, note, paidById: session!.user.id },
+    data: { userId, periodStart, periodEnd, hours: paidHours, amount: paidAmount, note, paidById: session!.user.id },
   });
   return apiSuccess(payout, 201);
 }

@@ -87,6 +87,31 @@ export default function PayrollPage() {
     onError: payoutError_,
   });
 
+  const { data: run } = useQuery<{ id: string; approvedAt: string } | null>({
+    queryKey: ["payroll-run", startDate, endDate],
+    queryFn: () => axios.get(`/api/payroll/runs?start=${startDate}&end=${endDate}`).then((r) => r.data),
+    enabled: !forbidden,
+    retry: false,
+  });
+  const [runError, setRunError] = useState<string | null>(null);
+  const runErr = (e: unknown) =>
+    setRunError((e as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed");
+  const refreshRun = () => {
+    setRunError(null);
+    queryClient.invalidateQueries({ queryKey: ["payroll-run"] });
+    queryClient.invalidateQueries({ queryKey: ["payroll"] });
+  };
+  const approveRun = useMutation({
+    mutationFn: () => axios.post("/api/payroll/runs", { start: startDate, end: endDate }),
+    onSuccess: refreshRun,
+    onError: runErr,
+  });
+  const reopenRun = useMutation({
+    mutationFn: (id: string) => axios.delete(`/api/payroll/runs?id=${id}`),
+    onSuccess: refreshRun,
+    onError: runErr,
+  });
+
   const payoutFor = (userId: string) => payouts?.find((p) => p.userId === userId);
 
   const downloadCSV = () => {
@@ -109,6 +134,32 @@ export default function PayrollPage() {
           </Button>
         )}
       </div>
+
+      {!forbidden && (
+        <Card className={run ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}>
+          <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap text-sm">
+            {run ? (
+              <p className="text-green-800">
+                Approved and locked on {new Date(run.approvedAt).toLocaleString()}. These amounts no longer change when rates or time logs change.
+              </p>
+            ) : (
+              <p className="text-amber-800">Estimate: this period is not approved yet, so amounts can still change.</p>
+            )}
+            {run ? (
+              <Button variant="outline" size="sm" disabled={reopenRun.isPending}
+                onClick={() => { if (confirm("Reopen this period? Pay will be recalculated from current data.")) reopenRun.mutate(run.id); }}>
+                Reopen period
+              </Button>
+            ) : (
+              <Button size="sm" disabled={approveRun.isPending}
+                onClick={() => { if (confirm(`Approve and lock payroll for ${startDate} to ${endDate}?`)) approveRun.mutate(); }}>
+                Approve &amp; lock period
+              </Button>
+            )}
+            {runError && <p className="w-full text-red-600">{runError}</p>}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Date Range */}
       <Card>
