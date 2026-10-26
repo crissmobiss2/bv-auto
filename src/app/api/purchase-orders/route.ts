@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     where: { ...(status ? { status: status as never } : {}), ...(vendorId ? { vendorId } : {}) },
     include: {
       vendor: { select: { id: true, name: true, phone: true, email: true, website: true } },
-      items: { select: { id: true, description: true, partNumber: true, quantity: true, unitCost: true, status: true } },
+      items: { select: { id: true, description: true, partNumber: true, quantity: true, quantityReceived: true, unitCost: true, status: true } },
     },
     orderBy: { createdAt: "desc" },
     take: 100,

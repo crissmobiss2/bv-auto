@@ -51,7 +51,7 @@ type PurchaseOrder = {
   expectedAt?: string | null;
   receivedAt?: string | null;
   vendor: { id: string; name: string; phone?: string; email?: string; website?: string };
-  items: { id: string; description: string; partNumber?: string; quantity: number; unitCost?: number; status: string; job?: { id: string; jobNumber: string; customer: { firstName: string; lastName: string } } }[];
+  items: { id: string; description: string; partNumber?: string; quantity: number; quantityReceived?: number; unitCost?: number; status: string; job?: { id: string; jobNumber: string; customer: { firstName: string; lastName: string } } }[];
 };
 
 export default function PartsPage() {
@@ -136,6 +136,17 @@ export default function PartsPage() {
     },
     onError: (e: unknown) => {
       setPoError((e as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to create order");
+    },
+  });
+
+  const [receiveQty, setReceiveQty] = useState<Record<string, string>>({});
+  const receiveMutation = useMutation({
+    mutationFn: ({ poId, partId, quantity }: { poId: string; partId: string; quantity: number }) =>
+      axios.post(`/api/purchase-orders/${poId}/receive`, { items: [{ partId, quantity }] }),
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["all-parts"] });
+      setReceiveQty((q) => ({ ...q, [v.partId]: "" }));
     },
   });
 
@@ -341,7 +352,37 @@ export default function PartsPage() {
                               )}
                             </p>
                           </div>
-                          <span className="text-gray-500 text-xs">{i.status.replace(/_/g, " ")}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-xs">
+                              {i.status.replace(/_/g, " ")} · {Number(i.quantityReceived ?? 0)}/{Number(i.quantity)} received
+                            </span>
+                            {["SENT", "CONFIRMED"].includes(po.status) && Number(i.quantityReceived ?? 0) < Number(i.quantity) && (
+                              <>
+                                <Input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min={0}
+                                  step="any"
+                                  aria-label={`Quantity received for ${i.description}`}
+                                  className="w-20 h-8 text-xs"
+                                  placeholder={String(Number(i.quantity) - Number(i.quantityReceived ?? 0))}
+                                  value={receiveQty[i.id] ?? ""}
+                                  onChange={(e) => setReceiveQty((q) => ({ ...q, [i.id]: e.target.value }))}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={receiveMutation.isPending}
+                                  onClick={() => {
+                                    const quantity = Number(receiveQty[i.id] || Number(i.quantity) - Number(i.quantityReceived ?? 0));
+                                    if (quantity > 0) receiveMutation.mutate({ poId: po.id, partId: i.id, quantity });
+                                  }}
+                                >
+                                  Receive
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
