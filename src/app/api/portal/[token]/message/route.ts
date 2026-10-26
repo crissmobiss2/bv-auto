@@ -6,7 +6,7 @@ import { smsConfigured } from "@/lib/sms";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  if (!rateLimit(`portal-message:${token}:${getIP(req)}`, 5, 10 * 60_000)) {
+  if (!(await rateLimit(`portal-message:${token}:${getIP(req)}`, 5, 10 * 60_000))) {
     return apiError("Too many messages. Please wait and try again.", 429);
   }
 

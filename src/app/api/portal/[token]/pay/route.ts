@@ -14,7 +14,7 @@ const schema = z.union([
 // invoice/quote must belong to that customer. Always returns a live session.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  if (!rateLimit(`portal-pay:${token}`, 20, 10 * 60_000)) return apiError("Too many requests", 429);
+  if (!(await rateLimit(`portal-pay:${token}`, 20, 10 * 60_000))) return apiError("Too many requests", 429);
   if (!stripe) return apiError("Online payments are not available right now. Please call the shop.", 503);
 
   const parsed = schema.safeParse(await req.json().catch(() => null));

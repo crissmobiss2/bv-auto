@@ -28,7 +28,7 @@
 | `/api/sms/webhook` | API | PASS | Twilio signature required. |
 | `/api/cron/*` | API | PASS | Secret required; no fake sends. |
 | Tenant scoping | data layer | FAIL | See AUTH-010 / DATA-001. |
-| Rate limiting | infra | FAIL | Per-instance Map only. |
+| Rate limiting | infra | PASS | DB-backed `RateLimit` table with in-memory fallback. |
 | Session revocation | auth | FAIL | JWT remains valid until expiry. |
 
 ## Findings
@@ -122,6 +122,7 @@
 - **Confidence:** Confirmed — fixed in this pass.
 
 ### [AUTH-009] Rate limiting is per serverless instance
+- **Status:** Fixed on branch `devin/*-platform`: DB-backed `RateLimit` table.
 - **Severity:** P2
 - **Area:** Abuse resistance
 - **Evidence:** `src/lib/rate-limit.ts:1`

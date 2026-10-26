@@ -131,7 +131,7 @@ export default async function proxy(req: NextRequest) {
 
   // Rate-limit mutating API calls per IP (120 per 10 min).
   if (pathname.startsWith("/api/") && MUTATING_METHODS.has(req.method)) {
-    if (!rateLimit(`api:${req.method}:${getIP(req)}`, 120, 10 * 60_000)) {
+    if (!(await rateLimit(`api:${req.method}:${getIP(req)}`, 120, 10 * 60_000))) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
   }

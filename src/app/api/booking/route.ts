@@ -25,7 +25,7 @@ const bookingSchema = z.object({
 
 export async function POST(req: NextRequest) {
   // Public endpoint — limit to 5 booking requests per 10 min per IP
-  if (!rateLimit(`booking:${getIP(req)}`, 5, 10 * 60_000)) {
+  if (!(await rateLimit(`booking:${getIP(req)}`, 5, 10 * 60_000))) {
     return apiError("Too many requests. Please call the shop directly.", 429);
   }
   const body = await req.json();
