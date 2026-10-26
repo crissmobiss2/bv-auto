@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, apiError } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 import { AI_MODELS, UNTRUSTED_NOTE, aiFailure, aiFailureMessage, extractJson, untrusted } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
@@ -96,7 +96,7 @@ Provide 2-4 diagnoses ranked by probability. Be specific to the ${vehicleInfo} â
     });
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = createAnthropic();
 
   // Streaming mode â€” client gets text/event-stream
   if (wantStream) {

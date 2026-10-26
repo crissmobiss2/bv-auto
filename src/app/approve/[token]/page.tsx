@@ -20,7 +20,7 @@ export default function ApproveQuotePage() {
   const [result, setResult] = useState<"approved" | "declined" | null>(null);
 
   const { data: shopInfo } = useQuery({
-    queryKey: ["shop-info"],
+    queryKey: ["shop-info", "quote", token],
     queryFn: () => axios.get(`/api/shop-info?quote=${encodeURIComponent(token)}`).then((r) => r.data),
     staleTime: 10 * 60 * 1000,
   });

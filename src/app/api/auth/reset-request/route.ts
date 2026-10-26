@@ -5,6 +5,7 @@ import { rateLimit, getIP } from "@/lib/rate-limit";
 import crypto from "crypto";
 import { emailFrom, escapeHtml } from "@/lib/email";
 import { APP_NAME } from "@/lib/app-name";
+import { hashResetToken } from "@/lib/password";
 
 export async function POST(req: NextRequest) {
   // 3 resets per 15 min per IP — prevents enumeration
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { resetToken: token, resetTokenExpiry: expiry },
+    data: { resetToken: hashResetToken(token), resetTokenExpiry: expiry },
   });
 
   const BASE_URL = process.env.NEXTAUTH_URL || "https://bv-auto.vercel.app";

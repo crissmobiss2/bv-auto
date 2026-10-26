@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { passwordSchema } from "@/lib/password";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-helpers";
@@ -13,7 +14,7 @@ const schema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().toLowerCase().email().max(200),
   phone: z.string().trim().max(30).optional(),
-  password: z.string().min(8).max(100),
+  password: passwordSchema,
   acceptTerms: z.literal(true),
 });
 

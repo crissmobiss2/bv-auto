@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 import { AI_MODELS, UNTRUSTED_NOTE, aiFailure, untrusted } from "@/lib/ai";
 import { getBranding } from "@/lib/shop";
 
@@ -45,7 +45,7 @@ Rules:
 - Output ONLY the message text, nothing else`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = createAnthropic();
     const msg = await client.messages.create({
       model: AI_MODELS.message,
       max_tokens: 200,

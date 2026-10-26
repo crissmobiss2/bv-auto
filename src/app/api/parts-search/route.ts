@@ -1,8 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 import { NextRequest } from "next/server";
 import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
 
-const client = new Anthropic();
+const client = createAnthropic();
 
 // Live PartsTech catalog — activates automatically when PARTSTECH_API_KEY is set.
 // PartsTech aggregates NAPA, Worldpac, Advance, O'Reilly and 4000+ suppliers under

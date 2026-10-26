@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/api-helpers";
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 
-const client = new Anthropic();
+const client = createAnthropic();
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAuth();

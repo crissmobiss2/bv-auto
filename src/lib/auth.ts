@@ -69,14 +69,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = (user as { role?: string }).role;
         token.shopId = (user as { shopId?: string | null }).shopId ?? null;
         token.checkedAt = Date.now();
+        token.authAt = Date.now();
         return token;
       }
       if (token.id && Date.now() - ((token.checkedAt as number | undefined) ?? 0) > 60_000) {
         const current = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, isActive: true, shopId: true },
+          select: { role: true, isActive: true, shopId: true, passwordChangedAt: true },
         });
         if (!current?.isActive) return null;
+        // A password change signs out every session that started before it.
+        if (current.passwordChangedAt && ((token.authAt as number | undefined) ?? 0) < current.passwordChangedAt.getTime()) return null;
         token.role = current.role;
         token.shopId = current.shopId;
         token.checkedAt = Date.now();

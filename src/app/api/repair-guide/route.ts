@@ -1,8 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropic } from "@/lib/ai-client";
 import { requireAuth, apiSuccess, apiError } from "@/lib/api-helpers";
 import { NextRequest } from "next/server";
 
-const client = new Anthropic();
+const client = createAnthropic();
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAuth();

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { passwordSchema } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-helpers";
 import { rateLimit, getIP } from "@/lib/rate-limit";
@@ -11,7 +12,7 @@ const schema = z.object({
   name: z.string().min(2).max(80),
   email: z.string().email(),
   phone: z.string().optional(),
-  password: z.string().min(8).max(100),
+  password: passwordSchema,
   role: z.enum(["CUSTOMER", "TECHNICIAN", "SERVICE_ADVISOR", "PARTS_COORDINATOR", "DISPATCHER"]).default("CUSTOMER"),
   inviteCode: z.string().optional(),
   shop: z.string().max(80).optional(),

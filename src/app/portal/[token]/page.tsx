@@ -72,7 +72,7 @@ export default function CustomerPortalPage() {
   const [messageSent, setMessageSent] = useState(false);
 
   const { data: shopInfo } = useQuery({
-    queryKey: ["shop-info"],
+    queryKey: ["shop-info", "portal", token],
     queryFn: () => axios.get(`/api/shop-info?portal=${encodeURIComponent(token)}`).then(r => r.data),
     staleTime: Infinity,
   });
