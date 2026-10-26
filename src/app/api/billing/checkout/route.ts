@@ -47,6 +47,11 @@ export async function POST(req: NextRequest) {
     return apiError("You already have a subscription. Use Manage billing to change it.", 409);
   }
 
+  // An unpaid first attempt is cancelled before retrying, so it can't also go through later and bill twice.
+  await Promise.all(
+    live.data.filter((s) => s.status === "incomplete").map((s) => platformStripe!.subscriptions.cancel(s.id)),
+  );
+
   // Only one checkout may be open at a time, so finishing two tabs can't create two subscriptions.
   const open = await platformStripe.checkout.sessions.list({ customer, status: "open", limit: 20 });
   await Promise.all(open.data.map((s) => platformStripe!.checkout.sessions.expire(s.id)));
