@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       reviewRequest: null,
     },
     include: {
-      customer: { select: { id: true, email: true, phone: true, firstName: true, lastName: true, smsOptOut: true, marketingOptOut: true } },
+      customer: { select: { id: true, email: true, phone: true, firstName: true, lastName: true, smsOptOut: true, marketingOptOut: true, smsConsentAt: true } },
     },
   });
 
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Send SMS
-    if (job.customer.phone && smsConfigured && !job.customer.smsOptOut && !job.customer.marketingOptOut) {
+    if (job.customer.phone && smsConfigured && !job.customer.smsOptOut && !job.customer.marketingOptOut && job.customer.smsConsentAt) {
       try {
         const twilio = (await import("twilio")).default;
         const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
