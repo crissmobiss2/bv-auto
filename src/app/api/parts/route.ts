@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { redactPartForShopFloor } from "@/lib/part-visibility";
 import { z } from "zod";
 import { AuditAction } from "@prisma/client";
 
@@ -21,16 +22,18 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
   const jobId = searchParams.get("jobId");
   const status = searchParams.get("status");
+  const isTech = session!.user.role === "TECHNICIAN";
 
   const where: Record<string, unknown> = {};
   if (jobId) where.jobId = jobId;
   if (status) where.status = status;
+  if (isTech) where.job = { technicianId: session!.user.id };
 
   const parts = await prisma.jobPart.findMany({
     where,
@@ -46,7 +49,8 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  return apiSuccess(parts);
+  if (!isTech) return apiSuccess(parts);
+  return apiSuccess(parts.map((part) => redactPartForShopFloor(part as unknown as Record<string, unknown>)));
 }
 
 export async function POST(req: NextRequest) {
@@ -58,6 +62,16 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError(parsed.error.issues[0].message);
 
   const data = parsed.data;
+
+  // A technician can request a part, but purchasing and pricing belong to the
+  // parts coordinator, dispatch, or office.
+  if (session!.user.role === "TECHNICIAN") {
+    const allowed = new Set(["jobId", "partNumber", "description", "quantity", "notes"]);
+    if (Object.keys(data).some((key) => !allowed.has(key))) {
+      return apiError("Technicians can request a part but cannot set vendor, inventory, or pricing fields", 403);
+    }
+  }
+
   if (data.vendorId) {
     const vendor = await prisma.partsVendor.findFirst({ where: { id: data.vendorId, isActive: true }, select: { id: true } });
     if (!vendor) return apiError("Vendor not found or inactive", 400);

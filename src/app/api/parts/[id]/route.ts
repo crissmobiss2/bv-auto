@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { requireAuth, requireRole, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { PARTS_MANAGEMENT_ROLES } from "@/lib/role-access";
+import { redactPartForShopFloor } from "@/lib/part-visibility";
 import { AuditAction, PartStatus } from "@prisma/client";
 import { z } from "zod";
 import { InsufficientStockError, moveStock, RETURNED_PART_STATUSES } from "@/lib/inventory";
@@ -45,14 +47,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const parsed = updatePartSchema.safeParse(body);
   if (!parsed.success) return apiError(parsed.error.issues[0].message, 400);
 
-  // Technicians may move a part through ordered/received/installed, but they
-  // must not be able to rewrite cost, sell price, or markup.
-  const pricingFields = ["unitCost", "unitPrice", "markup", "totalCost", "totalPrice", "creditAmount", "coreCharge"] as const;
-  if (
-    session!.user.role === "TECHNICIAN" &&
-    pricingFields.some((field) => parsed.data[field] !== undefined)
-  ) {
-    return apiError("Only parts, dispatch, or accounting staff can change part pricing", 403);
+  // Technicians may move a part through ordered/received/installed and add a
+  // note. Purchasing, quantity, vendor, inventory, and pricing fields belong
+  // to parts/dispatch/office roles.
+  if (session!.user.role === "TECHNICIAN") {
+    const allowed = new Set(["status", "notes"]);
+    if (Object.keys(parsed.data).some((key) => !allowed.has(key))) {
+      return apiError("Technicians can only update part status or notes", 403);
+    }
   }
 
   const existing = await prisma.jobPart.findUnique({ where: { id } });
@@ -114,11 +116,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   await logAudit(session!.user.id, AuditAction.UPDATE, "JobPart", id, existing, updated);
 
+  if (session!.user.role === "TECHNICIAN") {
+    return apiSuccess(redactPartForShopFloor(updated as unknown as Record<string, unknown>));
+  }
   return apiSuccess(updated);
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session } = await requireRole(PARTS_MANAGEMENT_ROLES);
   if (error) return error;
 
   const { id } = await params;

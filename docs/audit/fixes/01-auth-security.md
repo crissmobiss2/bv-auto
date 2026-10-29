@@ -5,7 +5,7 @@
 - **Objective:** Fix and verify every open finding in the linked report. Do not re-audit unrelated sections.
 
 ## Already fixed in the parent pass
-Proxy allowlists, registration takeover, role gates, cron fail-closed, SMS signatures, job ownership, tenant scoping, durable database rate limits, reset-token hashing, session refresh/deactivation checks, technician warranty access, customer/vehicle/job financial redaction, technician search scoping, destructive CRM roles (AUTH-015), and API credential redaction (AUTH-016).
+Proxy allowlists, registration takeover, role gates, cron fail-closed, SMS signatures, job ownership, tenant scoping, durable database rate limits, reset-token hashing, session refresh/deactivation checks, technician warranty access, customer/vehicle/job/parts financial redaction, technician search scoping, destructive CRM/parts roles (AUTH-015/PART-011), and API credential redaction (AUTH-016).
 
 ## Open work
 TOTP account enumeration, password policy/breach checks, and the 60-second role-change refresh window.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CUSTOMER_MANAGEMENT_ROLES,
+  PARTS_MANAGEMENT_ROLES,
   WARRANTY_ROLES,
   canViewCustomerFinancials,
   isCustomerApiAllowed,
@@ -22,11 +23,13 @@ describe("role access policy", () => {
     expect(isTechnicianApiBlocked("/api/shops/settings")).toBe(false);
   });
 
-  it("blocks technician checkout and keeps destructive CRM actions with the office", () => {
+  it("blocks technician checkout and keeps destructive CRM/parts actions with the office", () => {
     expect(isTechnicianApiBlocked("/api/stripe/checkout")).toBe(true);
     expect(CUSTOMER_MANAGEMENT_ROLES).not.toContain("TECHNICIAN");
     expect(CUSTOMER_MANAGEMENT_ROLES).toContain("ADMIN");
     expect(CUSTOMER_MANAGEMENT_ROLES).toContain("SERVICE_ADVISOR");
+    expect(PARTS_MANAGEMENT_ROLES).not.toContain("TECHNICIAN");
+    expect(PARTS_MANAGEMENT_ROLES).toContain("PARTS_COORDINATOR");
   });
 
   it("does not let technicians or parts coordinators read customer money data", () => {

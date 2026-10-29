@@ -139,13 +139,13 @@
 ### [PART-011] Technicians could still edit part cost, price, and markup
 - **Severity:** P1
 - **Area:** Financial authorization
-- **Evidence:** `src/app/api/parts/[id]/route.ts` (PATCH)
-- **Problem:** The Zod whitelist removed arbitrary fields but did not restrict pricing fields by role. Technicians can reach `/api/parts` and `/parts`, so they could change `unitCost`, `unitPrice`, `markup`, totals, credits, or core charges.
-- **Impact:** Margin manipulation and inaccurate job/invoice totals.
-- **Reproduce / verify:** As a technician, PATCH a job part with `{ "unitCost": 0, "unitPrice": 0 }`.
-- **Recommended fix:** Allow technicians to update status/notes only; require parts/dispatch/accounting roles for pricing fields.
+- **Evidence:** `src/app/api/parts/route.ts` (GET, POST), `src/app/api/parts/[id]/route.ts` (PATCH, DELETE)
+- **Problem:** The Zod whitelist removed arbitrary fields but did not restrict pricing fields by role on create, and the PATCH guard only blocked money fields while still allowing technicians to change quantity, vendor, inventory item, PO, and return fields. Technicians could also list every job part with vendor cost/margin, and delete any part. Technicians can reach `/api/parts` and `/parts`.
+- **Impact:** Margin manipulation, free or mispriced parts, incorrect inventory movement, deletion of billed parts, and exposure of vendor cost/margin across other technicians' jobs.
+- **Reproduce / verify:** As a technician, POST a job part with `{ "unitCost": 0, "unitPrice": 0 }`, PATCH a part's `quantity`, or GET `/api/parts?jobId=<another-tech-job>`.
+- **Recommended fix:** Allow technicians to create a bare part request and update status/notes only; require parts/dispatch/office roles for vendor, inventory, pricing, quantity, and delete actions; scope the parts list to the technician's assigned jobs and strip vendor/margin fields from their responses.
 - **Effort:** S
-- **Confidence:** Confirmed — fixed in this pass.
+- **Confidence:** Confirmed - fixed in this pass with `src/lib/part-visibility.ts`, route-level checks, and `src/__tests__/part-visibility.test.ts`.
 
 ## What already works well
 - Parts catalog supports local and external search, part numbers, cost, price, and markup.

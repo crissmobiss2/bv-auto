@@ -110,6 +110,15 @@ export const WARRANTY_ROLES: string[] = ["ADMIN", "DISPATCHER"];
 // can still read and edit day-to-day contact details.
 export const CUSTOMER_MANAGEMENT_ROLES: string[] = ["ADMIN", "DISPATCHER", "SERVICE_ADVISOR"];
 
+// Purchasing, pricing, and part deletion stay with parts/dispatch/office roles.
+export const PARTS_MANAGEMENT_ROLES: string[] = [
+  "ADMIN",
+  "DISPATCHER",
+  "PARTS_COORDINATOR",
+  "SERVICE_ADVISOR",
+  "ACCOUNTANT",
+];
+
 export function matchesPrefix(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }

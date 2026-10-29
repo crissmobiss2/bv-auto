@@ -8,6 +8,7 @@ import { sendPushToUser, sendPushToRole } from "@/lib/push";
 import { transitionError } from "@/lib/job-status";
 import { assertSmsAllowed } from "@/lib/consent";
 import { takeSmsQuota } from "@/lib/plan-limits";
+import { redactPartForShopFloor } from "@/lib/part-visibility";
 
 const updateJobSchema = z.object({
   status: z.nativeEnum(JobStatus).optional(),
@@ -132,17 +133,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   // Technicians need the work order, not the customer's bill or parts margin.
   if (session!.user.role === "TECHNICIAN") {
     const { quote: _quote, invoice: _invoice, parts, ...workOrder } = job;
-    const safeParts = parts.map(({
-      unitCost: _unitCost,
-      unitPrice: _unitPrice,
-      markup: _markup,
-      totalCost: _totalCost,
-      totalPrice: _totalPrice,
-      coreCharge: _coreCharge,
-      creditAmount: _creditAmount,
-      vendor: _vendor,
-      ...part
-    }) => part);
+    const safeParts = parts.map((part) =>
+      redactPartForShopFloor(part as unknown as Record<string, unknown>)
+    );
     return apiSuccess({ ...workOrder, parts: safeParts });
   }
 
