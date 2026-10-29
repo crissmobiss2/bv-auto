@@ -187,6 +187,17 @@
 - **Effort:** S
 - **Confidence:** Confirmed.
 
+### [AUTH-015] Technicians could read customer financials and warranty records
+- **Severity:** P1
+- **Area:** Role boundary / customer privacy
+- **Evidence:** `src/proxy.ts` (`TECH_BLOCKED_API_PREFIXES`), `src/app/api/customers/route.ts`, `src/app/api/customers/[id]/route.ts`, `src/app/api/warranties/route.ts`, `src/app/api/warranties/[id]/route.ts`
+- **Problem:** The technician blocklist named `/api/warranty` (singular), but the real API is `/api/warranties`, so technicians could list, create, claim, void, and read warranties. The customer list/detail APIs also returned invoice history, `_count.invoices`, lifetime revenue, average ticket, and CLV to technicians.
+- **Impact:** A shop-floor account could read customer money data and alter warranty claims, bypassing the navigation and page-level restrictions that hide Warranty, Invoices, and Reports.
+- **Reproduce / verify:** Sign in as `TECHNICIAN`; call `GET /api/warranties`, `GET /api/customers`, and `GET /api/customers/<id>`. Before the fix the first returned records and the customer responses included `invoices`/`clv`.
+- **Recommended fix:** Add both warranty route spellings to the technician API boundary; require `ADMIN`/`DISPATCHER` in the warranty routes themselves; and redact invoice history, invoice counts, revenue, average ticket, and CLV from customer responses for roles outside `ADMIN`, `DISPATCHER`, `ACCOUNTANT`, and `SERVICE_ADVISOR`.
+- **Effort:** S
+- **Confidence:** Confirmed - fixed in this pass with `src/lib/role-access.ts`, route-level role checks, and `src/__tests__/role-access.test.ts`.
+
 ## What already works well
 - NextAuth credentials + TOTP, bcrypt hashing, and invite-code-gated staff registration.
 - `requireRole` is simple and readable; the new proxy allowlists are default-deny.

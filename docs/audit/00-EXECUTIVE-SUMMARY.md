@@ -5,10 +5,10 @@
 - **Surface:** ~29,900 LOC, 134 API routes, 56 pages, 48 Prisma models, PWA service worker, Capacitor Android shell, Electron desktop shell.
 - **Method:** Static code review of every route/page/lib in the 14 section scopes, authorization-matrix scan, money/communication flow tracing, schema/query review, and local verification. No production data was touched.
 - **Baseline before fixes:** type-check, lint, 10 tests (3 files), and production build were clean on the original audit base `fb5d22b`.
-- **After fixes:** the audit tree was merged onto current `master` (`5a99eb3`, 76 newer commits). On the merged tree, type-check, lint, 14 tests (4 files), and production build are clean.
+- **Current `master` status (2026-10-29):** `master` is at `1aa1294` (Android v1.6) and includes the audit merge plus the follow-up security, billing, inventory, payroll, consent, multi-shop, UX, and platform PRs. Type-check, lint, **108 tests / 25 files**, and the **141-page production build** pass from a clean `npm ci --legacy-peer-deps`.
 
 ## Overall verdict
-**Ship with fixes for the current single-shop deployment. Do not onboard a second shop until tenant scoping is implemented.** The app’s core workflows are real and usable, and the highest-risk issues — customer account takeover, staff-API exposure to customers/technicians, duplicate Stripe payments, overpayment, fake send success, PDF XSS, and cross-technician job access — are fixed in this pass. The remaining risks are architectural (tenant isolation, durable rate limits, migrations), workflow completeness (refunds, deposits, inventory receiving, booking notifications), and mobile input/feedback quality.
+**Ship for the current shop.** The original P0 account-takeover, staff-API exposure, duplicate Stripe payment, overpayment, fake send success, PDF XSS, and cross-technician job issues are fixed, and later PRs added refunds, deposits, inventory receiving, payroll locks, SMS consent, multi-shop scoping, migrations, and release signing. Remaining risks are narrower: public booking and crons still assume a single public shop, some integrations are unverified without production keys, and several P2/P3 UX and observability items remain. The counts below are the original audit snapshot; per-PR follow-ups live in [`status/`](status/).
 
 ## Integration with master (2026-10-25)
 The audit was run on `fb5d22b`. Before committing, it was merged onto `master`, which already had ~40 later fix PRs. 20 files conflicted. They were resolved so both sides are kept:
@@ -20,12 +20,12 @@ The audit was run on `fb5d22b`. Before committing, it was merged onto `master`, 
 | Severity | Count | Fixed in this pass | Open |
 |---|---:|---:|---:|
 | P0 — Critical | 4 | 3 | 1 (tenant scoping) |
-| P1 — High | 48 | ~33 | ~15 |
+| P1 — High | 49 | ~34 | ~15 |
 | P2 - Medium | 107 | ~32 | ~75 |
 | P3 - Low | 20 | ~2 | ~18 |
-| **Total** | **179** | **~70** | **~109** |
+| **Total** | **180** | **~71** | **~109** |
 
-Counts are derived from the 14 reports; “fixed” means code changed and type-check/lint/tests pass, not that the integration was exercised live.
+Counts are derived from the 14 reports and include the post-summary AUTH-015 finding. Later `status/` PRs supersede individual rows; “fixed” means code changed and type-check/lint/tests pass, not that the integration was exercised live.
 
 ## Section scorecard
 | # | Section | Grade | Verdict | Biggest remaining risk |

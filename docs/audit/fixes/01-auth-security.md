@@ -5,10 +5,10 @@
 - **Objective:** Fix and verify every open finding in the linked report. Do not re-audit unrelated sections.
 
 ## Already fixed in the parent pass
-Proxy allowlists, registration takeover, role gates, cron fail-closed, SMS signatures, job ownership.
+Proxy allowlists, registration takeover, role gates, cron fail-closed, SMS signatures, job ownership, tenant scoping, durable database rate limits, reset-token hashing, session refresh/deactivation checks, technician warranty access, and customer financial redaction (AUTH-015).
 
 ## Open work
-Tenant scoping, durable rate limits, session revocation, reset-token hashing, TOTP enumeration.
+TOTP account enumeration, password policy/breach checks, and the 60-second role-change refresh window.
 
 ## Exit criteria
 Every API route has an explicit role/ownership check; authz table test passes; no cross-shop read.
@@ -27,4 +27,3 @@ npm run build
 - Add a test for every money/authz/ownership fix.
 - Mark runtime-dependent items Unverified - needs runtime until the provider key is available.
 - Record the exact files changed and commands run in this file before closing the lane.
-

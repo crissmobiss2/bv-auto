@@ -1,10 +1,11 @@
 import { WarrantyStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiError, apiSuccess } from "@/lib/api-helpers";
+import { WARRANTY_ROLES } from "@/lib/role-access";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(WARRANTY_ROLES);
   if (error) return error;
 
   const { id } = await params;
@@ -37,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(WARRANTY_ROLES);
   if (error) return error;
 
   const { id } = await params;

@@ -22,6 +22,7 @@ import { CustomerFormDialog } from "@/components/features/customer-form-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toaster";
+import { canViewCustomerFinancials } from "@/lib/role-access";
 
 function SmsThread({ customerId, customerName }: { customerId: string; customerName: string }) {
   const queryClient = useQueryClient();
@@ -276,6 +277,7 @@ export default function CustomerDetailPage() {
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const { data: session } = useSession();
+  const canSeeFinancials = canViewCustomerFinancials(session?.user?.role);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ["customer", id],
@@ -455,7 +457,9 @@ export default function CustomerDetailPage() {
           <Tabs defaultValue="jobs">
             <TabsList>
               <TabsTrigger value="jobs">Jobs ({customer.jobs?.length || 0})</TabsTrigger>
-              <TabsTrigger value="invoices">Invoices ({customer.invoices?.length || 0})</TabsTrigger>
+              {canSeeFinancials && (
+                <TabsTrigger value="invoices">Invoices ({customer.invoices?.length || 0})</TabsTrigger>
+              )}
               <TabsTrigger value="sms">SMS</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
               <TabsTrigger value="followups">Follow-Ups</TabsTrigger>
@@ -485,32 +489,34 @@ export default function CustomerDetailPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="invoices" className="mt-4">
-              <Card>
-                <CardContent className="p-0">
-                  {customer.invoices?.length === 0 ? (
-                    <p className="text-sm text-gray-500 p-4">No invoices yet.</p>
-                  ) : (
-                    <div className="divide-y">
-                      {customer.invoices?.map((inv: { id: string; invoiceNumber: string; totalAmount: number; amountDue: number; status: string; createdAt: string }) => (
-                        <Link key={inv.id} href={`/invoices/${inv.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
-                          <div>
-                            <p className="text-sm font-medium">{inv.invoiceNumber}</p>
-                            <p className="text-xs text-gray-500">{formatDate(inv.createdAt)}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">{formatCurrency(inv.totalAmount)}</p>
-                            <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${INVOICE_STATUS_COLORS[inv.status]}`}>
-                              {inv.status}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+            {canSeeFinancials && (
+              <TabsContent value="invoices" className="mt-4">
+                <Card>
+                  <CardContent className="p-0">
+                    {customer.invoices?.length === 0 ? (
+                      <p className="text-sm text-gray-500 p-4">No invoices yet.</p>
+                    ) : (
+                      <div className="divide-y">
+                        {customer.invoices?.map((inv: { id: string; invoiceNumber: string; totalAmount: number; amountDue: number; status: string; createdAt: string }) => (
+                          <Link key={inv.id} href={`/invoices/${inv.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                            <div>
+                              <p className="text-sm font-medium">{inv.invoiceNumber}</p>
+                              <p className="text-xs text-gray-500">{formatDate(inv.createdAt)}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">{formatCurrency(inv.totalAmount)}</p>
+                              <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${INVOICE_STATUS_COLORS[inv.status]}`}>
+                                {inv.status}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
 
             <TabsContent value="notes" className="mt-4">
               <Card>

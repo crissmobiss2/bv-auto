@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/api-helpers";
+import { requireRole, apiError, apiSuccess } from "@/lib/api-helpers";
+import { WARRANTY_ROLES } from "@/lib/role-access";
 import { WarrantyStatus, WarrantyType } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(WARRANTY_ROLES);
   if (error) return error;
 
   const { searchParams } = req.nextUrl;
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error } = await requireRole(WARRANTY_ROLES);
   if (error) return error;
 
   const body = await req.json();

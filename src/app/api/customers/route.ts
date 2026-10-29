@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { z } from "zod";
 import { findDuplicateCustomers } from "@/lib/customer-merge";
+import { canViewCustomerFinancials } from "@/lib/role-access";
 import { AuditAction, CustomerType, LeadSource } from "@prisma/client";
 
 const createSchema = z.object({
@@ -78,8 +79,11 @@ export async function GET(req: NextRequest) {
   ]);
 
   const now = Date.now();
+  const canSeeFinancials = canViewCustomerFinancials(session!.user.role);
   const enriched = customers.map((c) => {
-    const totalRevenue = c.invoices.reduce((s, i) => s + Number(i.totalAmount), 0);
+    const totalRevenue = canSeeFinancials
+      ? c.invoices.reduce((s, i) => s + Number(i.totalAmount), 0)
+      : 0;
     const visitCount = c._count.jobs;
     const avgTicket = visitCount > 0 ? totalRevenue / visitCount : 0;
     const lastVisit = c.jobs[0]?.createdAt;
@@ -95,11 +99,13 @@ export async function GET(req: NextRequest) {
       ...c,
       invoices: undefined,
       jobs: undefined,
-      clv: { totalRevenue, visitCount, avgTicket, daysSinceVisit, atRisk, clvScore },
+      _count: canSeeFinancials ? c._count : { jobs: c._count.jobs, invoices: 0 },
+      clv: canSeeFinancials
+        ? { totalRevenue, visitCount, avgTicket, daysSinceVisit, atRisk, clvScore }
+        : null,
     };
   });
 
-  void session; // session available but not needed here
   return apiSuccess({ customers: enriched, total, page, limit });
 }
 

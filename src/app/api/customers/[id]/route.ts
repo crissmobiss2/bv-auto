@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { canViewCustomerFinancials } from "@/lib/role-access";
 import { AuditAction, CustomerType, LeadSource } from "@prisma/client";
 import { z } from "zod";
 
@@ -30,10 +31,11 @@ const updateSchema = z.object({
 }).partial();
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
+  const canSeeFinancials = canViewCustomerFinancials(session!.user.role);
 
   const customer = await prisma.customer.findUnique({
     where: { id },
@@ -53,8 +55,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
   if (!customer) return apiError("Customer not found", 404);
 
-  // Compute CLV from invoice/job data
-  const paidInvoices = customer.invoices.filter(i => i.status === "PAID");
+  // Compute CLV from invoice/job data, but never expose it to shop-floor roles.
+  const paidInvoices = canSeeFinancials ? customer.invoices.filter(i => i.status === "PAID") : [];
   const totalRevenue = paidInvoices.reduce((s, i) => s + Number(i.totalAmount), 0);
   const visitCount = customer.jobs.length;
   const avgTicket = visitCount > 0 ? totalRevenue / visitCount : 0;
@@ -68,7 +70,13 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     (daysSinceVisit < 90 ? 20 : daysSinceVisit < 180 ? 10 : 0)
   ));
 
-  return apiSuccess({ ...customer, clv: { totalRevenue, visitCount, avgTicket, daysSinceVisit, atRisk, clvScore } });
+  return apiSuccess({
+    ...customer,
+    invoices: canSeeFinancials ? customer.invoices : [],
+    clv: canSeeFinancials
+      ? { totalRevenue, visitCount, avgTicket, daysSinceVisit, atRisk, clvScore }
+      : null,
+  });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
