@@ -90,8 +90,8 @@ function NewJobForm() {
       <Card>
         <CardHeader><CardTitle>Job Details</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2 space-y-2">
               <Label>Job Title *</Label>
               <Input autoCapitalize="words" placeholder="e.g. Oil Change, Brake Replacement" {...f("title")} />
             </div>
@@ -177,7 +177,7 @@ function NewJobForm() {
               <Input type="datetime-local" {...f("scheduledAt")} />
             </div>
 
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label>Service Location</Label>
               <Input autoCapitalize="words" autoComplete="street-address" placeholder="Customer address or drop-off location" {...f("serviceLocation")} />
             </div>
@@ -189,20 +189,20 @@ function NewJobForm() {
 
             <div className="space-y-2">
               <Label>Mileage In</Label>
-              <Input type="number" {...f("mileageIn")} />
+              <Input type="number" inputMode="numeric" {...f("mileageIn")} />
             </div>
 
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label>Description</Label>
               <Textarea rows={3} placeholder="Brief description of the repair..." {...f("description")} />
             </div>
 
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label>Customer Notes (visible to customer)</Label>
               <Textarea rows={2} {...f("customerNotes")} />
             </div>
 
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label>Internal Notes</Label>
               <Textarea rows={2} {...f("internalNotes")} />
             </div>

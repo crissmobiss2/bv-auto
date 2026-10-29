@@ -37,10 +37,10 @@ export function PushNotificationSetup() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Never ask public visitors or signed-out users for push access. The prompt
-  // belongs to authenticated app sessions, not booking/portal pages.
+  // Never ask public visitors or signed-out users for push access. Keep the
+  // prompt on the dashboard home so it cannot cover intake and payment forms.
   const isPublic = pathname === "/" || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  const canPrompt = status === "authenticated" && !isPublic;
+  const canPrompt = status === "authenticated" && !isPublic && pathname === "/dashboard";
 
   useEffect(() => {
     if (!canPrompt) return;

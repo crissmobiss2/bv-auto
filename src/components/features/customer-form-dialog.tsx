@@ -116,7 +116,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSu
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Customer" : "New Customer"}</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>First Name *</Label>
             <Input autoCapitalize="words" autoCorrect="off" value={form.firstName} onChange={set("firstName")} />
@@ -127,7 +127,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSu
           </div>
           <div className="space-y-2">
             <Label>Company</Label>
-            <Input autoCapitalize="words" value={form.company} onChange={set("company")} />
+            <Input autoCapitalize="words" autoCorrect="off" value={form.company} onChange={set("company")} />
           </div>
           <div className="space-y-2">
             <Label>Type</Label>
@@ -154,11 +154,11 @@ export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSu
             <Label>Alt Phone</Label>
             <Input value={form.altPhone} onChange={set("altPhone")} type="tel" inputMode="tel" />
           </div>
-          <div className="col-span-2 space-y-2">
+          <div className="sm:col-span-2 space-y-2">
             <Label>Email</Label>
-            <Input value={form.email} onChange={set("email")} type="email" inputMode="email" autoComplete="email" />
+            <Input value={form.email} onChange={set("email")} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
           </div>
-          <div className="col-span-2 space-y-2">
+          <div className="sm:col-span-2 space-y-2">
             <Label>Address</Label>
             <Input autoCapitalize="words" autoComplete="street-address" value={form.address} onChange={set("address")} />
           </div>
@@ -169,7 +169,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSu
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
               <Label>State</Label>
-              <Input value={form.state} onChange={set("state")} maxLength={2} autoCapitalize="characters" />
+              <Input value={form.state} onChange={set("state")} maxLength={2} autoCapitalize="characters" autoCorrect="off" spellCheck={false} />
             </div>
             <div className="space-y-2">
               <Label>ZIP</Label>
@@ -189,7 +189,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSu
               </Select>
             </div>
           )}
-          <div className={isEdit ? "col-span-2 space-y-2" : "col-span-2 space-y-2"}>
+          <div className="sm:col-span-2 space-y-2">
             <Label>Notes</Label>
             <Textarea rows={2} value={form.notes} onChange={set("notes")} />
           </div>

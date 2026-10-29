@@ -76,6 +76,7 @@ export function CustomerCombobox({
             onValueChange={setSearch}
             autoCapitalize="words"
             autoCorrect="off"
+            spellCheck={false}
           />
           <CommandList>
             <CommandEmpty>{isFetching ? "Searching…" : "No customers found."}</CommandEmpty>

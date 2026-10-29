@@ -8,22 +8,63 @@ const prisma = new PrismaClient({ adapter: createAdapter() });
 async function main() {
   console.log("Seeding B&V Mobile Auto database...");
 
+  // Every staff account needs a shop; API requests are scoped to it.
+  let shop = await prisma.shop.findFirst({
+    where: { isActive: true },
+    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+  });
+  if (!shop) {
+    shop = await prisma.shop.create({
+      data: {
+        name: "B&V Mobile Auto",
+        slug: "bv-auto",
+        email: "service@bvauto.com",
+        city: "Houston",
+        state: "TX",
+        taxRate: 8.25,
+        laborRate: 85,
+        isDefault: true,
+      },
+    });
+  }
+
   // Create users
   const adminHash = await bcrypt.hash("admin123", 12);
+  const techHash = await bcrypt.hash("tech123", 12);
 
   await prisma.user.upsert({
     where: { email: "admin@bvauto.com" },
-    update: {},
+    update: { shopId: shop.id },
     create: {
       name: "Brandon V.",
       email: "admin@bvauto.com",
       passwordHash: adminHash,
       role: UserRole.ADMIN,
       phone: "5550001000",
+      shopId: shop.id,
     },
   });
 
-  console.log("Users created.");
+  const tech = await prisma.user.upsert({
+    where: { email: "marcus@bvauto.com" },
+    update: { shopId: shop.id },
+    create: {
+      name: "Marcus Tech",
+      email: "marcus@bvauto.com",
+      passwordHash: techHash,
+      role: UserRole.TECHNICIAN,
+      phone: "5550001001",
+      shopId: shop.id,
+    },
+  });
+
+  await prisma.payrollRate.upsert({
+    where: { userId: tech.id },
+    update: {},
+    create: { userId: tech.id, rateType: "HOURLY", hourlyRate: 30 },
+  });
+
+  console.log("Shop and users created.");
 
   // Create real parts vendors
   await prisma.partsVendor.upsert({

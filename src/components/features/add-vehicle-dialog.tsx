@@ -166,7 +166,7 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
           {!vinError && <p className="text-xs text-blue-600">Auto-fills make, model, year, engine & more</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Year — native select (most reliable on touch devices) */}
           <div className="space-y-1">
             <Label className="text-xs">Year *</Label>
@@ -193,7 +193,7 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
           </div>
 
           {/* Model — NHTSA autocomplete (filtered by make) */}
-          <div className="col-span-2 space-y-1">
+          <div className="sm:col-span-2 space-y-1">
             <Label className="text-xs">Model *</Label>
             <VehicleCombobox
               placeholder={form.make ? "Select model..." : "Select make first"}
@@ -216,10 +216,10 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
 
           <div className="space-y-1">
             <Label className="text-xs">Mileage</Label>
-            <Input type="number" min="0" placeholder="85000" value={form.mileage} onChange={set("mileage")} />
+            <Input type="number" inputMode="numeric" min="0" placeholder="85000" value={form.mileage} onChange={set("mileage")} />
           </div>
 
-          <div className="col-span-2 space-y-1">
+          <div className="sm:col-span-2 space-y-1">
             <Label className="text-xs">VIN</Label>
             <Input
               className="font-mono text-sm"
@@ -227,6 +227,7 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
               maxLength={17}
               autoCapitalize="characters"
               autoCorrect="off"
+              spellCheck={false}
               value={form.vin}
               onChange={(e) => setForm((f) => ({ ...f, vin: e.target.value.toUpperCase() }))}
             />
@@ -234,12 +235,12 @@ export function AddVehicleDialog({ open, onOpenChange, customerId, onSuccess, in
 
           <div className="space-y-1">
             <Label className="text-xs">License Plate</Label>
-            <Input autoCapitalize="characters" placeholder="ABC1234" value={form.plate} onChange={set("plate")} />
+            <Input autoCapitalize="characters" autoCorrect="off" spellCheck={false} placeholder="ABC1234" value={form.plate} onChange={set("plate")} />
           </div>
 
           <div className="space-y-1">
             <Label className="text-xs">Plate State</Label>
-            <Input autoCapitalize="characters" placeholder="TX" maxLength={2} value={form.plateState} onChange={set("plateState")} />
+            <Input autoCapitalize="characters" autoCorrect="off" spellCheck={false} placeholder="TX" maxLength={2} value={form.plateState} onChange={set("plateState")} />
           </div>
 
           <div className="space-y-1">

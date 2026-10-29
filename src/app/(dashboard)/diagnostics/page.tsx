@@ -273,8 +273,6 @@ function DiagnosticsPageInner() {
   const [streamingText, setStreamingText] = useState("");
   const [diagJobId, setDiagJobId] = useState("");
   const [showCustomerText, setShowCustomerText] = useState(false);
-  const [createJobLoading, setCreateJobLoading] = useState(false);
-  const [createJobSuccess, setCreateJobSuccess] = useState("");
 
   const { data: openJobsData } = useQuery({
     queryKey: ["diag-open-jobs"],
@@ -500,24 +498,16 @@ function DiagnosticsPageInner() {
     return lines.join("\n").replace(/\n{3,}/g, "\n\n");
   }
 
-  async function handleCreateJob() {
+  function handleCreateJob() {
     if (!aiResult || !vehicle.make) return;
-    setCreateJobLoading(true);
-    setCreateJobSuccess("");
-    try {
-      const top = aiResult.diagnoses[0];
-      const res = await axios.post("/api/jobs", {
-        title: top ? `Diagnose & Repair: ${top.cause}` : aiResult.summary,
-        description: `AI Diagnosis:\n${aiResult.summary}\n\nSymptoms: ${symptoms}\n\nRecommended: ${top?.repairNeeded || "See diagnosis"}`,
-        vehicleYear: vehicle.year, vehicleMake: vehicle.make, vehicleModel: vehicle.model,
-        mileage: vehicle.mileage ? Number(vehicle.mileage) : undefined,
-        status: "ESTIMATE",
-      });
-      setCreateJobSuccess(`Job #${res.data.data?.jobNumber || res.data.jobNumber || "created"} — open in Jobs`);
-    } catch {
-      setCreateJobSuccess("Could not create job — check vehicle/customer fields");
-    }
-    setCreateJobLoading(false);
+    const top = aiResult.diagnoses[0];
+    const params = new URLSearchParams({
+      service: top ? `Diagnose & Repair: ${top.cause}` : aiResult.summary,
+      description: `AI Diagnosis:\n${aiResult.summary}\n\nSymptoms: ${symptoms}\n\nRecommended: ${top?.repairNeeded || "See diagnosis"}`,
+    });
+    // The jobs API requires a real customer and vehicle. Let the New Job form
+    // collect those instead of posting an incomplete job.
+    router.push(`/jobs/new?${params.toString()}`);
   }
 
   async function handleLookupSpecs() {
@@ -744,12 +734,11 @@ function DiagnosticsPageInner() {
                       <Button size="sm" variant="outline" onClick={() => setShowCustomerText(!showCustomerText)}>
                         <MessageCircle className="h-3.5 w-3.5 mr-1" /> Explain to Customer
                       </Button>
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleCreateJob} disabled={createJobLoading || !vehicle.make}>
-                        {createJobLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Briefcase className="h-3.5 w-3.5 mr-1" />}
+                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleCreateJob} disabled={!vehicle.make}>
+                        <Briefcase className="h-3.5 w-3.5 mr-1" />
                         Create Job
                       </Button>
                     </div>
-                    {createJobSuccess && <p className="text-xs text-green-700 mt-2">{createJobSuccess}</p>}
                     {showCustomerText && (
                       <div className="mt-3 p-3 bg-white rounded border space-y-2">
                         <div className="flex items-center justify-between">

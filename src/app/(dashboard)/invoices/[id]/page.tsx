@@ -209,15 +209,15 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-start gap-3">
         <Link href="/invoices"><Button aria-label="Back" variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900">{invoice.invoiceNumber}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg font-bold text-gray-900 break-words sm:text-xl">{invoice.invoiceNumber}</h1>
           <span className={`text-xs rounded-md px-2 py-0.5 font-medium ${INVOICE_STATUS_COLORS[invoice.status]}`}>
             {invoice.status}
           </span>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
           <a href={`/api/invoices/${id}/pdf`} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> PDF</Button>
           </a>
@@ -268,7 +268,7 @@ export default function InvoiceDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
         {/* Customer Info */}
         <Card>
           <CardContent className="p-4 space-y-2 text-sm">
@@ -380,12 +380,13 @@ export default function InvoiceDetailPage() {
                 const withBalance = rows.map((p) => {
                   balance = Math.round((balance - Number(p.amount)) * 100) / 100;
                   const refunded = rows.filter((r) => r.refundOfId === p.id).reduce((s2, r) => s2 + Number(r.amount), 0);
-                  return { ...p, balanceAfter: balance, refundable: Math.round((Number(p.amount) + refunded) * 100) / 100 };
+                  const kind = p.type === "REFUND" ? "REFUND" : p.type === "DEPOSIT" ? "DEPOSIT" : balance <= 0 ? "FINAL" : "PARTIAL";
+                  return { ...p, balanceAfter: balance, refundable: Math.round((Number(p.amount) + refunded) * 100) / 100, kind };
                 });
                 return withBalance.reverse().map((p) => (
                 <div key={p.id} className="flex justify-between items-start text-sm py-2 border-b last:border-0">
                   <div>
-                    <Badge variant="outline" className="mr-2 text-[10px]">{p.type ?? "PAYMENT"}</Badge>
+                    <Badge variant="outline" className="mr-2 text-[10px]">{p.kind}</Badge>
                     <span className="font-medium">{p.method.replace(/_/g, " ")}</span>
                     {p.reference && <span className="text-gray-400 ml-2">#{p.reference}</span>}
                     <p className="text-xs text-gray-400">{formatDateTime(p.receivedAt)} · Balance after: {formatCurrency(Math.max(0, p.balanceAfter))}</p>
