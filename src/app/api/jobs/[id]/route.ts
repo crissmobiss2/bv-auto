@@ -128,6 +128,24 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   if (session!.user.role === "TECHNICIAN" && job.technician?.id !== session!.user.id) {
     return apiError("You can only view jobs assigned to you", 403);
   }
+
+  // Technicians need the work order, not the customer's bill or parts margin.
+  if (session!.user.role === "TECHNICIAN") {
+    const { quote: _quote, invoice: _invoice, parts, ...workOrder } = job;
+    const safeParts = parts.map(({
+      unitCost: _unitCost,
+      unitPrice: _unitPrice,
+      markup: _markup,
+      totalCost: _totalCost,
+      totalPrice: _totalPrice,
+      coreCharge: _coreCharge,
+      creditAmount: _creditAmount,
+      vendor: _vendor,
+      ...part
+    }) => part);
+    return apiSuccess({ ...workOrder, parts: safeParts });
+  }
+
   return apiSuccess(job);
 }
 

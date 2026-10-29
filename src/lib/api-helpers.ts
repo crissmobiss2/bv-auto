@@ -1,5 +1,6 @@
 import { openShopScope } from "@/lib/tenant";
 import { redactAuditPayload } from "@/lib/audit-redact";
+import { redactApiPayload } from "@/lib/api-redact";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -64,5 +65,5 @@ export function apiError(message: string, status = 400) {
 }
 
 export function apiSuccess<T>(data: T, status = 200) {
-  return NextResponse.json(data, { status });
+  return NextResponse.json(redactApiPayload(data), { status });
 }

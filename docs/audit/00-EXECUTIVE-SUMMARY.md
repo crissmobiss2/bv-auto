@@ -20,12 +20,12 @@ The audit was run on `fb5d22b`. Before committing, it was merged onto `master`, 
 | Severity | Count | Fixed in this pass | Open |
 |---|---:|---:|---:|
 | P0 — Critical | 4 | 3 | 1 (tenant scoping) |
-| P1 — High | 49 | ~34 | ~15 |
+| P1 - High | 50 | ~35 | ~15 |
 | P2 - Medium | 107 | ~32 | ~75 |
 | P3 - Low | 20 | ~2 | ~18 |
-| **Total** | **180** | **~71** | **~109** |
+| **Total** | **181** | **~72** | **~109** |
 
-Counts are derived from the 14 reports and include the post-summary AUTH-015 finding. Later `status/` PRs supersede individual rows; “fixed” means code changed and type-check/lint/tests pass, not that the integration was exercised live.
+Counts are derived from the 14 reports and include the post-summary AUTH-015/AUTH-016 findings. Later `status/` PRs supersede individual rows; “fixed” means code changed and type-check/lint/tests pass, not that the integration was exercised live.
 
 ## Section scorecard
 | # | Section | Grade | Verdict | Biggest remaining risk |

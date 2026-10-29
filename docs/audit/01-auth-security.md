@@ -190,13 +190,24 @@
 ### [AUTH-015] Technicians could read customer financials and warranty records
 - **Severity:** P1
 - **Area:** Role boundary / customer privacy
-- **Evidence:** `src/proxy.ts` (`TECH_BLOCKED_API_PREFIXES`), `src/app/api/customers/route.ts`, `src/app/api/customers/[id]/route.ts`, `src/app/api/vehicles/[id]/route.ts`, `src/app/api/warranties/route.ts`, `src/app/api/warranties/[id]/route.ts`
-- **Problem:** The technician blocklist named `/api/warranty` (singular), but the real API is `/api/warranties`, so technicians could list, create, claim, void, and read warranties. The customer list/detail APIs also returned invoice history, `_count.invoices`, lifetime revenue, average ticket, and CLV to technicians, and vehicle detail returned each job's quote and invoice totals.
+- **Evidence:** `src/proxy.ts` (`TECH_BLOCKED_API_PREFIXES`), `src/app/api/customers/route.ts`, `src/app/api/customers/[id]/route.ts`, `src/app/api/vehicles/[id]/route.ts`, `src/app/api/jobs/[id]/route.ts`, `src/app/api/warranties/route.ts`, `src/app/api/warranties/[id]/route.ts`
+- **Problem:** The technician blocklist named `/api/warranty` (singular), but the real API is `/api/warranties`, so technicians could list, create, claim, void, and read warranties. The customer list/detail APIs also returned invoice history, `_count.invoices`, lifetime revenue, average ticket, and CLV to technicians; vehicle detail returned each job's quote and invoice totals; and assigned-job detail returned quote/invoice line items, payments, and parts cost/markup/vendor data.
 - **Impact:** A shop-floor account could read customer money data and alter warranty claims, bypassing the navigation and page-level restrictions that hide Warranty, Invoices, and Reports.
 - **Reproduce / verify:** Sign in as `TECHNICIAN`; call `GET /api/warranties`, `GET /api/customers`, and `GET /api/customers/<id>`. Before the fix the first returned records and the customer responses included `invoices`/`clv`.
-- **Recommended fix:** Add both warranty route spellings to the technician API boundary; require `ADMIN`/`DISPATCHER` in the warranty routes themselves; and redact invoice history, invoice counts, revenue, average ticket, CLV, and per-job quote/invoice totals from customer and vehicle responses for roles outside `ADMIN`, `DISPATCHER`, `ACCOUNTANT`, and `SERVICE_ADVISOR`.
+- **Recommended fix:** Add both warranty route spellings to the technician API boundary; require `ADMIN`/`DISPATCHER` in the warranty routes themselves; redact invoice history, invoice counts, revenue, average ticket, CLV, and per-job quote/invoice totals from customer and vehicle responses for roles outside `ADMIN`, `DISPATCHER`, `ACCOUNTANT`, and `SERVICE_ADVISOR`; and strip quote, invoice, payment, and parts-margin fields from the technician job response.
 - **Effort:** S
 - **Confidence:** Confirmed - fixed in this pass with `src/lib/role-access.ts`, route-level role checks, and `src/__tests__/role-access.test.ts`.
+
+### [AUTH-016] Customer portal bearer tokens and credential hashes were returned in API responses
+- **Severity:** P1
+- **Area:** Secret exposure / customer portal takeover
+- **Evidence:** `src/app/api/customers/route.ts`, `src/app/api/customers/[id]/route.ts`, `src/app/api/jobs/[id]/route.ts`, `src/app/api/jobs/route.ts` (POST response), `src/app/api/vehicles/[id]/route.ts`, `src/lib/api-helpers.ts`
+- **Problem:** Customer records include `portalToken`, a bearer credential for `/portal/<token>`. Endpoints that returned `customer: true` or spread the full customer row exposed the token to every signed-in staff role, including technicians. The same response shape could also expose `passwordHash`, `totpSecret`, reset-token hashes, or verification tokens if a route ever returned a full user row.
+- **Impact:** A shop-floor or compromised staff account could copy a customer's portal token, open the customer portal as that customer, read invoices/messages, and use portal payment actions. The token never expires automatically.
+- **Reproduce / verify:** Sign in as `TECHNICIAN`; request an assigned job with `GET /api/jobs/<id>` or a vehicle with `GET /api/vehicles/<id>`. Before the fix, the nested `customer.portalToken` was present.
+- **Recommended fix:** Add a narrow response redaction in `apiSuccess()` that removes `portalToken`, `passwordHash`, `totpSecret`, `resetTokenHash`, and `verificationToken` recursively, while preserving dates, Prisma `Decimal` values, and intentionally returned one-time setup secrets under other keys.
+- **Effort:** S
+- **Confidence:** Confirmed - fixed in this pass with `src/lib/api-redact.ts`, `apiSuccess()` integration, and `src/__tests__/api-redact.test.ts`.
 
 ## What already works well
 - NextAuth credentials + TOTP, bcrypt hashing, and invite-code-gated staff registration.
