@@ -27,8 +27,13 @@ describe("api response redaction", () => {
         id: "usr_1",
         passwordHash: "hash",
         totpSecret: "otp",
+        resetToken: "reset-raw",
         resetTokenHash: "reset",
         verificationToken: "verify",
+        sessionToken: "session",
+        access_token: "access",
+        refresh_token: "refresh",
+        id_token: "id",
       },
     });
 

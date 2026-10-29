@@ -205,7 +205,7 @@
 - **Problem:** Customer records include `portalToken`, a bearer credential for `/portal/<token>`. Endpoints that returned `customer: true` or spread the full customer row exposed the token to every signed-in staff role, including technicians. The same response shape could also expose `passwordHash`, `totpSecret`, reset-token hashes, or verification tokens if a route ever returned a full user row.
 - **Impact:** A shop-floor or compromised staff account could copy a customer's portal token, open the customer portal as that customer, read invoices/messages, and use portal payment actions. The token never expires automatically.
 - **Reproduce / verify:** Sign in as `TECHNICIAN`; request an assigned job with `GET /api/jobs/<id>` or a vehicle with `GET /api/vehicles/<id>`. Before the fix, the nested `customer.portalToken` was present.
-- **Recommended fix:** Add a narrow response redaction in `apiSuccess()` that removes `portalToken`, `passwordHash`, `totpSecret`, `resetTokenHash`, and `verificationToken` recursively, while preserving dates, Prisma `Decimal` values, and intentionally returned one-time setup secrets under other keys.
+- **Recommended fix:** Add a narrow response redaction in `apiSuccess()` that removes `portalToken`, `passwordHash`, `totpSecret`, `resetToken`, `resetTokenHash`, `verificationToken`, `sessionToken`, and OAuth `access_token`/`refresh_token`/`id_token` recursively, while preserving dates, Prisma `Decimal` values, and intentionally returned one-time setup secrets under other keys.
 - **Effort:** S
 - **Confidence:** Confirmed - fixed in this pass with `src/lib/api-redact.ts`, `apiSuccess()` integration, and `src/__tests__/api-redact.test.ts`.
 

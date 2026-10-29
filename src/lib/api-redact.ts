@@ -6,8 +6,13 @@ const NEVER_RETURN = new Set([
   "portalToken",
   "passwordHash",
   "totpSecret",
+  "resetToken",
   "resetTokenHash",
   "verificationToken",
+  "sessionToken",
+  "access_token",
+  "refresh_token",
+  "id_token",
 ]);
 
 /**
