@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
-import { canViewCustomerFinancials } from "@/lib/role-access";
+import { requireAuth, requireRole, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { CUSTOMER_MANAGEMENT_ROLES, canViewCustomerFinancials } from "@/lib/role-access";
 import { AuditAction, CustomerType, LeadSource } from "@prisma/client";
 import { z } from "zod";
 
@@ -108,7 +108,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error, session } = await requireAuth();
+  const { error, session } = await requireRole(CUSTOMER_MANAGEMENT_ROLES);
   if (error) return error;
 
   const { id } = await params;

@@ -68,6 +68,7 @@ export const TECH_BLOCKED_API_PREFIXES = [
   "/api/audit",
   "/api/quotes",
   "/api/invoices",
+  "/api/stripe",
   "/api/users",
   "/api/integrations",
   "/api/purchase-orders",
@@ -104,6 +105,10 @@ export const CUSTOMER_FINANCIAL_ROLES = new Set([
 
 // Warranty pages are admin/dispatcher surfaces in the navigation.
 export const WARRANTY_ROLES: string[] = ["ADMIN", "DISPATCHER"];
+
+// Destructive CRM actions stay with the office, even though shop-floor roles
+// can still read and edit day-to-day contact details.
+export const CUSTOMER_MANAGEMENT_ROLES: string[] = ["ADMIN", "DISPATCHER", "SERVICE_ADVISOR"];
 
 export function matchesPrefix(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));

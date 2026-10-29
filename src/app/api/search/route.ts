@@ -3,16 +3,21 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, apiSuccess } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const q = req.nextUrl.searchParams.get("q") || "";
   if (!q || q.length < 2) return apiSuccess({ results: [] });
 
+  const isTech = session!.user.role === "TECHNICIAN";
+  const techId = session!.user.id;
+  const techScope = isTech ? { jobs: { some: { technicianId: techId } } } : {};
+
   const [customers, vehicles, jobs, invoices] = await Promise.all([
     prisma.customer.findMany({
       where: {
         isActive: true,
+        ...techScope,
         OR: [
           { firstName: { contains: q, mode: "insensitive" } },
           { lastName: { contains: q, mode: "insensitive" } },
@@ -26,6 +31,7 @@ export async function GET(req: NextRequest) {
     prisma.vehicle.findMany({
       where: {
         isActive: true,
+        ...techScope,
         OR: [
           { vin: { contains: q, mode: "insensitive" } },
           { plate: { contains: q, mode: "insensitive" } },
@@ -37,6 +43,7 @@ export async function GET(req: NextRequest) {
     }),
     prisma.job.findMany({
       where: {
+        ...(isTech ? { technicianId: techId } : {}),
         OR: [
           { jobNumber: { contains: q, mode: "insensitive" } },
           { title: { contains: q, mode: "insensitive" } },
@@ -45,11 +52,13 @@ export async function GET(req: NextRequest) {
       include: { customer: { select: { firstName: true, lastName: true } } },
       take: 5,
     }),
-    prisma.invoice.findMany({
-      where: { invoiceNumber: { contains: q, mode: "insensitive" } },
-      include: { customer: { select: { firstName: true, lastName: true } } },
-      take: 5,
-    }),
+    isTech
+      ? Promise.resolve([] as { id: string; invoiceNumber: string; customer: { firstName: string; lastName: string } }[])
+      : prisma.invoice.findMany({
+          where: { invoiceNumber: { contains: q, mode: "insensitive" } },
+          include: { customer: { select: { firstName: true, lastName: true } } },
+          take: 5,
+        }),
   ]);
 
   const results = [
