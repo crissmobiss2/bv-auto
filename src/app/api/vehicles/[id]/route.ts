@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
+import { canViewCustomerFinancials } from "@/lib/role-access";
 import { AuditAction } from "@prisma/client";
 import { z } from "zod";
 import { normalizeVin, vinError } from "@/lib/vin";
@@ -24,10 +25,11 @@ const updateSchema = z.object({
 }).partial();
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAuth();
+  const { error, session } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
+  const canSeeFinancials = canViewCustomerFinancials(session!.user.role);
 
   const vehicle = await prisma.vehicle.findUnique({
     where: { id },
@@ -42,7 +44,12 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   });
 
   if (!vehicle) return apiError("Vehicle not found", 404);
-  return apiSuccess(vehicle);
+
+  if (canSeeFinancials) return apiSuccess(vehicle);
+
+  // Shop-floor roles see service history but not quote/invoice money.
+  const jobs = vehicle.jobs.map(({ quote: _quote, invoice: _invoice, ...job }) => job);
+  return apiSuccess({ ...vehicle, jobs });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
