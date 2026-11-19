@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UserPlus } from "lucide-react";
+import { UserPlus, KeyRound, Copy, Check } from "lucide-react";
 
 const ROLES = ["ADMIN", "DISPATCHER", "TECHNICIAN", "ACCOUNTANT", "PARTS_COORDINATOR"] as const;
 
@@ -26,6 +26,8 @@ export function TeamMembers({ users, currentUserId, canManage }: { users: Member
   const [inviteOpen, setInviteOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "TECHNICIAN" });
   const [showInactive, setShowInactive] = useState(false);
+  const [resetResult, setResetResult] = useState<{ email: string; tempPassword: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const update = async (id: string, data: { role?: string; isActive?: boolean }) => {
     setBusy(id);
@@ -52,6 +54,31 @@ export function TeamMembers({ users, currentUserId, canManage }: { users: Member
       setError(errorMessage(e, "Could not add team member"));
     } finally {
       setBusy(null);
+    }
+  };
+
+  const resetPassword = async (id: string, email: string) => {
+    if (!confirm(`Reset the password for ${email}? Every active session for this member will be signed out.`)) return;
+    setBusy(id);
+    setError(null);
+    try {
+      const { data } = await axios.post<{ email: string; tempPassword: string }>(`/api/users/${id}/reset-password`);
+      setResetResult({ email: data.email, tempPassword: data.tempPassword });
+    } catch (e) {
+      setError(errorMessage(e, "Could not reset the password"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const copyPassword = async () => {
+    if (!resetResult) return;
+    try {
+      await navigator.clipboard.writeText(resetResult.tempPassword);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Selecting the value in the input still lets the admin copy it manually.
     }
   };
 
@@ -91,17 +118,27 @@ export function TeamMembers({ users, currentUserId, canManage }: { users: Member
                     </SelectContent>
                   </Select>
                   {canManage && !isSelf && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busy === u.id}
-                      onClick={() => {
-                        if (u.isActive && !confirm(`Deactivate ${u.email}? They will be signed out and unable to log in.`)) return;
-                        update(u.id, { isActive: !u.isActive });
-                      }}
-                    >
-                      {u.isActive ? "Deactivate" : "Reactivate"}
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busy === u.id || !u.isActive}
+                        onClick={() => resetPassword(u.id, u.email)}
+                      >
+                        <KeyRound className="h-3.5 w-3.5 mr-1" /> Reset
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy === u.id}
+                        onClick={() => {
+                          if (u.isActive && !confirm(`Deactivate ${u.email}? They will be signed out and unable to log in.`)) return;
+                          update(u.id, { isActive: !u.isActive });
+                        }}
+                      >
+                        {u.isActive ? "Deactivate" : "Reactivate"}
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -124,7 +161,7 @@ export function TeamMembers({ users, currentUserId, canManage }: { users: Member
             <div>
               <Label htmlFor="tm-password">Temporary password (min 8 characters)</Label>
               <Input id="tm-password" type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-              <p className="text-xs text-gray-500 mt-1">Share it with them; they can change it via Forgot password.</p>
+              <p className="text-xs text-gray-500 mt-1">Share it with them; they can change it after signing in.</p>
             </div>
             <div>
               <Label>Role</Label>
@@ -144,6 +181,36 @@ export function TeamMembers({ users, currentUserId, canManage }: { users: Member
               >
                 {busy === "invite" ? "Adding..." : "Add member"}
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!resetResult} onOpenChange={(open) => { if (!open) { setResetResult(null); setCopied(false); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Temporary password</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              Share this with <strong>{resetResult?.email}</strong>. Their other sessions are signed out. They can change it after signing in.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={resetResult?.tempPassword ?? ""}
+                aria-label="Temporary password"
+                onFocus={(e) => e.currentTarget.select()}
+                className="font-mono"
+              />
+              <Button type="button" variant="outline" onClick={copyPassword}>
+                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                <span className="sr-only">{copied ? "Copied" : "Copy password"}</span>
+              </Button>
+            </div>
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+              This password is shown once. It is not stored anywhere in readable form. Two-factor authentication is unchanged.
+            </p>
+            <div className="flex justify-end">
+              <Button onClick={() => { setResetResult(null); setCopied(false); }}>Done</Button>
             </div>
           </div>
         </DialogContent>

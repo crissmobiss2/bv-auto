@@ -68,6 +68,22 @@ sessions were exercised with a real browser.
    now mints the token, marks the quote SENT, and returns the approval URL plus
    per-channel statuses; the UI copies the link and warns that delivery did not
    happen.
+3. **No account recovery without email.** Settings → Team Members now has a
+   **Reset** action that issues a one-time temporary password, invalidates the
+   member's old sessions, and writes an audit entry. This works without Resend.
+4. **Portal message endpoint 500 on bad input.** A non-string `body` now returns
+   `400 {"error":"Message required"}` instead of crashing.
+5. **Production timezone was Los Angeles.** `SHOP_TIMEZONE` and
+   `NEXT_PUBLIC_SHOP_TIMEZONE` are now `America/Chicago` for the Houston shop, so
+   “today”, date ranges, and printed dates no longer drift by two hours.
+6. **Security upgrade.** Next 16.4.3 → 16.4.6, Prisma 7.10.1, Electron 44.11.5,
+   Vite 8.3.8, Vitest 5.1.1; audit findings dropped from 29 (5 high) to 6
+   moderate dev-only packaging issues. See
+   `docs/audit/status/dependency-upgrade-2026-11-19.md`.
+7. **Codemagic signing.** The release key is now stored in the restricted
+   `android_release_signing` variable group and both Android workflows decode it
+   at build time. `android-signing-verify` was added to test the signing path
+   without publishing an APK.
 
 ## Production configuration findings
 

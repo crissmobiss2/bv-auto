@@ -12,9 +12,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return apiError("Too many messages. Please wait and try again.", 429);
   }
 
-  const { body } = await req.json();
-  if (!body?.trim()) return apiError("Message required");
-  if (typeof body !== "string" || body.length > 2000) {
+  const { body } = await req.json().catch(() => ({}));
+  if (typeof body !== "string" || !body.trim()) return apiError("Message required");
+  if (body.length > 2000) {
     return apiError("Message must be 2,000 characters or fewer", 400);
   }
 

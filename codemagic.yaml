@@ -64,9 +64,8 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      android_signing:
-        - bvauto_keystore
       groups:
+        - android_release_signing
         - google_play
       vars:
         PACKAGE_NAME: com.bvauto.app
@@ -79,6 +78,17 @@ workflows:
 
       - name: Sync Capacitor Android
         script: npx cap sync android
+
+      - name: Prepare Android signing
+        script: |
+          python3 - <<'PY'
+          import base64, os
+          open('/tmp/bvauto-release.p12', 'wb').write(base64.b64decode(os.environ['BVAUTO_KEYSTORE_BASE64']))
+          PY
+          echo "BVAUTO_KEYSTORE_FILE=/tmp/bvauto-release.p12" >> $CM_ENV
+          echo "BVAUTO_KEYSTORE_PASSWORD=$BVAUTO_KEYSTORE_PASSWORD" >> $CM_ENV
+          echo "BVAUTO_KEY_ALIAS=$BVAUTO_KEY_ALIAS" >> $CM_ENV
+          echo "BVAUTO_KEY_PASSWORD=$BVAUTO_KEY_PASSWORD" >> $CM_ENV
 
       - name: Build Android release AAB
         script: |
@@ -105,8 +115,8 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      android_signing:
-        - bvauto_keystore
+      groups:
+        - android_release_signing
       vars:
         PACKAGE_NAME: com.bvauto.app
       node: 22.11.0
@@ -118,6 +128,17 @@ workflows:
 
       - name: Sync Capacitor Android
         script: npx cap sync android
+
+      - name: Prepare Android signing
+        script: |
+          python3 - <<'PY'
+          import base64, os
+          open('/tmp/bvauto-release.p12', 'wb').write(base64.b64decode(os.environ['BVAUTO_KEYSTORE_BASE64']))
+          PY
+          echo "BVAUTO_KEYSTORE_FILE=/tmp/bvauto-release.p12" >> $CM_ENV
+          echo "BVAUTO_KEYSTORE_PASSWORD=$BVAUTO_KEYSTORE_PASSWORD" >> $CM_ENV
+          echo "BVAUTO_KEY_ALIAS=$BVAUTO_KEY_ALIAS" >> $CM_ENV
+          echo "BVAUTO_KEY_PASSWORD=$BVAUTO_KEY_PASSWORD" >> $CM_ENV
 
       - name: Build signed release APK
         script: |
@@ -142,3 +163,51 @@ workflows:
     artifacts:
       - android/app/build/outputs/apk/release/*.apk
       - public/app-release.apk
+
+  # Verifies that the Codemagic signing variables can build and sign the APK.
+  # Does not publish or change the served APK, so it is safe to run any time.
+  android-signing-verify:
+    name: Android Signing Verify
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+
+    environment:
+      groups:
+        - android_release_signing
+      vars:
+        PACKAGE_NAME: com.bvauto.app
+      node: 22.11.0
+      java: 17
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci --legacy-peer-deps
+
+      - name: Sync Capacitor Android
+        script: npx cap sync android
+
+      - name: Prepare Android signing
+        script: |
+          python3 - <<'PY'
+          import base64, os
+          open('/tmp/bvauto-release.p12', 'wb').write(base64.b64decode(os.environ['BVAUTO_KEYSTORE_BASE64']))
+          PY
+          echo "BVAUTO_KEYSTORE_FILE=/tmp/bvauto-release.p12" >> $CM_ENV
+          echo "BVAUTO_KEYSTORE_PASSWORD=$BVAUTO_KEYSTORE_PASSWORD" >> $CM_ENV
+          echo "BVAUTO_KEY_ALIAS=$BVAUTO_KEY_ALIAS" >> $CM_ENV
+          echo "BVAUTO_KEY_PASSWORD=$BVAUTO_KEY_PASSWORD" >> $CM_ENV
+
+      - name: Build signed release APK
+        script: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Verify signer
+        script: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Library/Android/sdk}}"
+          BT=$(ls -d "$SDK"/build-tools/* 2>/dev/null | sort -V | tail -1)
+          "$BT/apksigner" verify --print-certs "$APK"
+
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
