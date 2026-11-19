@@ -1,7 +1,7 @@
 import React from "react";
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { customerName } from "@/lib/customer-name";
-import { formatCurrency, formatDate, lineItemSalePrice } from "@/lib/utils";
+import { formatCurrency, formatDate, formatPhone, lineItemSalePrice } from "@/lib/utils";
 
 export type InvoicePdfBrand = {
   name: string;
@@ -122,7 +122,7 @@ function InvoiceDocument({ invoice, brand }: { invoice: InvoicePdfInvoice; brand
             <Text style={styles.label}>Bill To</Text>
             <Text style={styles.strong}>{customer}</Text>
             {invoice.customer.company ? <Text style={styles.muted}>{invoice.customer.company}</Text> : null}
-            {invoice.customer.phone ? <Text style={styles.muted}>{invoice.customer.phone}</Text> : null}
+            {invoice.customer.phone ? <Text style={styles.muted}>{formatPhone(invoice.customer.phone)}</Text> : null}
             {invoice.customer.email ? <Text style={styles.muted}>{invoice.customer.email}</Text> : null}
             {invoice.customer.address ? (
               <Text style={styles.muted}>
