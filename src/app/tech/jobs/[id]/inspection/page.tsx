@@ -171,7 +171,7 @@ export default function TechInspectionPage() {
   // --- Summary screen after submit ---
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24">
+      <div className="min-h-screen bg-gray-50 pb-40">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-3">
           <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
@@ -242,8 +242,8 @@ export default function TechInspectionPage() {
           ))}
         </div>
 
-        {/* Sticky bottom bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 space-y-2 shadow-lg">
+        {/* Sticky bottom bar — sits above the technician bottom navigation. */}
+        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-30 bg-white border-t p-4 space-y-2 shadow-lg">
           {sendMutation.isError && (
             <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-2">
               {(axios.isAxiosError(sendMutation.error) && sendMutation.error.response?.data?.error) ||
@@ -284,7 +284,7 @@ export default function TechInspectionPage() {
 
   // --- Main inspection form ---
   return (
-    <div className="min-h-screen bg-gray-50 pb-28">
+    <div className="min-h-screen bg-gray-50 pb-44">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-3">
         <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
@@ -423,8 +423,8 @@ export default function TechInspectionPage() {
         </Card>
       </div>
 
-      {/* Sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3 shadow-lg">
+      {/* Sticky bottom bar — sits above the technician bottom navigation. */}
+      <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-30 bg-white border-t px-4 py-3 shadow-lg">
         <div className="flex items-center gap-3">
           <div className="flex-1 text-center">
             <span className="text-sm text-gray-500">

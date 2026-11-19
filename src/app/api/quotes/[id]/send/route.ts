@@ -35,12 +35,6 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
 
   const canEmail = !!quote.customer.email && emailConfigured;
   const canSms = !!quote.customer.phone && smsConfigured;
-  if (!canEmail && !canSms) {
-    return apiError(
-      "Quote not sent: email/SMS is not configured, or the customer has no usable contact method.",
-      503,
-    );
-  }
 
   let emailSent = false;
   let emailError: string | undefined;
@@ -77,21 +71,9 @@ export async function POST(_: NextRequest, { params }: { params: Promise<{ id: s
     }
   }
 
-  // Never claim a quote was sent when every delivery attempt failed.
-  if (!emailSent && !smsSent) {
-    await logAudit(session!.user.id, AuditAction.EMAIL_SENT, "Quote", id, null, {
-      token,
-      emailSent,
-      smsSent,
-      emailError,
-      smsError,
-    });
-    return apiError(
-      `Quote was not sent. ${emailError || smsError || "No delivery channel succeeded."}`,
-      502,
-    );
-  }
-
+  // Email/SMS is optional. When neither channel is configured (or both fail) we
+  // still mint the approval link and mark the quote SENT so staff can copy the
+  // link and send it themselves. The response statuses tell the UI what failed.
   await prisma.quote.update({
     where: { id },
     data: {
