@@ -39,6 +39,8 @@ export default async function proxy(req: NextRequest) {
     matchesPrefix(pathname, PUBLIC_API_PREFIXES) ||
     // portal photo thumbnails; the route validates ?t= against the customer's portal token
     (pathname.startsWith("/api/photos/") && req.nextUrl.searchParams.has("t")) ||
+    // invoice PDFs opened in the phone's browser carry a short-lived HMAC token
+    (pathname.startsWith("/api/invoices/") && pathname.endsWith("/pdf") && req.nextUrl.searchParams.has("token")) ||
     (pathname === "/api/booking" && req.method === "POST") ||
     (pathname.startsWith("/api/booking/") && req.method === "POST")
   ) {

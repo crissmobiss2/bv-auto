@@ -157,7 +157,7 @@ export default function ApproveQuotePage() {
             </div>
             {Number(quote.taxAmount) > 0 && (
               <div className="flex justify-between text-gray-500">
-                <span>Tax ({Number(quote.taxRate)}%)</span>
+                <span>Sales tax (parts only, {Number(quote.taxRate)}%)</span>
                 <span>{formatCurrency(quote.taxAmount)}</span>
               </div>
             )}

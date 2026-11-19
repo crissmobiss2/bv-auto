@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { generateQuoteNumber, calculateLineItemTotal, withUniqueRetry } from "@/lib/utils";
+import { DEFAULT_TAX_RATE_PERCENT, isTaxableLineItem } from "@/lib/tax";
 import { z } from "zod";
 import { AuditAction, LineItemType } from "@prisma/client";
 
@@ -14,7 +15,7 @@ const lineItemSchema = z.object({
   unitPrice: z.number().min(0),
   markup: z.number().optional(),
   discount: z.number().optional(),
-  taxable: z.boolean().default(true),
+  taxable: z.boolean().default(false),
   notes: z.string().optional(),
 });
 
@@ -25,7 +26,7 @@ const createSchema = z.object({
   notes: z.string().optional(),
   internalNotes: z.string().optional(),
   validUntil: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid validUntil").optional(),
-  taxRate: z.number().min(0).max(30).default(0),
+  taxRate: z.number().min(0).max(30).default(DEFAULT_TAX_RATE_PERCENT),
   depositRequired: z.number().min(0).optional(),
   lineItems: z.array(lineItemSchema).default([]),
 });
@@ -87,6 +88,8 @@ export async function POST(req: NextRequest) {
   // Calculate totals
   const lineItemsWithTotals = parsed.data.lineItems.map((li) => ({
     ...li,
+    // Sales tax is parts-only for this shop; do not trust a client flag for labor.
+    taxable: isTaxableLineItem(li.type),
     total: calculateLineItemTotal(li.quantity, li.unitPrice, li.markup, li.discount),
   }));
 

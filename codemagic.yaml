@@ -94,3 +94,56 @@ workflows:
         credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
         track: internal
         submit_as_draft: true
+
+  # Build the signed APK that the in-app updater downloads. Push a tag such as
+  # android-v1.7 (after bumping versionCode/versionName) or run this workflow
+  # manually. With GITHUB_TOKEN available it commits the APK + metadata back to
+  # master, which Vercel deploys and /api/app-version serves to installed apps.
+  android-apk-update:
+    name: Android In-App Update APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    triggering:
+      events:
+        - type: tag
+          tag_pattern: "android-v*"
+
+    environment:
+      android_signing:
+        - bvauto_keystore
+      vars:
+        PACKAGE_NAME: com.bvauto.app
+      node: 22.11.0
+      java: 17
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci --legacy-peer-deps
+
+      - name: Sync Capacitor Android
+        script: npx cap sync android
+
+      - name: Build signed release APK
+        script: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Publish APK + version metadata
+        script: |
+          cd ..
+          node scripts/publish-android.mjs --skip-build --apk android/app/build/outputs/apk/release/app-release.apk
+          if [ -n "$GITHUB_TOKEN" ]; then
+            git config user.name "Codemagic"
+            git config user.email "ci@codemagic.io"
+            git add public/app-release.apk src/lib/android-release.json
+            VERSION=$(node -p "require('./src/lib/android-release.json').versionName")
+            git commit -m "chore: publish Android $VERSION"
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/crissmobiss2/bv-auto.git" HEAD:master
+          else
+            echo "GITHUB_TOKEN is not set. Download the APK artifact and commit public/app-release.apk + src/lib/android-release.json."
+          fi
+
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
+      - public/app-release.apk

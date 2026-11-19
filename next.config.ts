@@ -4,6 +4,9 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 const isDev = process.env.NODE_ENV !== "production";
 
 const nextConfig: NextConfig = {
+  // The PDF renderer loads fonts and Node-only modules; keep it out of the
+  // client/server bundle so the invoice PDF route stays reliable on Vercel.
+  serverExternalPackages: ["@react-pdf/renderer"],
   env: {
     NEXT_PUBLIC_BUILD_ID: (process.env.VERCEL_GIT_COMMIT_SHA || String(Date.now())).slice(0, 12),
     NEXT_PUBLIC_SHOP_TIMEZONE:

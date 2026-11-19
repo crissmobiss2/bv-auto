@@ -9,7 +9,7 @@ import { AuditAction, CustomerType, LeadSource } from "@prisma/client";
 const createSchema = z.object({
   type: z.nativeEnum(CustomerType).optional(),
   firstName: z.string().min(1),
-  lastName: z.string().min(1),
+  lastName: z.string().trim().optional(),
   company: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(7),
@@ -133,6 +133,7 @@ export async function POST(req: NextRequest) {
   const customer = await prisma.customer.create({
     data: {
       ...fields,
+      lastName: parsed.data.lastName || "",
       smsConsentAt: smsConsent ? new Date() : null,
       email: parsed.data.email || null,
       tags: parsed.data.tags || [],

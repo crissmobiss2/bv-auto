@@ -193,7 +193,7 @@ export default function ShopBoardPage() {
 
   const { data: techData } = useQuery({
     queryKey: ["technicians"],
-    queryFn: () => axios.get("/api/users?role=TECHNICIAN").then((r) => r.data),
+    queryFn: () => axios.get("/api/users?assignable=1").then((r) => r.data),
   });
 
   useEffect(() => {

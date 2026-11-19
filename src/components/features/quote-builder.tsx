@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Send, CheckCircle, XCircle, Brain, Loader2 } from "lucide-react";
 import { formatCurrency, calculateLineItemTotal } from "@/lib/utils";
+import { DEFAULT_TAX_RATE_PERCENT, calculateSalesTax, isTaxableLineItem, roundMoney } from "@/lib/tax";
 import { PartsCatalogDialog, type PickedPart } from "@/components/features/parts-catalog-dialog";
 import { ShoppingCart } from "lucide-react";
 import { toast } from "@/components/ui/toaster";
@@ -57,9 +58,9 @@ export function QuoteBuilder({ job }: { job: Job }) {
   const quote = job.quote;
 
   const [items, setItems] = useState<LineItem[]>(
-    quote?.lineItems || [{ type: "LABOR", description: "", quantity: 1, unitPrice: 0, taxable: true, total: 0 }]
+    quote?.lineItems || [{ type: "LABOR", description: "", quantity: 1, unitPrice: 0, taxable: false, total: 0 }]
   );
-  const [taxRate, setTaxRate] = useState(quote ? Number(quote.taxRate) : 0);
+  const [taxRate, setTaxRate] = useState(quote ? Number(quote.taxRate) : DEFAULT_TAX_RATE_PERCENT);
   const [notes, setNotes] = useState(quote?.notes || "");
   const [deposit, setDeposit] = useState(quote?.depositRequired ? String(Number(quote.depositRequired)) : "");
   const [editing, setEditing] = useState(!quote);
@@ -79,7 +80,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
         quantity: p.quantity,
         unitPrice: p.unitPrice,
         markup: p.markup,
-        taxable: true,
+        taxable: isTaxableLineItem("PART"),
         total: calculateLineItemTotal(p.quantity, p.unitPrice, p.markup),
       })),
     ]);
@@ -89,8 +90,9 @@ export function QuoteBuilder({ job }: { job: Job }) {
     axios.get("/api/shops/settings").then(({ data }) => {
       setShopLaborRate(data.laborRate || 105);
       setDefaultPartsMarkup(data.partsMarkup ?? 40);
-      // Only set tax rate for new quotes (not yet saved)
-      if (!quote) setTaxRate(data.taxRate || 0);
+      // Only set tax rate for new quotes (not yet saved). The shop rate is a
+      // percentage, e.g. 10.5 for 10.5%.
+      if (!quote) setTaxRate(Number(data.taxRate) > 0 ? Number(data.taxRate) : DEFAULT_TAX_RATE_PERCENT);
     }).catch(() => {});
   }, [quote]);
 
@@ -109,15 +111,15 @@ export function QuoteBuilder({ job }: { job: Job }) {
       const newItems: LineItem[] = [
         ...(data.laborItems || []).map((l: { description: string; hours: number; unitPrice: number; total: number }) => ({
           type: "LABOR", description: l.description, quantity: l.hours,
-          unitPrice: l.unitPrice, taxable: true, total: l.total,
+          unitPrice: l.unitPrice, taxable: isTaxableLineItem("LABOR"), total: l.total,
         })),
         ...(data.partItems || []).map((p: { description: string; partNumber?: string; quantity: number; unitPrice: number; total: number }) => ({
           type: "PART", description: p.description, partNumber: p.partNumber,
-          quantity: p.quantity, unitPrice: p.unitPrice, taxable: true, total: p.total,
+          quantity: p.quantity, unitPrice: p.unitPrice, taxable: isTaxableLineItem("PART"), total: p.total,
         })),
         ...(data.shopSupplies ? [{
           type: "SHOP_SUPPLY", description: "Shop Supplies", quantity: 1,
-          unitPrice: data.shopSupplies, taxable: true, total: data.shopSupplies,
+          unitPrice: data.shopSupplies, taxable: isTaxableLineItem("SHOP_SUPPLY"), total: data.shopSupplies,
         }] : []),
       ];
       setItems(newItems);
@@ -130,7 +132,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
   };
 
   const addItem = () => {
-    setItems([...items, { type: "LABOR", description: "", quantity: 1, unitPrice: 0, taxable: true, total: 0 }]);
+    setItems([...items, { type: "LABOR", description: "", quantity: 1, unitPrice: 0, taxable: false, total: 0 }]);
   };
 
   const removeItem = (index: number) => {
@@ -141,9 +143,13 @@ export function QuoteBuilder({ job }: { job: Job }) {
     const updated = [...items];
     (updated[index] as Record<string, unknown>)[field] = value;
     const item = updated[index];
-    // Auto-apply the shop's default markup when a line becomes a parts-type item
-    if (field === "type" && MARKUP_TYPES.includes(String(value)) && !item.markup) {
-      item.markup = defaultPartsMarkup;
+    // Sales tax follows the line type: parts are taxable, labor is not.
+    if (field === "type") {
+      item.taxable = isTaxableLineItem(String(value));
+      // Auto-apply the shop's default markup when a line becomes a parts-type item.
+      if (MARKUP_TYPES.includes(String(value)) && !item.markup) {
+        item.markup = defaultPartsMarkup;
+      }
     }
     item.total = calculateLineItemTotal(
       Number(item.quantity),
@@ -154,10 +160,9 @@ export function QuoteBuilder({ job }: { job: Job }) {
     setItems(updated);
   };
 
-  const subtotal = items.filter(i => i.type !== "DISCOUNT").reduce((s, i) => s + i.total, 0);
-  const taxableAmount = items.filter(i => i.taxable && i.type !== "DISCOUNT").reduce((s, i) => s + i.total, 0);
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-  const total = subtotal + taxAmount;
+  const subtotal = roundMoney(items.filter(i => i.type !== "DISCOUNT").reduce((s, i) => s + i.total, 0));
+  const { taxAmount } = calculateSalesTax(items, taxRate);
+  const total = roundMoney(subtotal + taxAmount);
 
   const saveMutation = useMutation({
     mutationFn: async (): Promise<AxiosResponse> => {
@@ -260,7 +265,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
           <div className="mt-4 space-y-1 text-sm">
             <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>{formatCurrency(quote.subtotal)}</span></div>
             {Number(quote.taxAmount) > 0 && (
-              <div className="flex justify-between text-gray-600"><span>Tax ({Number(quote.taxRate)}%)</span><span>{formatCurrency(quote.taxAmount)}</span></div>
+              <div className="flex justify-between text-gray-600"><span>Sales tax (parts only, {Number(quote.taxRate)}%)</span><span>{formatCurrency(quote.taxAmount)}</span></div>
             )}
             <div className="flex justify-between font-bold text-base border-t pt-2 mt-2">
               <span>Total</span><span>{formatCurrency(quote.totalAmount)}</span>
@@ -371,17 +376,12 @@ export function QuoteBuilder({ job }: { job: Job }) {
         {/* Totals */}
         <div className="border-t pt-4 space-y-2">
           <div className="flex items-center gap-4 justify-end">
-            <Label className="text-sm">Tax Rate (%)</Label>
-            <Input
-              type="number"
-              min="0"
-              max="30"
-              step="0.1"
-              className="w-24 h-8 text-sm"
-              value={taxRate}
-              onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-            />
+            <Label className="text-sm">Sales tax (parts only)</Label>
+            <span className="text-sm font-medium">{taxRate}%</span>
           </div>
+          <p className="text-xs text-gray-500 text-right">
+            Rate comes from Shops &amp; Locations. Labor is not taxed.
+          </p>
           <div className="flex items-center gap-4 justify-end">
             <Label htmlFor="quote-deposit" className="text-sm">Deposit required ($)</Label>
             <Input
@@ -398,7 +398,7 @@ export function QuoteBuilder({ job }: { job: Job }) {
           </div>
           <div className="text-sm space-y-1 text-right">
             <div className="flex justify-end gap-8"><span className="text-gray-500">Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-            {taxAmount > 0 && <div className="flex justify-end gap-8"><span className="text-gray-500">Tax ({taxRate}%)</span><span>{formatCurrency(taxAmount)}</span></div>}
+            {taxAmount > 0 && <div className="flex justify-end gap-8"><span className="text-gray-500">Sales tax (parts only, {taxRate}%)</span><span>{formatCurrency(taxAmount)}</span></div>}
             <div className="flex justify-end gap-8 font-bold text-base border-t pt-2"><span>Total</span><span>{formatCurrency(total)}</span></div>
           </div>
         </div>

@@ -16,7 +16,9 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: false,
-    captureInput: true,
+    // The "simpler keyboard" input capture breaks Android autocorrect and
+    // suggestions in text fields. Use the normal WebView input connection.
+    captureInput: false,
     webContentsDebuggingEnabled: false,
     // Icons generated to resources/android/mipmap-*/ by scripts/generate-icons.mjs
   },

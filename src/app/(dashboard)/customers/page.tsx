@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Phone, Mail, Car, Wrench, Eye, Pencil } from "lucide-react";
 import Link from "next/link";
 import { formatPhone } from "@/lib/utils";
+import { customerName } from "@/lib/customer-name";
 import type { Customer } from "@prisma/client";
 import { CustomerFormDialog } from "@/components/features/customer-form-dialog";
 
@@ -88,7 +89,7 @@ export default function CustomersPage() {
                   <TableRow key={c.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{`${c.firstName} ${c.lastName}`}</p>
+                        <p className="font-medium">{customerName(c)}</p>
                         {c.company && <p className="text-xs text-gray-500">{c.company}</p>}
                       </div>
                     </TableCell>

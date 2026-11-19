@@ -119,15 +119,15 @@ export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSu
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>First Name *</Label>
-            <Input autoCapitalize="words" autoCorrect="off" value={form.firstName} onChange={set("firstName")} />
+            <Input autoCapitalize="words" value={form.firstName} onChange={set("firstName")} />
           </div>
           <div className="space-y-2">
-            <Label>Last Name *</Label>
-            <Input autoCapitalize="words" autoCorrect="off" value={form.lastName} onChange={set("lastName")} />
+            <Label>Last Name</Label>
+            <Input autoCapitalize="words" value={form.lastName} onChange={set("lastName")} />
           </div>
           <div className="space-y-2">
             <Label>Company</Label>
-            <Input autoCapitalize="words" autoCorrect="off" value={form.company} onChange={set("company")} />
+            <Input autoCapitalize="words" value={form.company} onChange={set("company")} />
           </div>
           <div className="space-y-2">
             <Label>Type</Label>
@@ -230,7 +230,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer, initial, onSu
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={() => mutation.mutate(form)}
-            disabled={!form.firstName || !form.lastName || !form.phone || mutation.isPending}
+            disabled={!form.firstName || !form.phone || mutation.isPending}
           >
             {mutation.isPending ? "Saving..." : isEdit ? "Save Changes" : "Create Customer"}
           </Button>

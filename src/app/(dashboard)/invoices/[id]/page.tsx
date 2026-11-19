@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Download, Send, DollarSign, Phone, Smartphone, CheckCircle } from "lucide-react";
+import { ArrowLeft, Send, DollarSign, Phone, Smartphone, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate, formatDateTime, formatPhone, INVOICE_STATUS_COLORS, lineItemSalePrice } from "@/lib/utils";
+import { customerName } from "@/lib/customer-name";
 import { useState } from "react";
 import { CollectPaymentButton } from "@/components/collect-payment-button";
+import { InvoicePdfButton } from "@/components/invoice-pdf-button";
 import { toast } from "@/components/ui/toaster";
 
 const PAYMENT_METHODS = ["CASH", "CHECK", "CREDIT_CARD", "DEBIT_CARD", "ZELLE", "VENMO", "CASHAPP", "ACH", "OTHER"];
@@ -206,6 +208,8 @@ export default function InvoiceDetailPage() {
 
   const isPaid = invoice.status === "PAID";
   const isVoid = invoice.status === "VOID";
+  const invoiceMileage =
+    invoice.job?.mileageOut ?? invoice.job?.mileageIn ?? invoice.job?.vehicle?.mileage;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -218,9 +222,7 @@ export default function InvoiceDetailPage() {
           </span>
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-          <a href={`/api/invoices/${id}/pdf`} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> PDF</Button>
-          </a>
+          <InvoicePdfButton href={invoice.pdfUrl || `/api/invoices/${id}/pdf`} />
           {!isPaid && !isVoid && (
             <>
               <Button variant="outline" size="sm" onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending}>
@@ -273,7 +275,7 @@ export default function InvoiceDetailPage() {
         <Card>
           <CardContent className="p-4 space-y-2 text-sm">
             <p className="font-semibold text-gray-900 text-base">
-              {`${invoice.customer.firstName} ${invoice.customer.lastName}`}
+              {customerName(invoice.customer)}
             </p>
             {invoice.customer.company && <p className="text-gray-500">{invoice.customer.company}</p>}
             <a href={`tel:${invoice.customer.phone}`} className="flex items-center gap-1 text-blue-600">
@@ -306,6 +308,12 @@ export default function InvoiceDetailPage() {
               <span className="text-gray-500">Vehicle</span>
               <span>{`${invoice.job.vehicle.year} ${invoice.job.vehicle.make} ${invoice.job.vehicle.model}`}</span>
             </div>
+            {invoiceMileage != null && Number(invoiceMileage) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Mileage</span>
+                <span>{Number(invoiceMileage).toLocaleString()} mi</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-500">Job</span>
               <Link href={`/jobs/${invoice.job.id}`} className="text-blue-600 hover:underline">
@@ -344,7 +352,7 @@ export default function InvoiceDetailPage() {
             </div>
             {Number(invoice.taxAmount) > 0 && (
               <div className="flex justify-between text-gray-600">
-                <span>Tax ({Number(invoice.taxRate)}%)</span><span>{formatCurrency(invoice.taxAmount)}</span>
+                <span>Sales tax (parts only, {Number(invoice.taxRate)}%)</span><span>{formatCurrency(invoice.taxAmount)}</span>
               </div>
             )}
             {Number(invoice.discountAmount) > 0 && (

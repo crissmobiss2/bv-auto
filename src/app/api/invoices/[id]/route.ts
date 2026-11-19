@@ -6,6 +6,7 @@ import { z } from "zod";
 import { sendPushToRole } from "@/lib/push";
 import { formatCurrency } from "@/lib/utils";
 import { isUniqueViolation, lockInvoice, reconcileInvoice } from "@/lib/payments";
+import { createInvoicePdfToken } from "@/lib/invoice-pdf-token";
 
 const paymentSchema = z.object({
   action: z.literal("payment"),
@@ -50,7 +51,10 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   });
 
   if (!invoice) return apiError("Invoice not found", 404);
-  return apiSuccess(invoice);
+  return apiSuccess({
+    ...invoice,
+    pdfUrl: `/api/invoices/${invoice.id}/pdf?token=${encodeURIComponent(createInvoicePdfToken(invoice.id))}`,
+  });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

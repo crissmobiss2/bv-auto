@@ -8,7 +8,7 @@ import { z } from "zod";
 const updateSchema = z.object({
   type: z.nativeEnum(CustomerType).optional(),
   firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
+  lastName: z.string().trim().optional(),
   company: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(7).optional(),

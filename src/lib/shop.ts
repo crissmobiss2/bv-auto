@@ -16,13 +16,22 @@ export async function getDefaultShop() {
   });
 }
 
-export const DEFAULT_SHOP_NAME = process.env.DEFAULT_SHOP_NAME || "B&V Mobile Auto";
+export const DEFAULT_SHOP_NAME = process.env.DEFAULT_SHOP_NAME || "B&V Mobile Mechanic";
+
+// Names written by older seeds/migrations. Existing rows may not have the
+// latest branding migration yet, so keep customer-facing documents correct.
+const LEGACY_SHOP_NAMES = new Set(["B&V Mobile Auto", "My Shop"]);
+
+export function shopDisplayName(name?: string | null) {
+  const trimmed = name?.trim();
+  return trimmed && !LEGACY_SHOP_NAMES.has(trimmed) ? trimmed : DEFAULT_SHOP_NAME;
+}
 
 /** Customer-facing identity of the shop: used in texts, emails, PDFs and public pages. */
 export async function getBranding() {
   const shop = await getDefaultShop().catch(() => null);
   return {
-    name: shop?.name?.trim() || DEFAULT_SHOP_NAME,
+    name: shopDisplayName(shop?.name),
     phone: shop?.phone?.replace(/[^0-9+().\-\sx]/g, "") || null,
     email: shop?.email || null,
     logoUrl: shop?.logoUrl || null,

@@ -107,7 +107,7 @@ export default function OnboardingPage() {
   }
 
   async function handleCustomer() {
-    if (!firstName.trim() || !lastName.trim()) { setError("Name is required"); return; }
+    if (!firstName.trim()) { setError("First name is required"); return; }
     setLoading(true); setError("");
     try {
       await axios.post("/api/customers", {
@@ -310,7 +310,7 @@ export default function OnboardingPage() {
                 <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Jane" />
               </div>
               <div className="space-y-2">
-                <Label>Last Name *</Label>
+                <Label>Last Name</Label>
                 <Input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Smith" />
               </div>
             </div>

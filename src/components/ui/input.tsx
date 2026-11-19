@@ -5,8 +5,16 @@ export type InputProps = React.InputHTMLAttributes<HTMLInputElement>
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, inputMode, ...props }, ref) => {
+    // Keep the phone keyboard's autocorrect and sentence capitalization on for
+    // free-text fields. Callers override these for names (words), emails/VINs
+    // (none/off), and other structured values.
+    const isFreeText = !type || type === "text" || type === "search";
+    const isStructured = type === "email" || type === "url" || type === "password" || type === "tel";
     return (
       <input
+        autoCapitalize={isFreeText ? "sentences" : isStructured ? "none" : undefined}
+        autoCorrect={isFreeText ? "on" : isStructured ? "off" : undefined}
+        spellCheck={isFreeText ? true : isStructured ? false : undefined}
         type={type}
         // Number fields get the numeric keypad on phones unless a caller overrides it (UX-002).
         inputMode={inputMode ?? (type === "number" ? "decimal" : undefined)}

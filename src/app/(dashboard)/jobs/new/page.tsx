@@ -55,7 +55,7 @@ function NewJobForm() {
 
   const { data: technicians } = useQuery({
     queryKey: ["technicians"],
-    queryFn: () => axios.get("/api/users?role=TECHNICIAN").then((r) => r.data),
+    queryFn: () => axios.get("/api/users?assignable=1").then((r) => r.data),
   });
 
   const createMutation = useMutation({

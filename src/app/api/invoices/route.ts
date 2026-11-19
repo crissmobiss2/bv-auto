@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { reconcileInvoice } from "@/lib/payments";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { generateInvoiceNumber, withUniqueRetry } from "@/lib/utils";
+import { calculateSalesTax, isTaxableLineItem, roundMoney } from "@/lib/tax";
 import { AuditAction, InvoiceStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
@@ -72,6 +73,10 @@ export async function POST(req: NextRequest) {
   if (existing) return apiError("Invoice already exists for this job");
 
   const quote = job.quote;
+  // Re-apply the shop's parts-only tax rule when converting a quote. This also
+  // corrects older quotes that were saved with labor marked taxable.
+  const { taxAmount } = calculateSalesTax(quote.lineItems, Number(quote.taxRate));
+  const totalAmount = roundMoney(Number(quote.subtotal) + taxAmount);
 
   // Create invoice from approved quote
   const invoice = await withUniqueRetry(() => prisma.invoice.create({
@@ -82,10 +87,10 @@ export async function POST(req: NextRequest) {
       createdById: session!.user.id,
       subtotal: quote.subtotal,
       taxRate: quote.taxRate,
-      taxAmount: quote.taxAmount,
+      taxAmount,
       discountAmount: quote.discountAmount,
-      totalAmount: quote.totalAmount,
-      amountDue: quote.totalAmount,
+      totalAmount,
+      amountDue: totalAmount,
       notes: body.notes,
       dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
       lineItems: {
@@ -98,7 +103,7 @@ export async function POST(req: NextRequest) {
           unitPrice: li.unitPrice,
           markup: li.markup,
           discount: li.discount,
-          taxable: li.taxable,
+          taxable: isTaxableLineItem(li.type),
           total: li.total,
           notes: li.notes,
         })),

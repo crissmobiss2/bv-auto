@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
   const role = requestedRole && Object.values(UserRole).includes(requestedRole as UserRole)
     ? (requestedRole as UserRole)
     : null;
+  // Job assignment can go to technicians and the owner/admin who also works
+  // the floor. Keep the payload minimal for pickers.
+  const assignable = req.nextUrl.searchParams.get("assignable") === "1";
 
   // Technicians only need the technician roster (shop board / schedule).
   // Do not expose the admin/accountant email and phone directory to them.
@@ -31,9 +34,13 @@ export async function GET(req: NextRequest) {
   const users = await prisma.user.findMany({
     where: {
       isActive: true,
-      ...(effectiveRole ? { role: effectiveRole } : {}),
+      ...(assignable
+        ? { role: { in: [UserRole.TECHNICIAN, UserRole.ADMIN] } }
+        : effectiveRole ? { role: effectiveRole } : {}),
     },
-    select: { id: true, name: true, email: true, role: true, phone: true },
+    select: assignable
+      ? { id: true, name: true, role: true }
+      : { id: true, name: true, email: true, role: true, phone: true },
     orderBy: { name: "asc" },
   });
 

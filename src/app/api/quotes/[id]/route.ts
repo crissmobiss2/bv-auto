@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess, logAudit } from "@/lib/api-helpers";
 import { calculateLineItemTotal } from "@/lib/utils";
+import { isTaxableLineItem } from "@/lib/tax";
 import { AuditAction, QuoteStatus } from "@prisma/client";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -50,6 +51,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       type?: string;
     }) => ({
       ...li,
+      // Sales tax is parts-only for this shop; do not trust a client flag for labor.
+      taxable: isTaxableLineItem(li.type),
       total: calculateLineItemTotal(li.quantity, li.unitPrice, li.markup, li.discount),
     }));
 
