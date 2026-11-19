@@ -15,7 +15,7 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
         APP_STORE_APPLE_ID: 0000000000   # ← replace with your App Store app ID after creating it in App Store Connect
-      node: 22.11.0
+      node: 22.14.0
       xcode: latest
       cocoapods: default
 
@@ -69,7 +69,7 @@ workflows:
         - google_play
       vars:
         PACKAGE_NAME: com.bvauto.app
-      node: 22.11.0
+      node: 22.14.0
       java: 17
 
     scripts:
@@ -119,7 +119,7 @@ workflows:
         - android_release_signing
       vars:
         PACKAGE_NAME: com.bvauto.app
-      node: 22.11.0
+      node: 22.14.0
       java: 17
 
     scripts:
@@ -176,7 +176,7 @@ workflows:
         - android_release_signing
       vars:
         PACKAGE_NAME: com.bvauto.app
-      node: 22.11.0
+      node: 22.14.0
       java: 17
 
     scripts:

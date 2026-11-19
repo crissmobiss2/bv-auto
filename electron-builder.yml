@@ -19,9 +19,7 @@ win:
     - target: zip
       arch: [x64]
   icon: build/icon.ico
-  publisherName: "B&V Mobile Auto"
   # Code signing disabled — add cert later via CSC_LINK + CSC_KEY_PASSWORD env vars
-  sign: false
 
 # To build a full NSIS .exe installer (requires Windows Developer Mode enabled):
 #   1. Settings → Privacy & Security → For Developers → Developer Mode: ON
@@ -66,10 +64,6 @@ linux:
       arch: [x64]
   icon: build/icon.png
   category: Office
-  desktop:
-    Name: "B&V Auto"
-    Comment: "Mobile Auto Repair Business OS"
-    Categories: Office;Finance;
 
 publish:
   - provider: github
