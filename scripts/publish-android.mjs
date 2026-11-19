@@ -10,8 +10,9 @@ import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const skipBuild = args.includes("--skip-build");
 const apkArg = args.includes("--apk") ? args[args.indexOf("--apk") + 1] : null;
@@ -29,19 +30,33 @@ function buildTool(name) {
   const dir = path.join(sdk, "build-tools");
   if (!existsSync(dir)) fail(`Android build-tools not found under ${sdk}; set ANDROID_HOME`);
   const versions = readdirSync(dir).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+  const candidates = process.platform === "win32" ? [`${name}.exe`, `${name}.bat`, name] : [name];
   for (const v of versions) {
-    const p = path.join(dir, v, name);
-    if (existsSync(p)) return p;
+    for (const candidate of candidates) {
+      const p = path.join(dir, v, candidate);
+      if (existsSync(p)) return p;
+    }
   }
   fail(`${name} not found in ${dir}`);
+}
+
+function runTool(name, toolArgs, options = {}) {
+  const tool = buildTool(name);
+  if (process.platform === "win32" && /\.bat$/i.test(tool)) {
+    return execFileSync(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", tool, ...toolArgs], options);
+  }
+  return execFileSync(tool, toolArgs, options);
 }
 
 if (!skipBuild) {
   if (!process.env.BVAUTO_KEYSTORE_FILE && !process.env.CM_KEYSTORE_PATH) {
     fail("Set BVAUTO_KEYSTORE_FILE, BVAUTO_KEYSTORE_PASSWORD, BVAUTO_KEY_ALIAS and BVAUTO_KEY_PASSWORD");
   }
-  execFileSync("npx", ["cap", "sync", "android"], { cwd: root, stdio: "inherit" });
-  execFileSync("./gradlew", ["assembleRelease"], { cwd: path.join(root, "android"), stdio: "inherit" });
+  execFileSync(process.platform === "win32" ? "npx.cmd" : "npx", ["cap", "sync", "android"], { cwd: root, stdio: "inherit" });
+  execFileSync(process.platform === "win32" ? "gradlew.bat" : "./gradlew", ["assembleRelease"], {
+    cwd: path.join(root, "android"),
+    stdio: "inherit",
+  });
 }
 
 const apk = apkArg
@@ -49,7 +64,7 @@ const apk = apkArg
   : path.join(root, "android/app/build/outputs/apk/release/app-release.apk");
 if (!existsSync(apk)) fail(`No signed APK at ${apk} (an unsigned build is named app-release-unsigned.apk)`);
 
-const certs = execFileSync(buildTool("apksigner"), ["verify", "--print-certs", apk], { encoding: "utf8" });
+const certs = runTool("apksigner", ["verify", "--print-certs", apk], { encoding: "utf8" });
 const signerDigests = [...certs.matchAll(/^Signer #\d+ certificate SHA-256 digest: ([0-9a-f]{64})$/gm)].map((d) => d[1]);
 if (signerDigests.length === 0) fail("apksigner could not read a signing certificate");
 if (signerDigests.length > 1) fail(`APK has ${signerDigests.length} signers; installed apps expect exactly one`);
@@ -61,7 +76,7 @@ if (signerCertSha256 !== signing.expectedSignerCertSha256) {
   );
 }
 
-const badging = execFileSync(buildTool("aapt"), ["dump", "badging", apk], { encoding: "utf8" });
+const badging = runTool("aapt", ["dump", "badging", apk], { encoding: "utf8" });
 const m = /package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'/.exec(badging);
 if (!m || m[1] !== "com.bvauto.app") fail("APK is not com.bvauto.app");
 const versionCode = Number(m[2]);

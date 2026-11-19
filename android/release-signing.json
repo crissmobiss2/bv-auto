@@ -1,4 +1,4 @@
 {
-  "expectedSignerCertSha256": "ccdd77cbcdb2d79cf947be8f962d9fd07422a1bb678c4cc1c24ae9d472d9f02f",
-  "note": "SHA-256 of the signing certificate every published APK must carry (apksigner verify --print-certs). Keystore: Devin org secrets BVAUTO_KEYSTORE_BASE64 / BVAUTO_KEYSTORE_PASSWORD, alias bvauto. Changing it forces every installed app to be uninstalled and reinstalled."
+  "expectedSignerCertSha256": "8e313beb1627c9a4f407e6159adc33d54fcf4061f9f5aaa71e982cee3c7cf34e",
+  "note": "SHA-256 of the signing certificate every published APK must carry (apksigner verify --print-certs). New BV Auto release key generated 2026-11-19, alias bvauto, stored outside the repository in bv-auto-secrets. Back up the keystore and password. Replacing the old key means existing installs require one uninstall/reinstall."
 }
