@@ -108,6 +108,8 @@ workflows:
       events:
         - type: tag
           tag_pattern: "android-v*"
+        - type: branch
+          branch_pattern: "android-release"
 
     environment:
       android_signing:
