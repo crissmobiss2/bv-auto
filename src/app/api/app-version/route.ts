@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       downloadUrl: downloadUrl.toString(),
       playStoreUrl: "https://play.google.com/store/apps/details?id=com.bvauto.app",
       appStoreUrl: "https://apps.apple.com/app/bv-auto/id0000000000",
-      releaseNotes: "Keyboard autocorrect, invoice PDFs, parts-only sales tax, and shop branding fixes.",
+      releaseNotes: "Security updates, technician inspection fix, manual quote approval links, admin password reset, and shop timezone fix.",
       forceUpdate: false,
     },
     { headers: { "Cache-Control": "no-store" } },

@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.7",
-  "apkSha256": "ca6c5a25c3b2225546e6d7db718b289788428da01b7134c23276b3efdc698e6b",
+  "versionCode": 9,
+  "versionName": "1.8",
+  "apkSha256": "bbe53ac31295a8ec6dd7b9fdfaba47de975c6b4dc793ec6ed932fe745c1d7989",
   "signerCertSha256": "8e313beb1627c9a4f407e6159adc33d54fcf4061f9f5aaa71e982cee3c7cf34e",
   "requiresReinstallBelow": 8
 }

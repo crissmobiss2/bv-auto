@@ -48,12 +48,19 @@ function runTool(name, toolArgs, options = {}) {
   return execFileSync(tool, toolArgs, options);
 }
 
+function runCommand(command, commandArgs, options = {}) {
+  if (process.platform === "win32" && /\.(cmd|bat)$/i.test(command)) {
+    return execFileSync(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", command, ...commandArgs], options);
+  }
+  return execFileSync(command, commandArgs, options);
+}
+
 if (!skipBuild) {
   if (!process.env.BVAUTO_KEYSTORE_FILE && !process.env.CM_KEYSTORE_PATH) {
     fail("Set BVAUTO_KEYSTORE_FILE, BVAUTO_KEYSTORE_PASSWORD, BVAUTO_KEY_ALIAS and BVAUTO_KEY_PASSWORD");
   }
-  execFileSync(process.platform === "win32" ? "npx.cmd" : "npx", ["cap", "sync", "android"], { cwd: root, stdio: "inherit" });
-  execFileSync(process.platform === "win32" ? "gradlew.bat" : "./gradlew", ["assembleRelease"], {
+  runCommand(process.platform === "win32" ? "npx.cmd" : "npx", ["cap", "sync", "android"], { cwd: root, stdio: "inherit" });
+  runCommand(process.platform === "win32" ? "gradlew.bat" : "./gradlew", ["assembleRelease"], {
     cwd: path.join(root, "android"),
     stdio: "inherit",
   });

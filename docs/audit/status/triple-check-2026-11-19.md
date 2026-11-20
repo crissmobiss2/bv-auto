@@ -2,7 +2,7 @@
 
 Environment: production build (`next build && next start`) against the migrated
 local Postgres (`bvauto_audit`), plus the live Vercel deployment and the
-published Android 1.7 APK. Admin, technician, customer, and unauthenticated
+published Android 1.8 APK. Admin, technician, customer, and unauthenticated
 sessions were exercised with a real browser.
 
 ## Automated gates
@@ -50,7 +50,7 @@ sessions were exercised with a real browser.
 - **Mobile** — 390×844: no horizontal overflow on dashboard, jobs, new job,
   invoices, invoice detail, customers, vehicles, settings, shop board, schedule,
   dispatch, reports, payroll, parts, inventory, guide; dialogs scroll and fit.
-- **Android 1.7** — live `/api/app-version` returns build 8/1.7/reinstall-below 8;
+- **Android 1.8** — live `/api/app-version` returns build 9/1.8/reinstall-below 8;
   production APK hash `ca6c5a25…e6b`, signer `8e313beb…f34e`, `captureInput:false`.
 
 ## Bugs found and fixed
@@ -109,8 +109,8 @@ in Postgres and serving them through `/api/photos/[id]`.
 
 Final commit `7e32394` contains the fixes and these reports. Vercel production
 deployment `bv-auto-45hq3xoyi` is Ready, and
-`https://bv-auto.vercel.app/api/app-version` still serves build 8 / 1.7 /
-reinstall-below 8 / APK hash `ca6c5a25…e6b`. These are webview fixes, so the
+`https://bv-auto.vercel.app/api/app-version` still serves build 9 / 1.8 /
+reinstall-below 8 / APK hash `bbe53ac3…7989`. These are webview fixes, so the
 installed Android app receives them without a new APK.
 
 Dependency and CI follow-ups are recorded in
@@ -118,11 +118,11 @@ Dependency and CI follow-ups are recorded in
 
 ## Still unverified (needs a real device / real provider)
 
-- Installing 1.7 over an existing install and the one-time uninstall flow on a
+- Installing 1.8 over an existing install and the one-time uninstall flow on a
   physical Android device or emulator.
 - A real Resend email, Twilio SMS, or Stripe checkout/refund round-trip.
-- Codemagic builds: the new keystore still needs to be uploaded as
-  `bvauto_keystore` (alias `bvauto`). The current 1.7 APK was built and published
-  locally, so users can update without CI.
+- Codemagic signing is fixed and verified: the key is in the restricted
+  `android_release_signing` variable group, and `android-signing-verify` build
+  `6aff9abd8f52ca2751291ec9` built and signed an APK with the new certificate.
 - Devin org secrets still contain the old release key; future Devin builds would
   be signed with the obsolete key until they are replaced.
