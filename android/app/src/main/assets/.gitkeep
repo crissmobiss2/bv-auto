@@ -1,0 +1,2 @@
+# Keeps android/app/src/main/assets in clean checkouts.
+# Capacitor writes capacitor.config.json and capacitor.plugins.json here during sync.

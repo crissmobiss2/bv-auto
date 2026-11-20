@@ -77,7 +77,9 @@ workflows:
         script: npm ci
 
       - name: Sync Capacitor Android
-        script: npx cap sync android
+        script: |
+          mkdir -p android/app/src/main/assets
+          npx cap sync android
 
       - name: Prepare Android signing
         script: |
@@ -127,7 +129,9 @@ workflows:
         script: npm ci --legacy-peer-deps
 
       - name: Sync Capacitor Android
-        script: npx cap sync android
+        script: |
+          mkdir -p android/app/src/main/assets
+          npx cap sync android
 
       - name: Prepare Android signing
         script: |
@@ -184,7 +188,9 @@ workflows:
         script: npm ci --legacy-peer-deps
 
       - name: Sync Capacitor Android
-        script: npx cap sync android
+        script: |
+          mkdir -p android/app/src/main/assets
+          npx cap sync android
 
       - name: Prepare Android signing
         script: |
