@@ -11,11 +11,12 @@
 | `vitest` | 5.0.2 | 5.1.1 | Fixes Vitest manual-mock code injection |
 | `electron-builder` | 26.15.3 | 26.18.0 | Keeps desktop packaging on the current line |
 
-`npm audit` went from **29 vulnerabilities (5 high)** to **6 moderate**. The
-remaining six are all inside `electron-builder` → `app-builder-lib` →
+`npm audit` went from **29 vulnerabilities (5 high)** to **6 moderate, 0 high**.
+The remaining six are all inside `electron-builder` → `app-builder-lib` →
 `@electron/universal`/`minimatch` and only affect desktop packaging, not the
 web or Android runtime. A forced fix would downgrade `electron-builder` to
-25.1.0, so it was not applied.
+25.1.0, so it was not applied. Added overrides for `effect` (3.22.5) and
+`deepmerge-ts` (8.0.2) to clear the Prisma-related high findings.
 
 ## Verification
 
@@ -41,3 +42,9 @@ web or Android runtime. A forced fix would downgrade `electron-builder` to
   `BVAUTO_KEYSTORE_PASSWORD`, `BVAUTO_KEY_ALIAS`, `BVAUTO_KEY_PASSWORD`) instead
   of the missing `bvauto_keystore` code-signing identity. A non-publishing
   `android-signing-verify` workflow was added to test it.
+- Codemagic Node bumped from 22.11.0 to 22.14.0 (Prisma 7.10 requires 22.12+),
+  and `package.json` now declares `"engines": { "node": ">=22.12.0" }`.
+- `electron-builder.yml` had two options that electron-builder 26 rejects
+  (`win.publisherName`, `win.sign`, and `linux.desktop`). Removed; Windows
+  packaging now passes config validation and produces
+  `dist/win-unpacked/B&V Auto.exe` with the updated Electron 44.11.5 runtime.
