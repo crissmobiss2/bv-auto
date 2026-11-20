@@ -107,11 +107,14 @@ in Postgres and serving them through `/api/photos/[id]`.
 
 ## Deployment
 
-Commit `8027bff` contains the two fixes and this report. Vercel production
-deployment `bv-auto-18k80s5d4` is Ready, and `https://bv-auto.vercel.app/api/app-version`
-still serves build 8 / 1.7 / reinstall-below 8 / APK hash `ca6c5a25…e6b`.
-These are webview fixes, so the installed Android app receives them without a new
-APK.
+Final commit `7e32394` contains the fixes and these reports. Vercel production
+deployment `bv-auto-45hq3xoyi` is Ready, and
+`https://bv-auto.vercel.app/api/app-version` still serves build 8 / 1.7 /
+reinstall-below 8 / APK hash `ca6c5a25…e6b`. These are webview fixes, so the
+installed Android app receives them without a new APK.
+
+Dependency and CI follow-ups are recorded in
+`docs/audit/status/dependency-upgrade-2026-11-19.md`.
 
 ## Still unverified (needs a real device / real provider)
 
