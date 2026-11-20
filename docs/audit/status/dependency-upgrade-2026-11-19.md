@@ -44,7 +44,25 @@ web or Android runtime. A forced fix would downgrade `electron-builder` to
   `android-signing-verify` workflow was added to test it.
 - Codemagic Node bumped from 22.11.0 to 22.14.0 (Prisma 7.10 requires 22.12+),
   and `package.json` now declares `"engines": { "node": ">=22.12.0" }`.
+- `android/app/src/main/assets/.gitkeep` keeps the Capacitor assets directory in
+  clean checkouts; CI also creates it before `npx cap sync android`.
+- Android CI now uses Java 21 (the Capacitor/Gradle project requires it).
 - `electron-builder.yml` had two options that electron-builder 26 rejects
   (`win.publisherName`, `win.sign`, and `linux.desktop`). Removed; Windows
   packaging now passes config validation and produces
   `dist/win-unpacked/B&V Auto.exe` with the updated Electron 44.11.5 runtime.
+
+## Codemagic verification
+
+`android-signing-verify` build `6aff9abd8f52ca2751291ec9` finished with every
+step green:
+
+- Install dependencies, Capacitor sync, keystore decode, Gradle release build,
+  `apksigner verify` all passed
+- Artifact: `app-release.apk`, `versionCode 8`, `versionName 1.7`
+- Signer: `CN=BV Auto, OU=Mobile, O=BV Auto, C=US`,
+  SHA-256 `8e313beb1627c9a4f407e6159adc33d54fcf4061f9f5aaa71e982cee3c7cf34e`
+- Local `apksigner verify` on the downloaded CI artifact: exit 0
+
+The signing-identity upload problem is resolved; future `android-apk-update`
+runs only need a version bump before the publish step.
