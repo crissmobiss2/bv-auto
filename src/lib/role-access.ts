@@ -30,6 +30,7 @@ export const PUBLIC_PAGE_PREFIXES = [
   "/offline",
   "/track",
   "/icons",
+  "/downloads",
   "/sw.js",
   "/_next",
 ];
